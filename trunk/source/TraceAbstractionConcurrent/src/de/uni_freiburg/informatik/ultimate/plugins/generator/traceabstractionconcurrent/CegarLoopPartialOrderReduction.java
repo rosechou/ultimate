@@ -16,7 +16,7 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.predicates.
 import de.uni_freiburg.informatik.ultimate.lib.tracecheckerutils.singletracecheck.InterpolationTechnique;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.BasicCegarLoop;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TAPreferences;
-import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstractionconcurrent.reduction.MultiPartialOrderInclusionCheck;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstractionconcurrent.reduction.DualPartialOrderInclusionCheck;
 
 public class CegarLoopPartialOrderReduction<LETTER extends IIcfgTransition<?>> extends BasicCegarLoop<LETTER> {
 
@@ -33,7 +33,7 @@ public class CegarLoopPartialOrderReduction<LETTER extends IIcfgTransition<?>> e
 
 	@Override
 	protected boolean isAbstractionEmpty() throws AutomataOperationCanceledException {
-		final MultiPartialOrderInclusionCheck<IPredicate, IPredicate, LETTER> check = new MultiPartialOrderInclusionCheck<>(
+		final DualPartialOrderInclusionCheck<IPredicate, IPredicate, LETTER> check = new DualPartialOrderInclusionCheck<>(
 				mRelations, (INestedWordAutomaton<LETTER, IPredicate>) mAbstraction, mInterpolAutomaton);
 		if (!check.getResult()) {
 			mCounterexample = check.getCounterexample();

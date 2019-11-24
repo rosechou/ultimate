@@ -1,10 +1,10 @@
 package de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstractionconcurrent.reduction;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -22,8 +22,8 @@ import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.Pair;
 /**
  * Employs a modified sleep set algorithm to check if a given proof is
  * sufficient to prove a given program correct. A proof is considered
- * sufficient, if its closure under a sequence of independence relations
- * contains the program.
+ * sufficient, if its closure under two independence relations (in a fixed
+ * order) contains the program.
  *
  * As this problem is undecidable, the check implemented here is sound but not
  * complete: Even when a counterexample is found, the proof might actually have
@@ -35,15 +35,24 @@ import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.Pair;
  * @param <STATE2>
  * @param <LETTER>
  */
-public class MultiPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
-	private final IIndependenceRelation<STATE2, LETTER>[] mRelations;
+public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
+	private final IIndependenceRelation<STATE2, LETTER> mRelation1;
+	private final IIndependenceRelation<STATE2, LETTER> mRelation2;
+
+	private boolean mSwitched = false;
+
 	private final INestedWordAutomaton<LETTER, STATE1> mProgram;
 	private final INestedWordAutomaton<LETTER, STATE2> mProof;
 	private final NestedRun<LETTER, STATE1> mCounterexample;
+	private final Set<Pair<STATE1, STATE2>> mStack = new HashSet<>();
+	private final Map<Pair<STATE1, STATE2>, ArrayDeque<Set<LETTER>>> mDelay = new HashMap<>();
 
-	public MultiPartialOrderInclusionCheck(final IIndependenceRelation<STATE2, LETTER>[] relations,
-			final INestedWordAutomaton<LETTER, STATE1> program, final INestedWordAutomaton<LETTER, STATE2> proof) {
-		mRelations = relations;
+	public DualPartialOrderInclusionCheck(final IIndependenceRelation<STATE2, LETTER> relation1,
+			final IIndependenceRelation<STATE2, LETTER> relation2, final INestedWordAutomaton<LETTER, STATE1> program,
+			final INestedWordAutomaton<LETTER, STATE2> proof) {
+		mRelation1 = relation1;
+		mRelation2 = relation2;
+
 		mProgram = program;
 		mProof = proof;
 
@@ -72,80 +81,122 @@ public class MultiPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	}
 
 	private final NestedRun<LETTER, STATE1> performCheck() {
-		final Pair<List<LETTER>, Integer> result = search(getInitial(mProgram), getInitial(mProof),
-				Collections.emptyMap());
-		final List<LETTER> symbols = result.getFirst();
+		final ArrayDeque<LETTER> symbols = search(getInitial(mProgram), getInitial(mProof), Collections.emptySet(),
+				Collections.emptySet());
 		if (symbols != null) {
 			return createRun(symbols);
 		}
 		return null;
 	}
 
-	private final Pair<List<LETTER>, Integer> search(final STATE1 location, final STATE2 predicate,
-			final Map<LETTER, Integer> sleepSet) {
-		final int maxLevel = mRelations.length - 1;
+	private final ArrayDeque<LETTER> search(final STATE1 location, final STATE2 predicate, final Set<LETTER> sleepSet1,
+			final Set<LETTER> sleepSet2) {
 
 		if (mProof.isFinal(predicate)) {
 			// Assumes the final state of mProof is a sink state.
 			// Hence we can abort the search here.
-			return new Pair<>(null, maxLevel);
+			return null;
 		} else if (mProgram.isFinal(location)) {
 			// A counterexample has been found.
-			return new Pair<>(Arrays.asList(), maxLevel);
+			return new ArrayDeque<>();
 		}
 
 		final Set<LETTER> enabledActions = mProgram.lettersInternal(location);
-		int level = maxLevel;
+		final Set<LETTER> done = new HashSet<>(enabledActions.size());
 
 		for (final LETTER a : enabledActions) {
-			if (sleepSet.containsKey(a)) {
-				final Integer sleepLevel = sleepSet.get(a);
-				assert sleepLevel != null;
-				level = Math.min(level, sleepLevel);
-			} else {
+			final Set<LETTER> sleepSet = getActiveSleepSet(sleepSet1, sleepSet2);
+			if (!sleepSet.contains(a)) {
 				final STATE1 nextLocation = getSuccessor(mProgram, location, a);
 				final STATE2 nextPredicate = getSuccessor(mProof, predicate, a);
 
-				final Map<LETTER, Integer> nextSleep = recomputeSleep(sleepSet, predicate, a);
-				final Pair<List<LETTER>, Integer> result = search(nextLocation, nextPredicate, nextSleep);
+				final Set<LETTER> nextSleep1 = recomputeSleep(sleepSet1, done, predicate, a, mRelation1);
+				final Set<LETTER> nextSleep2 = recomputeSleep(sleepSet2, done, predicate, a, mRelation2);
 
-				final Integer recursiveLevel = result.getSecond();
-				assert recursiveLevel != null;
-				level = Math.min(level, recursiveLevel);
-				sleepSet.put(a, recursiveLevel);
+				final Pair<STATE1, STATE2> nextNode = new Pair<>(nextLocation, nextPredicate);
 
-				final List<LETTER> counterexample = result.getFirst();
+				if (mStack.contains(nextNode)) {
+					getDelay(nextNode).add(nextSleep2);
+
+					// We don't know if the delayed call will switch.
+					// For the moment, we simply assume it will.
+					// This is a safe assumption, but possibly too strict.
+					//
+					// Alternative solutions:
+					// - always, or heuristically, assume it won't; then enforce it (also possibly too strict)
+					// - assume it won't; but if it does, perform a partial restart of the reduction from this point on (more complex, and possibly in vain)
+					// - if we record explored (AND about-to-be explored) actions, and avoid re-exploring them, can we just not delay calls but do them immediately?
+					//   termination argument: the set of unexplored actions strictly decreases with each call for the same location, if it is empty we terminate this call
+					//     soundness argument: ?
+					mSwitched = true;
+				} else {
+					mStack.add(nextNode);
+					final ArrayDeque<LETTER> counterexample = search(nextLocation, nextPredicate, nextSleep1, nextSleep2);
+					mStack.remove(nextNode);
+
+					if (counterexample != null) {
+						mSwitched = true;
+						if (!sleepSet2.contains(a)) {
+							counterexample.addFirst(a);
+							return counterexample;
+						}
+					}
+				}
+			}
+			done.add(a);
+		}
+
+		final Pair<STATE1, STATE2> thisNode = new Pair<>(location, predicate);
+		if (mDelay.containsKey(thisNode)) {
+			final ArrayDeque<Set<LETTER>> delayed = mDelay.get(thisNode);
+			while (!delayed.isEmpty()) {
+				// We set sleep1 to the empty set, as we switched above anyway.
+				final Set<LETTER> sleep2 = delayed.pop();
+				final ArrayDeque<LETTER> counterexample = search(location, predicate, Collections.emptySet(), sleep2);
 				if (counterexample != null) {
-					counterexample.add(a);
-					return new Pair<>(counterexample, level);
+					return counterexample;
 				}
 			}
 		}
 
-		return new Pair<>(null, level);
+		return null;
 	}
 
-	private final Map<LETTER, Integer> recomputeSleep(final Map<LETTER, Integer> oldSleepSet, final STATE2 context,
-			final LETTER action) {
-		final Map<LETTER, Integer> newSleepSet = new HashMap<>(oldSleepSet.size());
+	private Set<LETTER> getActiveSleepSet(final Set<LETTER> sleepSet1, final Set<LETTER> sleepSet2) {
+		if (mSwitched) {
+			return sleepSet2;
+		} else {
+			return sleepSet1;
+		}
+	}
 
-		for (final Map.Entry<LETTER, Integer> entry : oldSleepSet.entrySet()) {
-			for (int level = entry.getValue(); level >= 0; level--) {
-				assert 0 <= level && level < mRelations.length : "Illegal level " + level;
-				if (mRelations[level].contains(context, entry.getKey(), action)) {
-					newSleepSet.put(entry.getKey(), level);
-					break;
-				}
+	private ArrayDeque<Set<LETTER>> getDelay(final Pair<STATE1, STATE2> node) {
+		if (!mDelay.containsKey(node)) {
+			mDelay.put(node, new ArrayDeque<>());
+		}
+		return mDelay.get(node);
+	}
+
+	private final Set<LETTER> recomputeSleep(final Set<LETTER> oldSleepSet, final Set<LETTER> done,
+			final STATE2 context, final LETTER action, final IIndependenceRelation<STATE2, LETTER> relation) {
+		final Set<LETTER> newSleepSet = new HashSet<>(oldSleepSet.size() + done.size());
+
+		for (final LETTER sleepAction : oldSleepSet) {
+			if (relation.contains(context, sleepAction, action)) {
+				newSleepSet.add(sleepAction);
+			}
+		}
+
+		for (final LETTER doneAction : done) {
+			if (relation.contains(context, doneAction, action)) {
+				newSleepSet.add(doneAction);
 			}
 		}
 
 		return newSleepSet;
 	}
 
-	private NestedRun<LETTER, STATE1> createRun(final List<LETTER> symbols) {
-		// The search returns the word in reverse order.
-		Collections.reverse(symbols);
-
+	private NestedRun<LETTER, STATE1> createRun(final ArrayDeque<LETTER> symbols) {
 		final Word<LETTER> word = new Word<>((LETTER[]) symbols.toArray());
 		final NestedWord<LETTER> nestedWord = NestedWord.nestedWord(word);
 

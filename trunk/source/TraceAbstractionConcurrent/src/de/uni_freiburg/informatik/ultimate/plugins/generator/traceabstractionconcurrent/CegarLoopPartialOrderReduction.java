@@ -20,7 +20,8 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstractioncon
 
 public class CegarLoopPartialOrderReduction<LETTER extends IIcfgTransition<?>> extends BasicCegarLoop<LETTER> {
 
-	private final IIndependenceRelation<IPredicate, LETTER>[] mRelations;
+	private final IIndependenceRelation<IPredicate, LETTER> mRelation1;
+	private final IIndependenceRelation<IPredicate, LETTER> mRelation2;
 
 	public CegarLoopPartialOrderReduction(final DebugIdentifier name, final IIcfg<?> rootNode,
 			final CfgSmtToolkit csToolkit, final PredicateFactory predicateFactory, final TAPreferences taPrefs,
@@ -28,13 +29,15 @@ public class CegarLoopPartialOrderReduction<LETTER extends IIcfgTransition<?>> e
 		super(name, rootNode, csToolkit, predicateFactory, taPrefs, errorLocs,
 				InterpolationTechnique.Craig_TreeInterpolation, false, services);
 
-		mRelations = null; // TODO
+		mRelation1 = null; // TODO
+		mRelation2 = null; // TODO
 	}
 
 	@Override
 	protected boolean isAbstractionEmpty() throws AutomataOperationCanceledException {
 		final DualPartialOrderInclusionCheck<IPredicate, IPredicate, LETTER> check = new DualPartialOrderInclusionCheck<>(
-				mRelations, (INestedWordAutomaton<LETTER, IPredicate>) mAbstraction, mInterpolAutomaton);
+				mRelation1, mRelation2, (INestedWordAutomaton<LETTER, IPredicate>) mAbstraction, mInterpolAutomaton,
+				true);
 		if (!check.getResult()) {
 			mCounterexample = check.getCounterexample();
 		}

@@ -47,14 +47,18 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	private final Set<Pair<STATE1, STATE2>> mStack = new HashSet<>();
 	private final Map<Pair<STATE1, STATE2>, ArrayDeque<Set<LETTER>>> mDelay = new HashMap<>();
 
+	private final boolean mAssumeProofSinkAccept;
+
 	public DualPartialOrderInclusionCheck(final IIndependenceRelation<STATE2, LETTER> relation1,
 			final IIndependenceRelation<STATE2, LETTER> relation2, final INestedWordAutomaton<LETTER, STATE1> program,
-			final INestedWordAutomaton<LETTER, STATE2> proof) {
+			final INestedWordAutomaton<LETTER, STATE2> proof,
+			final boolean assumeProofSinkAccept) {
 		mRelation1 = relation1;
 		mRelation2 = relation2;
 
 		mProgram = program;
 		mProof = proof;
+		mAssumeProofSinkAccept = assumeProofSinkAccept;
 
 		assert NestedWordAutomataUtils.isFiniteAutomaton(program) : "POR does not support calls and returns.";
 		assert NestedWordAutomataUtils.isFiniteAutomaton(proof) : "POR does not support calls and returns.";
@@ -92,13 +96,13 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	private final ArrayDeque<LETTER> search(final STATE1 location, final STATE2 predicate, final Set<LETTER> sleepSet1,
 			final Set<LETTER> sleepSet2) {
 
-		if (mProof.isFinal(predicate)) {
-			// Assumes the final state of mProof is a sink state.
-			// Hence we can abort the search here.
-			return null;
-		} else if (mProgram.isFinal(location)) {
+		if (mProgram.isFinal(location) && !mProof.isFinal(predicate)) {
 			// A counterexample has been found.
 			return new ArrayDeque<>();
+		} else if (mProof.isFinal(predicate) && mAssumeProofSinkAccept) {
+			// Assumes any final state of mProof is a sink state.
+			// Hence we can abort the search here.
+			return null;
 		}
 
 		final Set<LETTER> enabledActions = mProgram.lettersInternal(location);

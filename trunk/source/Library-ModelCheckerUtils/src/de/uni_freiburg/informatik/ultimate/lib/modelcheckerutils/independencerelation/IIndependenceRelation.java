@@ -55,9 +55,10 @@ public interface IIndependenceRelation<STATE, LETTER> {
 	 * Unconditional relations (see {@link isConditional}) should accept
 	 * {@code null} as state.
 	 *
-	 * The intuition is that correctness of a trace containing the subsequence "ba"
-	 * implies the correctness of the trace where this was replaced by "ab". We also
-	 * sometimes say that {@code a} is a right-mover for {@code b} (in the given
+	 * The intuition is that a word containing the subsequence "ba" *covers*
+	 * the corresponding word where the subsequence was replaced by "ab",
+	 * e.g. infeasibility of the former implies infeasibility of the latter.
+	 * We also sometimes say that {@code a} is a right-mover for {@code b} (in the given
 	 * {@code state}, if the relation is conditional), or resp., {@code b} is a left
 	 * mover for {@code a}.
 	 */

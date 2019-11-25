@@ -26,11 +26,7 @@
  */
 package de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.independencerelation;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import de.uni_freiburg.informatik.ultimate.core.model.services.ILogger;
@@ -41,20 +37,13 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.I
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.transitions.TransFormulaBuilder;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.transitions.TransFormulaUtils;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.transitions.UnmodifiableTransFormula;
-import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramConst;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramVar;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.hoaretriple.IHoareTripleChecker;
-import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.hoaretriple.IHoareTripleChecker.Validity;
-import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.SmtUtils;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.SmtUtils.SimplificationTechnique;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.SmtUtils.XnfConversionTechnique;
-import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.Substitution;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.managedscript.ManagedScript;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.predicates.IPredicate;
 import de.uni_freiburg.informatik.ultimate.logic.Script.LBool;
-import de.uni_freiburg.informatik.ultimate.logic.Term;
-import de.uni_freiburg.informatik.ultimate.logic.TermVariable;
-import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.HashRelation;
 
 /**
  * Independence relation that considers semantic independence of abstractions of
@@ -65,25 +54,20 @@ import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.HashRela
  * {@link CachedIndependenceRelation} for better performance.
  *
  * @author Dominik Klumpp (klumpp@informatik.uni-freiburg.de)
- *
  */
+@Deprecated
 public class AbstractSemanticIndependenceRelation implements IIndependenceRelation<IPredicate, IIcfgTransition<?>> {
-
-	private final IHoareTripleChecker mChecker;
-	private final Set<IPredicate> mPredicates;
-	private final Set<IProgramVar> mAllVariables;
-
-	private final boolean mConditional;
-	private final boolean mSymmetric;
-
-	private final Map<IInternalAction, HashRelation<IPredicate, IPredicate>> mAbstractionCache = new HashMap<>();
 
 	private final IUltimateServiceProvider mServices;
 	private final ManagedScript mManagedScript;
 	private final ILogger mLogger;
 
-	private final static SimplificationTechnique mSimplificationTechnique = SimplificationTechnique.SIMPLIFY_DDA;
-	private final static XnfConversionTechnique mXnfConversionTechnique = XnfConversionTechnique.BOTTOM_UP_WITH_LOCAL_SIMPLIFICATION;
+	private static final SimplificationTechnique mSimplificationTechnique = SimplificationTechnique.SIMPLIFY_DDA;
+	private static final XnfConversionTechnique mXnfConversionTechnique = XnfConversionTechnique.BOTTOM_UP_WITH_LOCAL_SIMPLIFICATION;
+
+	private final boolean mConditional;
+	private final boolean mSymmetric;
+	private final HoareAbstraction mAbstraction;
 
 	/**
 	 * Create a new variant of the abstract semantic independence relation.
@@ -104,12 +88,10 @@ public class AbstractSemanticIndependenceRelation implements IIndependenceRelati
 		mManagedScript = mgdScript;
 		mLogger = services.getLoggingService().getLogger(ModelCheckerUtils.PLUGIN_ID);
 
-		mChecker = checker;
-		mPredicates = predicates;
-		mAllVariables = allVariables;
-
 		mConditional = conditional;
 		mSymmetric = symmetric;
+
+		mAbstraction = new HoareAbstraction(mgdScript, checker, predicates, allVariables);
 	}
 
 	@Override
@@ -125,18 +107,16 @@ public class AbstractSemanticIndependenceRelation implements IIndependenceRelati
 	@Override
 	public boolean contains(final IPredicate state, final IIcfgTransition<?> a, final IIcfgTransition<?> b) {
 		assert a instanceof IInternalAction && b instanceof IInternalAction;
-		final HashRelation<IPredicate, IPredicate> abstrA = computeAbstraction((IInternalAction) a);
-		final HashRelation<IPredicate, IPredicate> abstrB = computeAbstraction((IInternalAction) b);
 
-		final UnmodifiableTransFormula tfA = concretizeAbstraction(abstrA);
-		final UnmodifiableTransFormula tfB = concretizeAbstraction(abstrB);
+		final IPredicate context = mConditional ? state : null;
+		final UnmodifiableTransFormula tfA = mAbstraction.computeAbstraction(a);
+		final UnmodifiableTransFormula tfB = mAbstraction.computeAbstraction(b);
 
 		assert TransFormulaUtils.checkImplication(a.getTransformula(), tfA,
 				mManagedScript) != LBool.SAT : "Abstraction is not a superset of concrete relation";
 		assert TransFormulaUtils.checkImplication(b.getTransformula(), tfB,
 				mManagedScript) != LBool.SAT : "Abstraction is not a superset of concrete relation";
 
-		final IPredicate context = mConditional ? state : null;
 		final boolean subset = performInclusionCheck(context, tfA, tfB);
 		if (mSymmetric) {
 			final boolean superset = performInclusionCheck(context, tfB, tfA);
@@ -146,72 +126,8 @@ public class AbstractSemanticIndependenceRelation implements IIndependenceRelati
 		}
 	}
 
-	private final HashRelation<IPredicate, IPredicate> computeAbstraction(final IInternalAction action) {
-		if (mAbstractionCache.containsKey(action)) {
-			return mAbstractionCache.get(action);
-		}
-
-		final HashRelation<IPredicate, IPredicate> abstraction = new HashRelation<>();
-		for (final IPredicate pre : mPredicates) {
-			for (final IPredicate post : mPredicates) {
-				final IHoareTripleChecker.Validity result = mChecker.checkInternal(pre, action, post);
-				assert result == Validity.VALID || result == Validity.INVALID : "Could not determine abstraction";
-				abstraction.addPair(pre, post);
-
-			}
-		}
-		mAbstractionCache.put(action, abstraction);
-
-		return abstraction;
-	}
-
-	private final UnmodifiableTransFormula concretizeAbstraction(final HashRelation<IPredicate, IPredicate> abstraction) {
-		final TransFormulaBuilder tfb = new TransFormulaBuilder(null, null, true, null, true, null, true);
-
-		// Construct a substitution to apply to postconditions.
-		final Map<TermVariable, Term> substitutionMap = new HashMap<>(mAllVariables.size());
-		for (final IProgramVar variable : mAllVariables) {
-			final TermVariable original = variable.getTermVariable();
-			final TermVariable replacement = mManagedScript.constructFreshCopy(original);
-			substitutionMap.put(original, replacement);
-
-			// All variables are output variables (may change arbitrarily, unless
-			// constrained below).
-			tfb.addOutVar(variable, replacement);
-		}
-		final Substitution postSubstitution = new Substitution(mManagedScript.getScript(), substitutionMap);
-
-		final List<Term> conjuncts = new ArrayList<>(abstraction.size());
-
-		for (final Map.Entry<IPredicate, IPredicate> pair : abstraction) {
-			final IPredicate pre = pair.getKey();
-			final IPredicate post = pair.getValue();
-
-			// Add program constants.
-			for (final IProgramConst constant : pre.getConstants()) {
-				tfb.addProgramConst(constant);
-			}
-			for (final IProgramConst constant : post.getConstants()) {
-				tfb.addProgramConst(constant);
-			}
-
-			// Free variables of the precondition are input variables.
-			for (final IProgramVar variable : pre.getVars()) {
-				tfb.addInVar(variable, variable.getTermVariable());
-			}
-
-			final Term postFormula = postSubstitution.transform(post.getFormula());
-			final Term conjunct = SmtUtils.implies(mManagedScript.getScript(), pre.getFormula(), postFormula);
-			conjuncts.add(conjunct);
-		}
-
-		tfb.setFormula(SmtUtils.and(mManagedScript.getScript(), conjuncts));
-
-		return tfb.finishConstruction(mManagedScript);
-	}
-
-	// TODO: this method and the next are duplicated in SemanticIndependenceChecker.
-	// Avoid that.
+	// This method and the next are duplicated in SemanticIndependenceRelation.
+	// TODO: Avoid that.
 	private final boolean performInclusionCheck(final IPredicate context, final UnmodifiableTransFormula a,
 			final UnmodifiableTransFormula b) {
 		UnmodifiableTransFormula transFormula1 = compose(a, b);

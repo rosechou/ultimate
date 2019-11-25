@@ -32,6 +32,7 @@ import de.uni_freiburg.informatik.ultimate.core.model.services.ILogger;
 import de.uni_freiburg.informatik.ultimate.core.model.services.IUltimateServiceProvider;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.ModelCheckerUtils;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IIcfgTransition;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IInternalAction;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.transitions.TransFormulaBuilder;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.transitions.TransFormulaUtils;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.transitions.UnmodifiableTransFormula;
@@ -50,18 +51,18 @@ import de.uni_freiburg.informatik.ultimate.logic.Script.LBool;
  *
  * @author Dominik Klumpp (klumpp@informatik.uni-freiburg.de)
  */
-
 public class SemanticIndependenceRelation implements IIndependenceRelation<IPredicate, IIcfgTransition<?>> {
 
 	private final IUltimateServiceProvider mServices;
 	private final ManagedScript mManagedScript;
 	private final ILogger mLogger;
 
-	private final static SimplificationTechnique mSimplificationTechnique = SimplificationTechnique.SIMPLIFY_DDA;
-	private final static XnfConversionTechnique mXnfConversionTechnique = XnfConversionTechnique.BOTTOM_UP_WITH_LOCAL_SIMPLIFICATION;
+	private static final SimplificationTechnique mSimplificationTechnique = SimplificationTechnique.SIMPLIFY_DDA;
+	private static final XnfConversionTechnique mXnfConversionTechnique = XnfConversionTechnique.BOTTOM_UP_WITH_LOCAL_SIMPLIFICATION;
 
 	private final boolean mConditional;
 	private final boolean mSymmetric;
+	private final HoareAbstraction mAbstraction;
 
 	private long mPositiveQueries;
 	private long mNegativeQueries;
@@ -82,12 +83,35 @@ public class SemanticIndependenceRelation implements IIndependenceRelation<IPred
 	 */
 	public SemanticIndependenceRelation(final IUltimateServiceProvider services, final ManagedScript mgdScript,
 			final boolean conditional, final boolean symmetric) {
+		this(services, mgdScript, conditional, symmetric, null);
+	}
+
+	/**
+	 * Create a new variant of the semantic independence relation.
+	 *
+	 * @param conditional
+	 *            If set to true, the relation will be conditional: It will use the
+	 *            given {@link IPredicate} as context to enable additional
+	 *            commutativity. This subsumes the non-conditional variant.
+	 * @param symmetric
+	 *            If set to true, the relation will check for full commutativity. If
+	 *            false, only semicommutativity is checked, which subsumes full
+	 *            commutativity.
+	 * @param abstraction
+	 *            An optional abstraction to be applied to actions. The relation
+	 *            will then compare the abstract semantics. If null, no abstraction
+	 *            is performed.
+	 */
+	public SemanticIndependenceRelation(final IUltimateServiceProvider services, final ManagedScript mgdScript,
+			final boolean conditional, final boolean symmetric, final HoareAbstraction abstraction) {
+
 		mServices = services;
 		mManagedScript = mgdScript;
 		mLogger = services.getLoggingService().getLogger(ModelCheckerUtils.PLUGIN_ID);
 
 		mConditional = conditional;
 		mSymmetric = symmetric;
+		mAbstraction = abstraction;
 	}
 
 	@Override
@@ -102,23 +126,27 @@ public class SemanticIndependenceRelation implements IIndependenceRelation<IPred
 
 	@Override
 	public boolean contains(final IPredicate state, final IIcfgTransition<?> a, final IIcfgTransition<?> b) {
-		final long startTime = System.nanoTime();
-		final IPredicate context = mConditional ? state : null;
-		final LBool subset = performInclusionCheck(context, a, b);
+		assert a instanceof IInternalAction && b instanceof IInternalAction;
 
+		final long startTime = System.nanoTime();
+
+		final IPredicate context = mConditional ? state : null;
+		final UnmodifiableTransFormula tfA = getTransitionFormula(a);
+		final UnmodifiableTransFormula tfB = getTransitionFormula(b);
+
+		assert TransFormulaUtils.checkImplication(a.getTransformula(), tfA,
+				mManagedScript) != LBool.SAT : "Abstraction is not a superset of concrete relation";
+		assert TransFormulaUtils.checkImplication(b.getTransformula(), tfB,
+				mManagedScript) != LBool.SAT : "Abstraction is not a superset of concrete relation";
+
+		final LBool subset = performInclusionCheck(context, tfA, tfB);
 		final LBool result;
-		if (mSymmetric) {
-			final LBool superset = performInclusionCheck(context, b, a);
-			if (subset == LBool.UNSAT && superset == LBool.UNSAT) {
-				result = LBool.UNSAT;
-			} else if (subset == LBool.UNKNOWN || superset == LBool.UNKNOWN) {
-				result = LBool.UNKNOWN;
-			} else {
-				result = LBool.SAT;
-			}
+		if (mSymmetric && subset == LBool.UNSAT) {
+			result = performInclusionCheck(context, tfB, tfA);
 		} else {
 			result = subset;
 		}
+
 		switch (result) {
 		case SAT:
 			mNegativeQueries++;
@@ -132,14 +160,23 @@ public class SemanticIndependenceRelation implements IIndependenceRelation<IPred
 		default:
 			throw new AssertionError();
 		}
+
 		mComputationTimeNano += (System.nanoTime() - startTime);
 		return result == LBool.UNSAT;
 	}
 
-	private final LBool performInclusionCheck(final IPredicate context, final IIcfgTransition<?> a,
-			final IIcfgTransition<?> b) {
-		UnmodifiableTransFormula transFormula1 = compose(a.getTransformula(), b.getTransformula());
-		final UnmodifiableTransFormula transFormula2 = compose(b.getTransformula(), a.getTransformula());
+	private final UnmodifiableTransFormula getTransitionFormula(final IIcfgTransition<?> transition) {
+		if (mAbstraction == null) {
+			return transition.getTransformula();
+		} else {
+			return mAbstraction.computeAbstraction(transition);
+		}
+	}
+
+	private final LBool performInclusionCheck(final IPredicate context, final UnmodifiableTransFormula a,
+			final UnmodifiableTransFormula b) {
+		UnmodifiableTransFormula transFormula1 = compose(a, b);
+		final UnmodifiableTransFormula transFormula2 = compose(b, a);
 
 		if (context != null) {
 			// TODO: This represents conjunction with guard (precondition) as composition

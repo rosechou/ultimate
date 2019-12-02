@@ -3,9 +3,7 @@ package de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstractionco
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -18,6 +16,7 @@ import de.uni_freiburg.informatik.ultimate.automata.nestedword.NestedWord;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.NestedWordAutomataUtils;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.transitions.OutgoingInternalTransition;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.independencerelation.IIndependenceRelation;
+import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.Pair;
 
 /**
  * Employs a modified sleep set algorithm to check if a given proof is
@@ -38,8 +37,6 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.independencerel
 public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	private final IIndependenceRelation<STATE2, LETTER> mRelation1;
 	private final IIndependenceRelation<STATE2, LETTER> mRelation2;
-
-	private boolean mSwitched = false;
 
 	private final INestedWordAutomaton<LETTER, STATE1> mProgram;
 	private final INestedWordAutomaton<LETTER, STATE2> mProof;
@@ -83,43 +80,46 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	}
 
 	private final NestedRun<LETTER, STATE1> performCheck() {
-		final ArrayDeque<LETTER> symbols = search(getInitial(mProgram), getInitial(mProof), Collections.emptySet(),
-				Collections.emptySet());
+		final Pair<ArrayDeque<LETTER>, Boolean> result = search(getInitial(mProgram), getInitial(mProof),
+				Collections.emptySet(), Collections.emptySet());
+		final ArrayDeque<LETTER> symbols = result.getFirst();
 		if (symbols != null) {
 			return createRun(symbols);
 		}
 		return null;
 	}
 
-	private final ArrayDeque<LETTER> search(final STATE1 location, final STATE2 predicate, final Set<LETTER> sleepSet1,
-			final Set<LETTER> sleepSet2) {
+	private final Pair<ArrayDeque<LETTER>, Boolean> search(final STATE1 location, final STATE2 predicate,
+			final Set<LETTER> sleepSet1, final Set<LETTER> sleepSet2) {
 
 		if (mProgram.isFinal(location) && !mProof.isFinal(predicate)) {
 			// A counterexample has been found.
-			return new ArrayDeque<>();
+			return new Pair<>(new ArrayDeque<>(), false);
 		} else if (mProof.isFinal(predicate) && mAssumeProofSinkAccept) {
 			// Assumes any final state of mProof is a sink state.
 			// Hence we can abort the search here.
-			return null;
+			return new Pair<>(null, false);
 		}
 
-		final boolean switchedBefore = mSwitched;
 		final Set<LETTER> enabledActions = mProgram.lettersInternal(location);
-		final Set<LETTER> done = new HashSet<>(enabledActions.size());
+		final Set<Pair<LETTER, Boolean>> done = new HashSet<>(enabledActions.size());
+		boolean switched = false;
 
 		for (final LETTER a : enabledActions) {
-			final Set<LETTER> sleepSet = getActiveSleepSet(sleepSet1, sleepSet2);
-			if (!sleepSet.contains(a)) {
+			final Set<LETTER> sleepSet = getActiveSleepSet(switched, sleepSet1, sleepSet2);
+			final boolean callSwitched;
+
+			if (sleepSet.contains(a)) {
+				callSwitched = switched;
+			} else {
 				final STATE1 nextLocation = getSuccessor(mProgram, location, a);
 				final STATE2 nextPredicate = getSuccessor(mProof, predicate, a);
 
-				final Set<LETTER> nextSleep1 = recomputeSleep(sleepSet1, done, predicate, a, mRelation1);
-				final Set<LETTER> nextSleep2 = recomputeSleep(sleepSet2, done, predicate, a, mRelation2);
+				final Set<LETTER> nextSleep1 = recomputeSleep(false, sleepSet1, done, predicate, a);
+				final Set<LETTER> nextSleep2 = recomputeSleep(true, sleepSet2, done, predicate, a);
 
-				final SearchState nextNode = new SearchState(mSwitched, nextLocation, nextPredicate, nextSleep1,
-						nextSleep2);
+				final SearchState nextNode = new SearchState(nextLocation, nextPredicate, nextSleep1, nextSleep2);
 				if (mStack.contains(nextNode)) {
-
 					// We don't know if the delayed call will switch.
 					// For the moment, we simply assume it will.
 					// This is a safe assumption, but possibly too strict.
@@ -130,39 +130,45 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 					// - if we record explored (AND about-to-be explored) actions, and avoid re-exploring them, can we just not delay calls but do them immediately?
 					//   termination argument: the set of unexplored actions strictly decreases with each call for the same location, if it is empty we terminate this call
 					//     soundness argument: ?
-					mSwitched = true;
+					callSwitched = true;
 				} else {
 					mStack.add(nextNode);
-					final ArrayDeque<LETTER> counterexample = search(nextLocation, nextPredicate, nextSleep1,
+					final Pair<ArrayDeque<LETTER>, Boolean> result = search(nextLocation, nextPredicate, nextSleep1,
 							nextSleep2);
+					final ArrayDeque<LETTER> counterexample = result.getFirst();
 					mStack.remove(nextNode);
 
-					if (counterexample != null) {
-						mSwitched = true;
-						if (!sleepSet2.contains(a)) {
-							counterexample.addFirst(a);
-							return counterexample;
-						}
+					if (counterexample == null) {
+						callSwitched = result.getSecond();
+					} else if (sleepSet2.contains(a)) {
+						callSwitched = true;
+					} else {
+						callSwitched = result.getSecond();
+						counterexample.addFirst(a);
+						return new Pair<>(counterexample, switched || callSwitched);
 					}
 				}
 			}
-			done.add(a);
+			done.add(new Pair<>(a, callSwitched));
+			switched = switched || callSwitched;
 		}
 
-		return null;
+		return new Pair<>(null, switched);
 	}
 
-	private Set<LETTER> getActiveSleepSet(final Set<LETTER> sleepSet1, final Set<LETTER> sleepSet2) {
-		if (mSwitched) {
+	private Set<LETTER> getActiveSleepSet(final boolean switched, final Set<LETTER> sleepSet1,
+			final Set<LETTER> sleepSet2) {
+		if (switched) {
 			return sleepSet2;
 		} else {
 			return sleepSet1;
 		}
 	}
 
-	private final Set<LETTER> recomputeSleep(final Set<LETTER> oldSleepSet, final Set<LETTER> done,
-			final STATE2 context, final LETTER action, final IIndependenceRelation<STATE2, LETTER> relation) {
+	private final Set<LETTER> recomputeSleep(final boolean switched, final Set<LETTER> oldSleepSet,
+			final Set<Pair<LETTER, Boolean>> done, final STATE2 context, final LETTER action) {
 		final Set<LETTER> newSleepSet = new HashSet<>(oldSleepSet.size() + done.size());
+		final IIndependenceRelation<STATE2, LETTER> relation = switched ? mRelation1 : mRelation2;
 
 		for (final LETTER sleepAction : oldSleepSet) {
 			if (relation.contains(context, sleepAction, action)) {
@@ -170,8 +176,10 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 			}
 		}
 
-		for (final LETTER doneAction : done) {
-			if (relation.contains(context, doneAction, action)) {
+		for (final Pair<LETTER, Boolean> donePair : done) {
+			final LETTER doneAction = donePair.getFirst();
+			final boolean doneSwitched = donePair.getSecond();
+			if ((!doneSwitched || switched) && relation.contains(context, doneAction, action)) {
 				newSleepSet.add(doneAction);
 			}
 		}
@@ -212,22 +220,15 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	}
 
 	private final class SearchState {
-		private final boolean mSwitched;
 		private final STATE1 mLocation;
 		private final STATE2 mPredicate;
 		private final Set<LETTER> mSleep1;
 		private final Set<LETTER> mSleep2;
 
-		public SearchState(final boolean switched, final STATE1 loc, final STATE2 pred, final Set<LETTER> sleep1,
-				final Set<LETTER> sleep2) {
-			mSwitched = switched;
+		public SearchState(final STATE1 loc, final STATE2 pred, final Set<LETTER> sleep1, final Set<LETTER> sleep2) {
 			mLocation = loc;
 			mPredicate = pred;
-			if (switched) {
-				mSleep1 = null;
-			} else {
-				mSleep1 = sleep1;
-			}
+			mSleep1 = sleep1;
 			mSleep2 = sleep2;
 		}
 
@@ -239,7 +240,6 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 			result = prime * result + ((mPredicate == null) ? 0 : mPredicate.hashCode());
 			result = prime * result + ((mSleep1 == null) ? 0 : mSleep1.hashCode());
 			result = prime * result + ((mSleep2 == null) ? 0 : mSleep2.hashCode());
-			result = prime * result + (mSwitched ? 1231 : 1237);
 			return result;
 		}
 
@@ -252,7 +252,7 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 
 			@SuppressWarnings("unchecked")
 			SearchState other = (SearchState) obj;
-			return mSwitched == other.mSwitched && mLocation == other.mLocation && mPredicate == other.mPredicate
+			return mLocation == other.mLocation && mPredicate == other.mPredicate
 					&& Objects.equals(mSleep1, other.mSleep1) && mSleep2.equals(other.mSleep2);
 		}
 	}

@@ -45,7 +45,6 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	private final INestedWordAutomaton<LETTER, STATE2> mProof;
 	private final NestedRun<LETTER, STATE1> mCounterexample;
 	private final Set<SearchState> mStack = new HashSet<>();
-	private final Map<SearchState, ArrayDeque<Set<LETTER>>> mDelay = new HashMap<>();
 
 	private final boolean mAssumeProofSinkAccept;
 
@@ -120,7 +119,6 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 				final SearchState nextNode = new SearchState(mSwitched, nextLocation, nextPredicate, nextSleep1,
 						nextSleep2);
 				if (mStack.contains(nextNode)) {
-					getDelay(nextNode).add(nextSleep2);
 
 					// We don't know if the delayed call will switch.
 					// For the moment, we simply assume it will.
@@ -151,19 +149,6 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 			done.add(a);
 		}
 
-		final SearchState thisNode = new SearchState(switchedBefore, location, predicate, sleepSet1, sleepSet2);
-		if (mDelay.containsKey(thisNode)) {
-			final ArrayDeque<Set<LETTER>> delayed = mDelay.get(thisNode);
-			while (!delayed.isEmpty()) {
-				// We set sleep1 to the empty set, as we switched above anyway.
-				final Set<LETTER> sleep2 = delayed.pop();
-				final ArrayDeque<LETTER> counterexample = search(location, predicate, Collections.emptySet(), sleep2);
-				if (counterexample != null) {
-					return counterexample;
-				}
-			}
-		}
-
 		return null;
 	}
 
@@ -173,13 +158,6 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 		} else {
 			return sleepSet1;
 		}
-	}
-
-	private ArrayDeque<Set<LETTER>> getDelay(final SearchState node) {
-		if (!mDelay.containsKey(node)) {
-			mDelay.put(node, new ArrayDeque<>());
-		}
-		return mDelay.get(node);
 	}
 
 	private final Set<LETTER> recomputeSleep(final Set<LETTER> oldSleepSet, final Set<LETTER> done,

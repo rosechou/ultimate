@@ -4,7 +4,6 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -24,9 +23,9 @@ import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.Pair;
  * sufficient, if its closure under two independence relations (in a fixed
  * order) contains the program.
  *
- * As this problem is undecidable, the check implemented here is sound but not
- * complete: Even when a counterexample is found, the proof might actually have
- * been sufficient.
+ * As this problem is undecidable (even for a single independence relation), the
+ * check implemented here is sound but not complete: Even when a counterexample
+ * is found, the proof might actually have been sufficient.
  *
  * @author Dominik Klumpp (klumpp@informatik.uni-freiburg.de)
  *
@@ -55,8 +54,9 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 		mProof = proof;
 		mAssumeProofSinkAccept = assumeProofSinkAccept;
 
-		assert NestedWordAutomataUtils.isFiniteAutomaton(program) : "POR does not support calls and returns.";
-		assert NestedWordAutomataUtils.isFiniteAutomaton(proof) : "POR does not support calls and returns.";
+		if (!NestedWordAutomataUtils.isFiniteAutomaton(program) || !NestedWordAutomataUtils.isFiniteAutomaton(proof)) {
+			throw new UnsupportedOperationException("POR does not support calls and returns.");
+		}
 
 		mCounterexample = performCheck();
 	}
@@ -80,8 +80,13 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	}
 
 	private final NestedRun<LETTER, STATE1> performCheck() {
+		final STATE1 initialLoc = getInitial(mProgram);
+		final STATE2 initialPred = getInitial(mProof);
+		final SearchState initial = new SearchState(initialLoc, initialPred, Collections.emptySet(), Collections.emptySet());
+		mStack.add(initial);
 		final Pair<ArrayDeque<LETTER>, Boolean> result = search(getInitial(mProgram), getInitial(mProof),
 				Collections.emptySet(), Collections.emptySet());
+		mStack.remove(initial);
 		final ArrayDeque<LETTER> symbols = result.getFirst();
 		if (symbols != null) {
 			return createRun(symbols);
@@ -106,9 +111,9 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 		boolean switched = false;
 
 		for (final LETTER a : enabledActions) {
-			final Set<LETTER> sleepSet = getActiveSleepSet(switched, sleepSet1, sleepSet2);
 			final boolean callSwitched;
 
+			final Set<LETTER> sleepSet = switched ? sleepSet1 : sleepSet2;
 			if (sleepSet.contains(a)) {
 				callSwitched = switched;
 			} else {
@@ -120,24 +125,18 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 
 				final SearchState nextNode = new SearchState(nextLocation, nextPredicate, nextSleep1, nextSleep2);
 				if (mStack.contains(nextNode)) {
-					// We don't know if the delayed call will switch.
+					// We don't know if the ongoing call will switch.
 					// For the moment, we simply assume it will.
 					// This is a safe assumption, but possibly too strict.
-					//
-					// Alternative solutions:
-					// - always, or heuristically, assume it won't; then enforce it (also possibly too strict)
-					// - assume it won't; but if it does, perform a partial restart of the reduction from this point on (more complex, and possibly in vain)
-					// - if we record explored (AND about-to-be explored) actions, and avoid re-exploring them, can we just not delay calls but do them immediately?
-					//   termination argument: the set of unexplored actions strictly decreases with each call for the same location, if it is empty we terminate this call
-					//     soundness argument: ?
 					callSwitched = true;
+					// TODO: assume it won't; but if it does, perform a partial restart of the reduction from this point on
 				} else {
 					mStack.add(nextNode);
 					final Pair<ArrayDeque<LETTER>, Boolean> result = search(nextLocation, nextPredicate, nextSleep1,
 							nextSleep2);
-					final ArrayDeque<LETTER> counterexample = result.getFirst();
 					mStack.remove(nextNode);
 
+					final ArrayDeque<LETTER> counterexample = result.getFirst();
 					if (counterexample == null) {
 						callSwitched = result.getSecond();
 					} else if (sleepSet2.contains(a)) {
@@ -154,15 +153,6 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 		}
 
 		return new Pair<>(null, switched);
-	}
-
-	private Set<LETTER> getActiveSleepSet(final boolean switched, final Set<LETTER> sleepSet1,
-			final Set<LETTER> sleepSet2) {
-		if (switched) {
-			return sleepSet2;
-		} else {
-			return sleepSet1;
-		}
 	}
 
 	private final Set<LETTER> recomputeSleep(final boolean switched, final Set<LETTER> oldSleepSet,
@@ -209,7 +199,7 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 		return initial.iterator().next();
 	}
 
-	private <STATE> STATE getSuccessor(final INestedWordAutomaton<LETTER, STATE> automaton, final STATE state,
+	private static <STATE, LETTER> STATE getSuccessor(final INestedWordAutomaton<LETTER, STATE> automaton, final STATE state,
 			final LETTER letter) {
 		// TODO: there must be a much better way than this, this is horrible
 		final Set<STATE> successors = StreamSupport
@@ -253,7 +243,7 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 			@SuppressWarnings("unchecked")
 			SearchState other = (SearchState) obj;
 			return mLocation == other.mLocation && mPredicate == other.mPredicate
-					&& Objects.equals(mSleep1, other.mSleep1) && mSleep2.equals(other.mSleep2);
+					&& mSleep1.equals(other.mSleep1) && mSleep2.equals(other.mSleep2);
 		}
 	}
 }

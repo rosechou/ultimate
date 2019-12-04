@@ -3,7 +3,10 @@ package de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstractionco
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -40,7 +43,12 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	private final INestedWordAutomaton<LETTER, STATE1> mProgram;
 	private final INestedWordAutomaton<LETTER, STATE2> mProof;
 	private final NestedRun<LETTER, STATE1> mCounterexample;
-	private final Set<SearchState> mStack = new HashSet<>();
+
+	private final LinkedList<SearchState> mStack = new LinkedList<>();
+	private final Set<SearchState> mStackSet = new HashSet<>();
+
+	private final ArrayDeque<Integer> mRestartQueue = new ArrayDeque<>();
+	private final Map<SearchState, Boolean> mVisited = new HashMap<>();
 
 	private final boolean mAssumeProofSinkAccept;
 
@@ -82,11 +90,17 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	private final NestedRun<LETTER, STATE1> performCheck() {
 		final STATE1 initialLoc = getInitial(mProgram);
 		final STATE2 initialPred = getInitial(mProof);
-		final SearchState initial = new SearchState(initialLoc, initialPred, Collections.emptySet(), Collections.emptySet());
-		mStack.add(initial);
-		final Pair<ArrayDeque<LETTER>, Boolean> result = search(getInitial(mProgram), getInitial(mProof),
-				Collections.emptySet(), Collections.emptySet());
-		mStack.remove(initial);
+		final SearchState initial = new SearchState(initialLoc, initialPred, Collections.emptySet(),
+				Collections.emptySet());
+
+		mStack.addLast(initial);
+		mStackSet.add(initial);
+		final Pair<ArrayDeque<LETTER>, Boolean> result = search(initial);
+		mStackSet.remove(initial);
+		mStack.removeLast();
+
+		assert mStack.isEmpty() : "Stack should be empty after complete backtracking";
+
 		final ArrayDeque<LETTER> symbols = result.getFirst();
 		if (symbols != null) {
 			return createRun(symbols);
@@ -94,8 +108,11 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 		return null;
 	}
 
-	private final Pair<ArrayDeque<LETTER>, Boolean> search(final STATE1 location, final STATE2 predicate,
-			final Set<LETTER> sleepSet1, final Set<LETTER> sleepSet2) {
+	private final Pair<ArrayDeque<LETTER>, Boolean> search(final SearchState currentNode) {
+		final STATE1 location = currentNode.mLocation;
+		final STATE2 predicate = currentNode.mPredicate;
+		final Set<LETTER> sleepSet1 = currentNode.mSleep1;
+		final Set<LETTER> sleepSet2 = currentNode.mSleep2;
 
 		if (mProgram.isFinal(location) && !mProof.isFinal(predicate)) {
 			// A counterexample has been found.
@@ -124,17 +141,25 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 				final Set<LETTER> nextSleep2 = recomputeSleep(true, sleepSet2, done, predicate, a);
 
 				final SearchState nextNode = new SearchState(nextLocation, nextPredicate, nextSleep1, nextSleep2);
-				if (mStack.contains(nextNode)) {
-					// We don't know if the ongoing call will switch.
-					// For the moment, we simply assume it will.
-					// This is a safe assumption, but possibly too strict.
-					callSwitched = true;
-					// TODO: assume it won't; but if it does, perform a partial restart of the reduction from this point on
+				final boolean onStack = mStackSet.contains(nextNode);
+				if (onStack || mVisited.containsKey(nextNode)) {
+					callSwitched = mVisited.getOrDefault(nextNode, false);
+					if (onStack && !callSwitched) {
+						// We don't know if the ongoing call will switch. For the moment, we assume it
+						// will not (default value false above). We later verify this and restart if our
+						// assumption was incorrect.
+						final int index = mStack.indexOf(nextNode);
+						if (mRestartQueue.isEmpty() || index <= mRestartQueue.element()) {
+							// save restart point, unless there already is one higher in the hierarchy
+							mRestartQueue.offerLast(index);
+						}
+					}
 				} else {
-					mStack.add(nextNode);
-					final Pair<ArrayDeque<LETTER>, Boolean> result = search(nextLocation, nextPredicate, nextSleep1,
-							nextSleep2);
-					mStack.remove(nextNode);
+					mStack.addLast(nextNode);
+					mStackSet.add(nextNode);
+					final Pair<ArrayDeque<LETTER>, Boolean> result = search(nextNode);
+					mStackSet.remove(nextNode);
+					mStack.removeLast();
 
 					final ArrayDeque<LETTER> counterexample = result.getFirst();
 					if (counterexample == null) {
@@ -150,6 +175,19 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 			}
 			done.add(new Pair<>(a, callSwitched));
 			switched = switched || callSwitched;
+		}
+		mVisited.put(currentNode, switched);
+
+		if (!mRestartQueue.isEmpty() && mRestartQueue.element() == mStack.size() - 1 && switched) {
+			mRestartQueue.removeFirst();
+			// NOTE Dominik 2019-12-04: We currently re-explore the entire subgraph, instead
+			// of returning directly to the node which inserted the marker in the restart
+			// queue. There is potential for future optimization here.
+			final Pair<ArrayDeque<LETTER>, Boolean> result = search(currentNode);
+			if (result.getFirst() != null) {
+				mVisited.remove(currentNode);
+			}
+			return result;
 		}
 
 		return new Pair<>(null, switched);
@@ -199,8 +237,8 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 		return initial.iterator().next();
 	}
 
-	private static <STATE, LETTER> STATE getSuccessor(final INestedWordAutomaton<LETTER, STATE> automaton, final STATE state,
-			final LETTER letter) {
+	private static <STATE, LETTER> STATE getSuccessor(final INestedWordAutomaton<LETTER, STATE> automaton,
+			final STATE state, final LETTER letter) {
 		// TODO: there must be a much better way than this, this is horrible
 		final Set<STATE> successors = StreamSupport
 				.stream(automaton.internalSuccessors(state, letter).spliterator(), false)
@@ -242,8 +280,8 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 
 			@SuppressWarnings("unchecked")
 			SearchState other = (SearchState) obj;
-			return mLocation == other.mLocation && mPredicate == other.mPredicate
-					&& mSleep1.equals(other.mSleep1) && mSleep2.equals(other.mSleep2);
+			return mLocation == other.mLocation && mPredicate == other.mPredicate && mSleep1.equals(other.mSleep1)
+					&& mSleep2.equals(other.mSleep2);
 		}
 	}
 }

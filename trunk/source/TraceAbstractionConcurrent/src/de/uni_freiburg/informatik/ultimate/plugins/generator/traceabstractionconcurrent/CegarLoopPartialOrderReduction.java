@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import de.uni_freiburg.informatik.ultimate.automata.AutomataOperationCanceledException;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.INestedWordAutomaton;
+import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.reduction.DualPartialOrderInclusionCheck;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.reduction.IIndependenceRelation;
 import de.uni_freiburg.informatik.ultimate.core.model.services.IUltimateServiceProvider;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.CfgSmtToolkit;
@@ -16,7 +17,6 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.predicates.
 import de.uni_freiburg.informatik.ultimate.lib.tracecheckerutils.singletracecheck.InterpolationTechnique;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.BasicCegarLoop;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TAPreferences;
-import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstractionconcurrent.reduction.DualPartialOrderInclusionCheck;
 
 public class CegarLoopPartialOrderReduction<LETTER extends IIcfgTransition<?>> extends BasicCegarLoop<LETTER> {
 

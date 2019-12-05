@@ -71,6 +71,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.Unit;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WhileStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogieType;
 import de.uni_freiburg.informatik.ultimate.core.lib.exceptions.ToolchainCanceledException;
+import de.uni_freiburg.informatik.ultimate.core.lib.models.annotation.AtomicBlockInfo;
 import de.uni_freiburg.informatik.ultimate.core.lib.models.annotation.Check;
 import de.uni_freiburg.informatik.ultimate.core.lib.models.annotation.LoopEntryAnnotation;
 import de.uni_freiburg.informatik.ultimate.core.lib.models.annotation.LoopEntryAnnotation.LoopEntryType;
@@ -138,6 +139,8 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.util.Tr
 public class CfgBuilder {
 
 	private static final String ULTIMATE_START = "ULTIMATE.start";
+
+	private static final boolean NEW_ATOMIC_HANDLING = false;
 
 	/**
 	 * ILogger for this plugin.
@@ -1109,12 +1112,7 @@ public class CfgBuilder {
 						|| mCodeBlockSize == CodeBlockSize.LoopFreeBlock || mAtomicMode) {
 					addStatementToStatementSequenceThatIsCurrentlyBuilt(st);
 				} else {
-					final DebugIdentifier locName = constructLocDebugIdentifier(st);
-					final BoogieIcfgLocation locNode =
-							new BoogieIcfgLocation(locName, mCurrentProcedureName, false, st);
-					((CodeBlock) mCurrent).connectTarget(locNode);
-					mCurrent = locNode;
-					mProcLocNodes.put(locName, locNode);
+					endCurrentStatementSequence(st);
 					startNewStatementSequenceAndAddStatement(st, origin);
 				}
 			} else {
@@ -1122,6 +1120,14 @@ public class CfgBuilder {
 				throw new IllegalArgumentException();
 			}
 
+		}
+
+		private void endCurrentStatementSequence(final Statement nextSt) {
+			final DebugIdentifier locName = constructLocDebugIdentifier(nextSt);
+			final BoogieIcfgLocation locNode = new BoogieIcfgLocation(locName, mCurrentProcedureName, false, nextSt);
+			((CodeBlock) mCurrent).connectTarget(locNode);
+			mCurrent = locNode;
+			mProcLocNodes.put(locName, locNode);
 		}
 
 		private void startNewStatementSequenceAndAddStatement(final Statement st, final Origin origin) {
@@ -1243,7 +1249,9 @@ public class CfgBuilder {
 
 		private void processCallStatement(final CallStatement st) {
 			if (st.getMethodName().equals("__VERIFIER_atomic_begin")) {
-				if (mAtomicMode) {
+				if (NEW_ATOMIC_HANDLING) {
+					beginAtomicBlock(st);
+				} else if (mAtomicMode) {
 					throw new AssertionError("already in atomic mode");
 				} else {
 					mAtomicMode = true;
@@ -1251,7 +1259,9 @@ public class CfgBuilder {
 				return;
 			}
 			if (st.getMethodName().equals("__VERIFIER_atomic_end")) {
-				if (!mAtomicMode) {
+				if (NEW_ATOMIC_HANDLING) {
+					endAtomicBlock(st);
+				} else if (!mAtomicMode) {
 					throw new AssertionError("already ended atomic mode");
 				} else {
 					mAtomicMode = false;
@@ -1454,10 +1464,32 @@ public class CfgBuilder {
 			mCurrent = joinCurrentNode;
 		}
 
+		private void beginAtomicBlock(final Statement st) {
+			if (mCurrent instanceof CodeBlock) {
+				endCurrentStatementSequence(st);
+			}
+			assert mCurrent instanceof BoogieIcfgLocation : "Atomic section must begin with ICFG location";
+			AtomicBlockInfo.addBeginAnnotation(mCurrent);
+		}
+
+		private void endAtomicBlock(final Statement st) {
+			if (mCurrent instanceof CodeBlock) {
+				endCurrentStatementSequence(st);
+			}
+			assert mCurrent instanceof BoogieIcfgLocation : "Atomic section must end with ICFG location";
+			AtomicBlockInfo.addEndAnnotation(mCurrent);
+		}
+
 		private void processAtomicStatement(final AtomicStatement atomicStatement) {
-			mAtomicMode = true;
+			if (NEW_ATOMIC_HANDLING) {
+				beginAtomicBlock(atomicStatement);
+			} else {
+				mAtomicMode = true;
+			}
+
 			for (int i = 0; i < atomicStatement.getBody().length; i++) {
 				final Statement st = atomicStatement.getBody()[i];
+
 				if (st instanceof AssignmentStatement || st instanceof AssumeStatement
 						|| st instanceof HavocStatement) {
 					processAssuAssiHavoStatement(st, Origin.IMPLEMENTATION);
@@ -1496,7 +1528,12 @@ public class CfgBuilder {
 							"Not supported in atomic block " + st.getClass().getSimpleName());
 				}
 			}
-			mAtomicMode = false;
+
+			if (NEW_ATOMIC_HANDLING) {
+				endAtomicBlock(atomicStatement);
+			} else {
+				mAtomicMode = false;
+			}
 		}
 
 		/**

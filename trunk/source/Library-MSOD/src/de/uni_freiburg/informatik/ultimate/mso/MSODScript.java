@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.uni_freiburg.informatik.ultimate.automata.AutomataLibraryServices;
-import de.uni_freiburg.informatik.ultimate.automata.nestedword.INestedWordAutomaton;
 import de.uni_freiburg.informatik.ultimate.core.model.services.ILogger;
 import de.uni_freiburg.informatik.ultimate.core.model.services.IUltimateServiceProvider;
 import de.uni_freiburg.informatik.ultimate.logic.Logics;
@@ -40,6 +39,7 @@ import de.uni_freiburg.informatik.ultimate.logic.Model;
 import de.uni_freiburg.informatik.ultimate.logic.NoopScript;
 import de.uni_freiburg.informatik.ultimate.logic.SMTLIBException;
 import de.uni_freiburg.informatik.ultimate.logic.Term;
+import de.uni_freiburg.informatik.ultimate.mso.MSODSolver.MSODLogic;
 
 /**
  * Solver for Monadic Second Order Difference Logic Formulas
@@ -53,33 +53,14 @@ import de.uni_freiburg.informatik.ultimate.logic.Term;
 public class MSODScript extends NoopScript {
 	private final AutomataLibraryServices mAutomataLibrarayServices;
 	private final MSODSolver mMSODSolver;
-	public final ILogger mLogger;
+	private final ILogger mLogger;
 	private Term mAssertionTerm;
 	private Map<Term, Term> mModel;
-
-	public enum MSODLogic {
-		MSODInt, MSODNat, MSODIntWeak, MSODNatWeak,
-	}
 
 	public MSODScript(final IUltimateServiceProvider services, final ILogger logger, final MSODLogic logic) {
 		mAutomataLibrarayServices = new AutomataLibraryServices(services);
 		mLogger = logger;
-
-		if (logic == MSODLogic.MSODNatWeak) {
-			mMSODSolver = new MSODSolver(services, this, logger, new MSODFormulaOperationsNat(),
-					new MSODAutomataOperationsWeak());
-		} else if (logic == MSODLogic.MSODIntWeak) {
-			mMSODSolver = new MSODSolver(services, this, logger, new MSODFormulaOperationsInt(),
-					new MSODAutomataOperationsWeak());
-		} else if (logic == MSODLogic.MSODNat) {
-			mMSODSolver = new MSODSolver(services, this, logger, new MSODFormulaOperationsNat(),
-					new MSODAutomataOperationsBuchi());
-		} else if (logic == MSODLogic.MSODInt) {
-			mMSODSolver = new MSODSolver(services, this, logger, new MSODFormulaOperationsInt(),
-					new MSODAutomataOperationsBuchi());
-		} else {
-			throw new AssertionError("Unknown value: " + logic);
-		}
+		mMSODSolver = new MSODSolver(services, this, logger, logic);
 	}
 
 	@Override
@@ -100,63 +81,43 @@ public class MSODScript extends NoopScript {
 
 	@Override
 	public LBool checkSat() throws SMTLIBException {
-		mLogger.info("INPUT: " + mAssertionTerm);
-		final LBool result = LBool.UNKNOWN;
+		mLogger.info("Input term: " + mAssertionTerm);
 
 		try {
+			mModel = mMSODSolver.getResult(this, mLogger, mAutomataLibrarayServices, mAssertionTerm);
 
-			final INestedWordAutomaton<MSODAlphabetSymbol, String> automaton =
-					mMSODSolver.traversePostOrder(mAssertionTerm);
-
-			mLogger.info(MSODUtils.automatonToString(mAutomataLibrarayServices, automaton));
-
-			mMSODSolver.getResult(mLogger, mAutomataLibrarayServices, automaton);
-
-			// mModel = mMSODSolver.getResultOld(this, mAutomataLibrarayServices, automaton);
-			//
-			// if (mModel == null) {
-			// mLogger.info("RESULT: UNSAT");
-			// return LBool.UNSAT;
-			// }
-			//
-			// if (mModel.keySet().toString().contains("emptyWord")) {
-			// // TODO Deal with empty word
-			// mLogger.info("Model: EMPTYWORD");
-			// final ConstantFinder cf = new ConstantFinder();
-			// final Set<ApplicationTerm> terms = cf.findConstants(mAssertionTerm, true);
-			// mModel.clear();
-			// for (final Term t : terms) {
-			// mModel.put(t, mAssertionTerm.getTheory().mFalse);
-			// }
-			// }
-			//
-			// result = LBool.SAT;
-			// mLogger.info("RESULT: SAT");
-			// mLogger.info("MODEL: " + mModel);
+			if (mModel != null) {
+				mLogger.info("SAT");
+				mModel.entrySet().forEach(e -> mLogger.info(e.getKey() + ": " + e.getValue()));
+				return LBool.SAT;
+			}
 
 		} catch (final Exception e) {
 			mLogger.error(e);
+			return LBool.UNKNOWN;
 		}
 
-		return result;
+		mLogger.info("UNSAT");
+		return LBool.UNSAT;
 	}
 
 	@Override
 	public Map<Term, Term> getValue(final Term[] terms) throws SMTLIBException {
-		final Map<Term, Term> values = new HashMap<>();
+		final Map<Term, Term> result = new HashMap<>();
 
 		if (mModel == null) {
-			return values;
+			return result;
 		}
 
 		for (final Term term : terms) {
 			final Term value = mModel.get(term);
-			values.put(term, value);
+
+			if (value != null) {
+				result.put(term, value);
+			}
 		}
 
-		return values;
-
-		// throw new UnsupportedOperationException("Not implemented yet.");
+		return result;
 	}
 
 	@Override

@@ -44,6 +44,7 @@ import de.uni_freiburg.informatik.ultimate.core.lib.models.annotation.Check.Spec
 import de.uni_freiburg.informatik.ultimate.core.lib.models.annotation.WitnessInvariant;
 import de.uni_freiburg.informatik.ultimate.core.lib.results.AllSpecificationsHoldResult;
 import de.uni_freiburg.informatik.ultimate.core.lib.results.CounterExampleResult;
+import de.uni_freiburg.informatik.ultimate.core.lib.results.GenericResult;
 import de.uni_freiburg.informatik.ultimate.core.lib.results.InvariantResult;
 import de.uni_freiburg.informatik.ultimate.core.lib.results.PositiveResult;
 import de.uni_freiburg.informatik.ultimate.core.lib.results.ProcedureContractResult;
@@ -57,15 +58,17 @@ import de.uni_freiburg.informatik.ultimate.core.model.models.IElement;
 import de.uni_freiburg.informatik.ultimate.core.model.models.ILocation;
 import de.uni_freiburg.informatik.ultimate.core.model.models.annotation.IAnnotations;
 import de.uni_freiburg.informatik.ultimate.core.model.results.IResult;
+import de.uni_freiburg.informatik.ultimate.core.model.results.IResultWithSeverity.Severity;
 import de.uni_freiburg.informatik.ultimate.core.model.services.IBacktranslationService;
 import de.uni_freiburg.informatik.ultimate.core.model.services.ILogger;
 import de.uni_freiburg.informatik.ultimate.core.model.services.IProgressMonitorService;
 import de.uni_freiburg.informatik.ultimate.core.model.services.IUltimateServiceProvider;
+import de.uni_freiburg.informatik.ultimate.core.model.translation.AtomicTraceElement;
 import de.uni_freiburg.informatik.ultimate.core.model.translation.IProgramExecution;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.CfgSmtToolkit;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.IcfgPetrifier;
-import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.IcfgUtils;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.IcfgPetrifier.IcfgConstructionMode;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.IcfgUtils;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IIcfg;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IIcfgElement;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IIcfgTransition;
@@ -119,15 +122,15 @@ public class TraceAbstractionStarter {
 			final List<INestedWordAutomaton<String, String>> rawFloydHoareAutomataFromFile) {
 		mServices = services;
 		mLogger = mServices.getLoggingService().getLogger(Activator.PLUGIN_ID);
-		if (icfg.getCfgSmtToolkit().getConcurrencyInformation().getThreadInstanceMap().isEmpty()) {
+//		if (icfg.getCfgSmtToolkit().getConcurrencyInformation().getThreadInstanceMap().isEmpty()) {
 			runCegarLoops(icfg, witnessAutomaton, rawFloydHoareAutomataFromFile);
-		} else {
-			final IcfgPetrifier icfgPetrifier =
-					new IcfgPetrifier(mServices, icfg, IcfgConstructionMode.ASSUME_THREAD_INSTANCE_SUFFICIENCY);
-			final IIcfg<IcfgLocation> petrifiedIcfg = icfgPetrifier.getPetrifiedIcfg();
-			mServices.getBacktranslationService().addTranslator(icfgPetrifier.getBacktranslator());
-			runCegarLoops(petrifiedIcfg, witnessAutomaton, rawFloydHoareAutomataFromFile);
-		}
+//		} else {
+//			final IcfgPetrifier icfgPetrifier =
+//					new IcfgPetrifier(mServices, icfg, IcfgConstructionMode.ASSUME_THREAD_INSTANCE_SUFFICIENCY);
+//			final IIcfg<IcfgLocation> petrifiedIcfg = icfgPetrifier.getPetrifiedIcfg();
+//			mServices.getBacktranslationService().addTranslator(icfgPetrifier.getBacktranslator());
+//			runCegarLoops(petrifiedIcfg, witnessAutomaton, rawFloydHoareAutomataFromFile);
+//		}
 
 	}
 
@@ -168,9 +171,8 @@ public class TraceAbstractionStarter {
 		mArtifact = null;
 
 		if (taPrefs.allErrorLocsAtOnce()) {
-			iterate(AllErrorsAtOnceDebugIdentifier.INSTANCE, icfg, taPrefs, csToolkit, predicateFactory,
-					traceAbstractionBenchmark, errNodesOfAllProc, witnessAutomaton, rawFloydHoareAutomataFromFile,
-					computeHoareAnnotation);
+			iterateNew(AllErrorsAtOnceDebugIdentifier.INSTANCE, icfg, taPrefs, predicateFactory, traceAbstractionBenchmark,
+					errNodesOfAllProc, witnessAutomaton, rawFloydHoareAutomataFromFile, computeHoareAnnotation);
 		} else {
 			final IProgressMonitorService progmon = mServices.getProgressMonitorService();
 			final int numberOfErrorLocs = errNodesOfAllProc.size();
@@ -319,18 +321,128 @@ public class TraceAbstractionStarter {
 		}
 	}
 
+
+	private Result iterateNew(final DebugIdentifier name, final IIcfg<IcfgLocation> root, final TAPreferences taPrefs,
+			final PredicateFactory predicateFactory, final TraceAbstractionBenchmarks taBenchmark,
+			final Collection<IcfgLocation> errorLocs, final INwaOutgoingLetterAndTransitionProvider<WitnessEdge, WitnessNode> witnessAutomaton,
+			final List<INestedWordAutomaton<String, String>> rawFloydHoareAutomataFromFile,
+			final boolean computeHoareAnnotation) {
+		final CegarLoopResult<IIcfgTransition<?>> clres;
+		if (root.getCfgSmtToolkit().getConcurrencyInformation().getThreadInstanceMap().isEmpty()) {
+			clres = CegarLoopResult.iterate(mServices, name, root, taPrefs,
+					root.getCfgSmtToolkit(), predicateFactory, taBenchmark, errorLocs, witnessAutomaton, rawFloydHoareAutomataFromFile,
+					computeHoareAnnotation);
+		} else {
+			CegarLoopResult<IIcfgTransition<?>> concurClres = null;
+			int numberOfThreadInstances = 1;
+			while (true) {
+				mLogger.info("Constructing petrified ICFG for " + numberOfThreadInstances + " thread instances.");
+				final IcfgPetrifier icfgPetrifier = new IcfgPetrifier(mServices, root,
+						IcfgConstructionMode.ASSUME_THREAD_INSTANCE_SUFFICIENCY, numberOfThreadInstances);
+				final IIcfg<IcfgLocation> petrifiedIcfg = icfgPetrifier.getPetrifiedIcfg();
+				final PredicateFactory predicateFactory1 = new PredicateFactory(mServices,
+						petrifiedIcfg.getCfgSmtToolkit().getManagedScript(), petrifiedIcfg.getCfgSmtToolkit().getSymbolTable());
+				final Map<String, Set<IcfgLocation>> proc2errNodes = petrifiedIcfg.getProcedureErrorNodes();
+				final Collection<IcfgLocation> errNodesOfAllProc = new ArrayList<>();
+				for (final Collection<IcfgLocation> errNodeOfProc : proc2errNodes.values()) {
+					errNodesOfAllProc.addAll(errNodeOfProc);
+				}
+				concurClres = CegarLoopResult.iterate(mServices, name, petrifiedIcfg, taPrefs, petrifiedIcfg.getCfgSmtToolkit(),
+						predicateFactory1, taBenchmark, errNodesOfAllProc, witnessAutomaton,
+						rawFloydHoareAutomataFromFile, computeHoareAnnotation);
+				final boolean insufficientThreadInstances = hasInsufficientThreadInstances(concurClres);
+				if (insufficientThreadInstances) {
+					if (false) {
+						reportResult(new GenericResult(Activator.PLUGIN_ID, "unable to analyze concurrent program",
+								"unable to analyze", Severity.WARNING));
+						mOverallResult = Result.UNKNOWN;
+						return Result.UNKNOWN;
+					} else {
+						mLogger.warn(numberOfThreadInstances
+								+ " thread instances were not sufficient, I will increast this number and restart the analysis");
+						numberOfThreadInstances++;
+						continue;
+					}
+				} else {
+					clres = concurClres;
+					mServices.getBacktranslationService().addTranslator(icfgPetrifier.getBacktranslator());
+					break;
+				}
+			}
+		}
+		final Result result = clres.getOverallResult();
+
+
+
+
+		if (taPrefs.getFloydHoareAutomataReuse() != FloydHoareAutomataReuse.NONE) {
+			mFloydHoareAutomataFromOtherErrorLocations.addAll(clres.getFloydHoareAutomata());
+		}
+
+		mOverallResult = clres.getOverallResult();
+		reportResults(errorLocs, clres, result);
+
+		taBenchmark.aggregateBenchmarkData(clres.getCegarLoopStatisticsGenerator());
+
+		mArtifact = clres.getArtifact();
+		return result;
+	}
+
+	private static boolean hasInsufficientThreadInstances(final CegarLoopResult<IIcfgTransition<?>> clres) {
+		final boolean insufficientThreadInstances;
+		if (clres.getOverallResult() == Result.UNSAFE) {
+			final AtomicTraceElement<IIcfgTransition<IcfgLocation>> te = clres.getProgramExecution()
+					.getTraceElement(clres.getProgramExecution().getLength() - 1);
+			final IcfgLocation tar = te.getTraceElement().getTarget();
+			final Check check = Check.getAnnotation(tar);
+			insufficientThreadInstances = check.getSpec().contains(Spec.SUFFICIENT_THREAD_INSTANCES);
+		} else {
+			insufficientThreadInstances = false;
+		}
+		return insufficientThreadInstances;
+	}
+
+
 	private Result iterate(final DebugIdentifier name, final IIcfg<IcfgLocation> root, final TAPreferences taPrefs,
 			final CfgSmtToolkit csToolkit, final PredicateFactory predicateFactory,
 			final TraceAbstractionBenchmarks taBenchmark, final Collection<IcfgLocation> errorLocs,
 			final INwaOutgoingLetterAndTransitionProvider<WitnessEdge, WitnessNode> witnessAutomaton,
 			final List<INestedWordAutomaton<String, String>> rawFloydHoareAutomataFromFile,
 			final boolean computeHoareAnnotation) {
-		final BasicCegarLoop<? extends IIcfgTransition<?>> basicCegarLoop =
-				constructCegarLoop(name, root, taPrefs, csToolkit, predicateFactory, errorLocs, rawFloydHoareAutomataFromFile,
-						computeHoareAnnotation);
+		IIcfg<IcfgLocation> icfg;
+		if (root.getCfgSmtToolkit().getConcurrencyInformation().getThreadInstanceMap().isEmpty()) {
+			icfg = root;
+		} else {
+			final int numberOfThreadInstances = 3;
+			final IcfgPetrifier icfgPetrifier = new IcfgPetrifier(mServices, root,
+					IcfgConstructionMode.ASSUME_THREAD_INSTANCE_SUFFICIENCY, numberOfThreadInstances);
+			final IIcfg<IcfgLocation> petrifiedIcfg = icfgPetrifier.getPetrifiedIcfg();
+			mServices.getBacktranslationService().addTranslator(icfgPetrifier.getBacktranslator());
+			icfg = petrifiedIcfg;
+		}
+		final PredicateFactory predicateFactory1 = new PredicateFactory(mServices, icfg.getCfgSmtToolkit().getManagedScript(),
+				icfg.getCfgSmtToolkit().getSymbolTable());
+		final Map<String, Set<IcfgLocation>> proc2errNodes = icfg.getProcedureErrorNodes();
+		final Collection<IcfgLocation> errNodesOfAllProc = new ArrayList<>();
+		for (final Collection<IcfgLocation> errNodeOfProc : proc2errNodes.values()) {
+			errNodesOfAllProc.addAll(errNodeOfProc);
+		}
+		final BasicCegarLoop<? extends IIcfgTransition<?>> basicCegarLoop = constructCegarLoop(name, icfg, taPrefs,
+				icfg.getCfgSmtToolkit(), predicateFactory1, errNodesOfAllProc, rawFloydHoareAutomataFromFile,
+				computeHoareAnnotation);
+		final Result result = basicCegarLoop.iterate();
+		if (result == Result.UNSAFE) {
+			final AtomicTraceElement<IIcfgTransition<IcfgLocation>> te = basicCegarLoop.getRcfgProgramExecution().getTraceElement(basicCegarLoop.getRcfgProgramExecution().getLength()-1);
+			final IcfgLocation tar = te.getTraceElement().getTarget();
+			final Check check = Check.getAnnotation(tar);
+			if (check.getSpec().contains(Spec.SUFFICIENT_THREAD_INSTANCES)) {
+				reportResult(new GenericResult(Activator.PLUGIN_ID, "unable to analyze concurrent program", "unable to analyze", Severity.WARNING));
+				return Result.UNKNOWN;
+			}
+		}
+
 		basicCegarLoop.setWitnessAutomaton(witnessAutomaton);
 
-		final Result result = basicCegarLoop.iterate();
 		basicCegarLoop.finish();
 		if (taPrefs.getFloydHoareAutomataReuse() != FloydHoareAutomataReuse.NONE) {
 			final LinkedHashSet<?> fhs = basicCegarLoop.getFloydHoareAutomata();
@@ -401,6 +513,31 @@ public class TraceAbstractionStarter {
 					taPrefs.interpolation(), computeHoareAnnotation, mServices, languageOperation);
 		}
 		return result;
+	}
+
+	private Result reportResults(final Collection<IcfgLocation> errorLocs,
+			final CegarLoopResult clres, final Result result) {
+		switch (result) {
+		case SAFE:
+			reportPositiveResults(errorLocs);
+			return mOverallResult;
+		case UNSAFE:
+			reportCounterexampleResult(clres.getProgramExecution());
+			return result;
+		case TIMEOUT:
+		case USER_LIMIT_ITERATIONS:
+		case USER_LIMIT_PATH_PROGRAM:
+		case USER_LIMIT_TIME:
+		case USER_LIMIT_TRACEHISTOGRAM:
+			reportLimitResult(result, errorLocs, clres.getRunningTaskStackProvider());
+			return mOverallResult != Result.UNSAFE ? result : mOverallResult;
+		case UNKNOWN:
+			final IProgramExecution<IIcfgTransition<IcfgLocation>, Term> pe = clres.getProgramExecution();
+			reportUnproveableResult(pe, clres.getUnprovabilityReasons());
+			return mOverallResult != Result.UNSAFE ? result : mOverallResult;
+		default:
+			throw new IllegalArgumentException();
+		}
 	}
 
 	private Result computeOverallResult(final Collection<IcfgLocation> errorLocs,

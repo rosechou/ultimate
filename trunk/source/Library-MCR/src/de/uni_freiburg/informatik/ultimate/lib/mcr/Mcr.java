@@ -75,7 +75,6 @@ public class Mcr<LETTER extends IIcfgTransition<?>> implements IInterpolatingTra
 	private final AutomataLibraryServices mAutomataServices;
 	private final VpAlphabet<LETTER> mAlphabet;
 	private final McrTraceCheckResult<LETTER> mResult;
-	private final Map<LETTER, Integer> mActionCounts;
 	private final IWriteRelation<LETTER> mWriteRelation;
 
 	public Mcr(final ILogger logger, final ITraceCheckPreferences prefs, final IPredicateUnifier predicateUnifier,
@@ -96,7 +95,6 @@ public class Mcr<LETTER extends IIcfgTransition<?>> implements IInterpolatingTra
 		mVariables2Writes = new HashRelation<>();
 		mPreviousWrite = new HashMap<>();
 		mActions2TermVars = new HashMap<>();
-		mActionCounts = new HashMap<>();
 		mThreads2SortedActions = new HashMap<>();
 		mActions2Threads = new HashRelation<>();
 		// Explore all the interleavings of trace
@@ -111,7 +109,7 @@ public class Mcr<LETTER extends IIcfgTransition<?>> implements IInterpolatingTra
 		queue.add(initialTrace);
 		final McrInterpolantAutomatonBuilder<LETTER> automatonBuilder =
 				new McrInterpolantAutomatonBuilder<>(mAutomataServices, mAlphabet, mEmptyStackStateFactory,
-						mProofProvider, getPrecondition(), getPostcondition(), mPredicateUnifier);
+						mProofProvider, getPrecondition(), getPostcondition(), mPredicateUnifier, mLogger);
 		IPredicate[] initialInterpolants = null;
 		while (!queue.isEmpty()) {
 			final List<LETTER> trace = queue.remove();
@@ -142,21 +140,22 @@ public class Mcr<LETTER extends IIcfgTransition<?>> implements IInterpolatingTra
 	}
 
 	private void getReadsAndWrites(final List<LETTER> trace) {
-		for (int i = 0; i < trace.size(); i++) {
-			final LETTER action = trace.get(i);
-			// TODO: There might be duplicate actions, is this a problem?
-			// TODO: => Map indices to varNames
+		for (final LETTER action : trace) {
 			final TermVariable tv =
 					mManagedScript.constructFreshTermVariable("order", SmtSortUtils.getIntSort(mManagedScript));
 			final String varName = ProgramVarUtils.generateConstantIdentifierForAuxVar(tv);
-			mActions2TermVars.put(action, SmtUtils.buildNewConstant(mManagedScript.getScript(), varName, "Int"));
+			final Term constant = SmtUtils.buildNewConstant(mManagedScript.getScript(), varName, "Int");
+			if (mActions2TermVars.put(action, constant) != null) {
+				// For now throw an exception for duplicate actions
+				// TODO: Fix this using the indices instead
+				throw new IllegalArgumentException("For now MCR cannot handle duplicate actions");
+			}
 			final TransFormula transformula = action.getTransformula();
 			mReads2Variables.addAllPairs(action, transformula.getInVars().keySet());
 			for (final IProgramVar var : transformula.getAssignedVars()) {
 				mVariables2Writes.addPair(var, action);
 				mWrites2Variables.addPair(action, var);
 			}
-			mActionCounts.put(action, mActionCounts.getOrDefault(action, 0) + 1);
 		}
 	}
 
@@ -199,13 +198,6 @@ public class Mcr<LETTER extends IIcfgTransition<?>> implements IInterpolatingTra
 		}
 	}
 
-	private List<IPredicate> getInterpolantsIfAccepted(final NestedWordAutomaton<LETTER, IPredicate> automaton,
-			final List<LETTER> trace) throws AutomataLibraryException {
-		// TODO: Get an accepting run if possible and return its state sequence, otherwise just return null
-		// TODO: Use DeterministicInterpolantAutomaton
-		return Collections.emptyList();
-	}
-
 	// TODO: Avoid duplicates by caching?
 	private Collection<List<LETTER>> generateSeedInterleavings(final List<LETTER> trace,
 			final List<IPredicate> interpolants) {
@@ -222,7 +214,7 @@ public class Mcr<LETTER extends IIcfgTransition<?>> implements IInterpolatingTra
 				final Set<LETTER> writesWithNull =
 						DataStructureUtils.union(mVariables2Writes.getImage(var), Collections.singleton(null));
 				for (final LETTER write : writesWithNull) {
-					if (mWriteRelation.canBeReplacedBy(write, previousWrites.get(var), var, trace, interpolants)) {
+					if (mWriteRelation.areRelated(write, previousWrites.get(var), var, trace, interpolants)) {
 						continue;
 					}
 					script.push(1);
@@ -291,7 +283,7 @@ public class Mcr<LETTER extends IIcfgTransition<?>> implements IInterpolatingTra
 			final Set<LETTER> writesWithNull =
 					DataStructureUtils.union(mVariables2Writes.getImage(var), Collections.singleton(null));
 			for (final LETTER write : writesWithNull) {
-				if (!mWriteRelation.canBeReplacedBy(write, writeToBeRead, var, trace, interpolants)) {
+				if (!mWriteRelation.areRelated(write, writeToBeRead, var, trace, interpolants)) {
 					continue;
 				}
 				final List<Term> conjuncts = new ArrayList<>();
@@ -303,7 +295,7 @@ public class Mcr<LETTER extends IIcfgTransition<?>> implements IInterpolatingTra
 					conjuncts.add(SmtUtils.less(script, writeVar, readVar));
 				}
 				for (final LETTER otherWrite : mVariables2Writes.getImage(var)) {
-					if (mWriteRelation.canBeReplacedBy(otherWrite, writeToBeRead, var, trace, interpolants)) {
+					if (mWriteRelation.areRelated(otherWrite, writeToBeRead, var, trace, interpolants)) {
 						continue;
 					}
 					final Term otherWriteVar = mActions2TermVars.get(otherWrite);
@@ -381,7 +373,6 @@ public class Mcr<LETTER extends IIcfgTransition<?>> implements IInterpolatingTra
 				final NestedWordAutomaton<LETTER, String> nwa =
 						new NestedWordAutomaton<>(mAutomataServices, mAlphabet, factory);
 				final Set<LETTER> writesOnVar = mVariables2Writes.getImage(var);
-				final int readCount = mActionCounts.get(read);
 				final String initial = "q0";
 				final String postWrite = "q1";
 				final String postRead = "q2";
@@ -389,10 +380,7 @@ public class Mcr<LETTER extends IIcfgTransition<?>> implements IInterpolatingTra
 				if (write == null) {
 					nwa.addState(false, true, postRead);
 					nwa.addInternalTransition(initial, read, postRead);
-					for (final LETTER action : mActionCounts.keySet()) {
-						if (action.equals(read) && readCount == 1) {
-							continue;
-						}
+					for (final LETTER action : trace) {
 						if (!writesOnVar.contains(action)) {
 							nwa.addInternalTransition(initial, action, initial);
 						}
@@ -403,28 +391,12 @@ public class Mcr<LETTER extends IIcfgTransition<?>> implements IInterpolatingTra
 					nwa.addState(false, true, postRead);
 					final Set<LETTER> correctWrites = new HashSet<>();
 					for (final LETTER otherWrite : writesOnVar) {
-						if (otherWrite.equals(read) && readCount == 1) {
-							continue;
-						}
-						if (mWriteRelation.canBeReplacedBy(otherWrite, write, var, trace, interpolants)) {
+						if (mWriteRelation.areRelated(otherWrite, write, var, trace, interpolants)) {
 							correctWrites.add(otherWrite);
 						}
 					}
-					// Add all the forward edges and count the actions
-					final Map<LETTER, Integer> remainingCounts = new HashMap<>(mActionCounts);
-					remainingCounts.put(read, readCount - 1);
-					nwa.addInternalTransition(postWrite, read, postRead);
-					for (final LETTER w : correctWrites) {
-						nwa.addInternalTransition(initial, w, postWrite);
-						if (correctWrites.size() == 1) {
-							remainingCounts.put(w, remainingCounts.get(w) - 1);
-						}
-					}
 					// Add the self-loops for all the actions, that still can happen
-					for (final LETTER action : mActionCounts.keySet()) {
-						if (remainingCounts.get(action) == 0) {
-							continue;
-						}
+					for (final LETTER action : trace) {
 						nwa.addInternalTransition(initial, action, initial);
 						nwa.addInternalTransition(postRead, action, postRead);
 						if (!writesOnVar.contains(action) || correctWrites.contains(action)) {
@@ -539,7 +511,11 @@ public class Mcr<LETTER extends IIcfgTransition<?>> implements IInterpolatingTra
 	}
 
 	public interface IWriteRelation<LETTER extends IIcfgTransition<?>> {
-		boolean canBeReplacedBy(LETTER write1, LETTER write2, IProgramVar var, List<LETTER> trace,
+		/**
+		 * Returns true iff write1 and write2 are related writes on var int the trace, given these interpolants. To be a
+		 * useful relation, write1 must be at least as strong as writ2 on the given var.
+		 */
+		boolean areRelated(LETTER write1, LETTER write2, IProgramVar var, List<LETTER> trace,
 				List<IPredicate> interpolants);
 	}
 }

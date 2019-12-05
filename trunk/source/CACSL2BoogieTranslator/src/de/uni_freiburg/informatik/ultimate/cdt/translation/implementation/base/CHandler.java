@@ -69,7 +69,6 @@ import org.eclipse.cdt.core.dom.ast.IASTDeclarationStatement;
 import org.eclipse.cdt.core.dom.ast.IASTDeclarator;
 import org.eclipse.cdt.core.dom.ast.IASTDefaultStatement;
 import org.eclipse.cdt.core.dom.ast.IASTDoStatement;
-import org.eclipse.cdt.core.dom.ast.IASTElaboratedTypeSpecifier;
 import org.eclipse.cdt.core.dom.ast.IASTEqualsInitializer;
 import org.eclipse.cdt.core.dom.ast.IASTExpression;
 import org.eclipse.cdt.core.dom.ast.IASTExpressionList;
@@ -89,7 +88,6 @@ import org.eclipse.cdt.core.dom.ast.IASTInitializerList;
 import org.eclipse.cdt.core.dom.ast.IASTLabelStatement;
 import org.eclipse.cdt.core.dom.ast.IASTLiteralExpression;
 import org.eclipse.cdt.core.dom.ast.IASTName;
-import org.eclipse.cdt.core.dom.ast.IASTNamedTypeSpecifier;
 import org.eclipse.cdt.core.dom.ast.IASTNode;
 import org.eclipse.cdt.core.dom.ast.IASTNullStatement;
 import org.eclipse.cdt.core.dom.ast.IASTParameterDeclaration;
@@ -121,7 +119,6 @@ import org.eclipse.cdt.core.dom.ast.c.ICASTCompositeTypeSpecifier;
 import org.eclipse.cdt.core.dom.ast.gnu.IGNUASTCompoundStatementExpression;
 import org.eclipse.cdt.core.dom.ast.gnu.c.ICASTKnRFunctionDeclarator;
 import org.eclipse.cdt.internal.core.dom.parser.c.CASTDesignatedInitializer;
-import org.eclipse.cdt.internal.core.dom.parser.c.CASTFunctionDeclarator;
 import org.eclipse.cdt.internal.core.dom.parser.c.CASTLiteralExpression;
 import org.eclipse.cdt.internal.core.dom.parser.c.CVariable;
 
@@ -211,6 +208,7 @@ import de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.result
 import de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.result.ExpressionResult;
 import de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.result.ExpressionResultBuilder;
 import de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.result.ExpressionResultTransformer;
+import de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.result.ExpressionWithIncompleteTypeResult;
 import de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.result.HeapLValue;
 import de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.result.InitializerResult;
 import de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.result.InitializerResultBuilder;
@@ -677,7 +675,7 @@ public class CHandler {
 	}
 
 	public Result visit(final IDispatcher main, final CASTDesignatedInitializer node) {
-		return mStructHandler.handleDesignatedInitializer(main, mMemoryHandler, mStructHandler, node);
+		return mInitHandler.handleDesignatedInitializer(main, mLocationFactory, mMemoryHandler, mStructHandler, node);
 	}
 
 	public Result visit(final IDispatcher main, final IASTArraySubscriptExpression node) {
@@ -931,34 +929,47 @@ public class CHandler {
 	}
 
 	private void checkIfNecessaryMemoryModelAdaption(final IASTCastExpression node, final ILocation loc,
-			final CType newCType, final ExpressionResult expr) {
-		final CType exprType = expr.getLrValue().getCType().getUnderlyingType();
-		if ((!(exprType instanceof CArray) && !(exprType instanceof CPointer))
-				|| (!(newCType instanceof CArray) && !(newCType instanceof CPointer))) {
+			final CType castTargetType, final ExpressionResult operand) {
+		final CType operandType = operand.getLrValue().getCType().getUnderlyingType();
+		if (!(operandType instanceof CArray) && !(operandType instanceof CPointer)
+				|| !(castTargetType instanceof CArray) && !(castTargetType instanceof CPointer)) {
 			return;
 		}
 
 		// memory model adaptation might be necessary
 		final CType operandValueType;
-		if (exprType instanceof CArray) {
-			operandValueType = ((CArray) exprType).getValueType().getUnderlyingType();
+		if (operandType instanceof CArray) {
+			operandValueType = ((CArray) operandType).getValueType().getUnderlyingType();
 		} else {
-			operandValueType = ((CPointer) exprType).getPointsToType().getUnderlyingType();
+			operandValueType = ((CPointer) operandType).getPointsToType().getUnderlyingType();
 		}
 
 		final CType castTargetValueType;
-		if (newCType instanceof CArray) {
-			castTargetValueType = ((CArray) newCType).getValueType().getUnderlyingType();
+		if (castTargetType instanceof CArray) {
+			castTargetValueType = ((CArray) castTargetType).getValueType().getUnderlyingType();
 		} else {
-			castTargetValueType = ((CPointer) newCType).getPointsToType().getUnderlyingType();
+			castTargetValueType = ((CPointer) castTargetType).getPointsToType().getUnderlyingType();
 		}
 
-		final Expression operandTypeByteSizeExp =
-				mTypeSizeComputer.constructBytesizeExpression(loc, operandValueType, node);
+		final Expression operandTypeByteSizeExp;
+		try {
+			operandTypeByteSizeExp = mTypeSizeComputer.constructBytesizeExpression(loc, operandValueType, node);
+		} catch (final UnsupportedOperationException e) {
+			mLogger.debug("saw a pointer cast to a type that we could not get a type size for, not adapting memory "
+					+ "model");
+			return;
+		}
 		final BigInteger operandTypeByteSize =
 				mTypeSizes.extractIntegerValue(operandTypeByteSizeExp, mTypeSizeComputer.getSizeT(), node);
-		final Expression castTargetByteSizeExp =
-				mTypeSizeComputer.constructBytesizeExpression(loc, castTargetValueType, node);
+
+		final Expression castTargetByteSizeExp;
+		try {
+			castTargetByteSizeExp = mTypeSizeComputer.constructBytesizeExpression(loc, castTargetValueType, node);
+		} catch (final UnsupportedOperationException e) {
+			mLogger.debug("saw a pointer cast to a type that we could not get a type size for, not adapting memory "
+					+ "model");
+			return;
+		}
 		final BigInteger castTargetByteSize =
 				mTypeSizes.extractIntegerValue(castTargetByteSizeExp, mTypeSizeComputer.getSizeT(), node);
 
@@ -982,6 +993,14 @@ public class CHandler {
 					+ "model resolution";
 		} else {
 			// no need to change memory model
+			return;
+		}
+
+		if (operandTypeByteSize.intValueExact() == 0) {
+			// operand's type has size 0 -- not sure what makes sense to do here, doing nothing
+			// case where I encountered it was a struct with a 0-sized array in it; if someone wants to read more on
+			// that phenomenon:
+			// https://stackoverflow.com/questions/52630441/c-struct-with-zero-sized-array-members
 			return;
 		}
 
@@ -1460,7 +1479,10 @@ public class CHandler {
 		final boolean intFromPtr;
 		DeclarationInformation declarationInformation;
 
-		if (mSymbolTable.containsCSymbol(node, cId) && !mProcedureManager.hasProcedure(cIdMp)) {
+		if (mSymbolTable.containsCSymbol(node, cId)) {
+			if (mProcedureManager.hasProcedure(cIdMp)) {
+				mLogger.warn("Possible shadowing of function " + cId);
+			}
 			// a local variable
 			final SymbolTableValue stv = mSymbolTable.findCSymbol(node, cId);
 			bId = stv.getBoogieName();
@@ -1468,7 +1490,10 @@ public class CHandler {
 			useHeap = isHeapVar(bId);
 			intFromPtr = stv.isIntFromPointer();
 			declarationInformation = stv.getDeclarationInformation();
-		} else if (mSymbolTable.containsCSymbol(node, cIdMp) && !mProcedureManager.hasProcedure(cIdMp)) {
+		} else if (mSymbolTable.containsCSymbol(node, cIdMp)) {
+			if (mProcedureManager.hasProcedure(cIdMp)) {
+				mLogger.warn("Possible shadowing of function " + cId);
+			}
 			// we have a normal variable
 			final SymbolTableValue stv = mSymbolTable.findCSymbol(node, cIdMp);
 			bId = stv.getBoogieName();
@@ -1589,26 +1614,20 @@ public class CHandler {
 		final ILocation loc = mLocationFactory.createCLocation(node);
 
 		// translate type
-		CType cType;
-		{
-			final IASTTypeId typeId = node.getTypeId();
-			final TypesResult declSpecifierResult = (TypesResult) main.dispatch(typeId.getDeclSpecifier());
-			mCurrentDeclaredTypes.push(declSpecifierResult);
-			final DeclaratorResult declaratorResult = (DeclaratorResult) main.dispatch(typeId.getAbstractDeclarator());
-			mCurrentDeclaredTypes.pop();
+		final IASTTypeId typeId = node.getTypeId();
+		final TypesResult declSpecifierResult = (TypesResult) main.dispatch(typeId.getDeclSpecifier());
+		mCurrentDeclaredTypes.push(declSpecifierResult);
+		final DeclaratorResult declaratorResult = (DeclaratorResult) main.dispatch(typeId.getAbstractDeclarator());
+		mCurrentDeclaredTypes.pop();
 
-			final CDeclaration cDeclaration = declaratorResult.getDeclaration();
-			assert !cDeclaration.hasInitializer() : "unexpected, inspect this case";
-			assert !cDeclaration.isOnHeap() : "unexpected, inspect this case";
-			cType = cDeclaration.getType().getUnderlyingType();
-		}
+		final CDeclaration cDeclaration = declaratorResult.getDeclaration();
+		assert !cDeclaration.hasInitializer() : "unexpected, inspect this case";
+		assert !cDeclaration.isOnHeap() : "unexpected, inspect this case";
+		final CType cType = cDeclaration.getType().getUnderlyingType();
 
 		// translate initializer
-		final InitializerResult ir;
-		{
-			final IASTInitializer initializer = node.getInitializer();
-			ir = (InitializerResult) main.dispatch(initializer);
-		}
+		final IASTInitializer initializer = node.getInitializer();
+		final InitializerResult ir = (InitializerResult) main.dispatch(initializer);
 
 		final boolean isAddressTaken = node.getParent() instanceof IASTUnaryExpression
 				&& ((IASTUnaryExpression) node.getParent()).getOperator() == IASTUnaryExpression.op_amper;
@@ -2248,36 +2267,13 @@ public class CHandler {
 			mDeclarations.addAll(acslResultBuilder.getDeclarations());
 		}
 
-		// delayed processing of IASTFunctionDefinitions and structs
-		// This is a workaround. Invariants my use global variables that
-		// are not yet declared.
-		// Better solution: obtain function signature in a first pass
-		// process function body in a second pass
-		final List<IASTNode> complexNodes = new ArrayList<>();
+		// NOTE: Hack for ACSL was removed; we should first process C and then ACSL.
 		for (final IASTNode child : node.getChildren()) {
 			// Ignore included declarations which might cause problems
 			if (!child.isPartOfTranslationUnitFile()) {
 				continue;
 			}
-			if (child instanceof IASTSimpleDeclaration) {
-				final IASTSimpleDeclaration simpleDecl = (IASTSimpleDeclaration) child;
-				if (simpleDecl.getDeclSpecifier() instanceof IASTElaboratedTypeSpecifier
-						|| simpleDecl.getDeclSpecifier() instanceof ICASTCompositeTypeSpecifier
-						|| simpleDecl.getDeclarators().length > 0
-								&& simpleDecl.getDeclarators()[0] instanceof CASTFunctionDeclarator
-						|| simpleDecl.getDeclSpecifier() instanceof IASTNamedTypeSpecifier) {
-					complexNodes.add(child);
-				} else {
-					processTUchild(main, mDeclarations, child);
-				}
-			} else if (child instanceof IASTFunctionDefinition) {
-				complexNodes.add(child);
-			} else {
-				processTUchild(main, mDeclarations, child);
-			}
-		}
-		for (final IASTNode funcDef : complexNodes) {
-			processTUchild(main, mDeclarations, funcDef);
+			processTUchild(main, mDeclarations, child);
 		}
 
 		// TODO(thrax): Check if decl should be passed as null.
@@ -2350,7 +2346,7 @@ public class CHandler {
 		case IASTUnaryExpression.op_bracketedPrimary:
 			return operand;
 		case IASTUnaryExpression.op_sizeof:
-			final CType operandType = operand.getLrValue().getCType().getUnderlyingType();
+			final CType operandType = operand.getCType().getUnderlyingType();
 			return new ExpressionResult(
 					new RValue(mMemoryHandler.calculateSizeOf(loc, operandType, node), mTypeSizeComputer.getSizeT()),
 					Collections.emptySet());
@@ -3441,10 +3437,7 @@ public class CHandler {
 				IASTBinaryExpression.op_minus, ptr1Offset, mExpressionTranslation.getCTypeOfPointerComponents(),
 				ptr2Offset, mExpressionTranslation.getCTypeOfPointerComponents());
 		final Expression typesize = mMemoryHandler.calculateSizeOf(loc, pointsToType, hook);
-		final CPrimitive typesizeType = new CPrimitive(CPrimitives.INT);
-		// TODO: typesizeType and .getCTypeOfPointerComponents() might be
-		// different then one expression has to be converted into the type of
-		// the other
+		final CPrimitive typesizeType = mExpressionTranslation.getCTypeOfPointerComponents();
 		final Expression offsetDifferenceDividedByTypesize =
 				mExpressionTranslation.constructArithmeticExpression(loc, IASTBinaryExpression.op_divide,
 						offsetDifference, mExpressionTranslation.getCTypeOfPointerComponents(), typesize, typesizeType);
@@ -3558,7 +3551,10 @@ public class CHandler {
 		final CPointer pointer = (CPointer) rValue.getCType().getUnderlyingType();
 		final CType pointedType = pointer.getPointsToType();
 		if (pointedType.isIncomplete()) {
-			throw new IncorrectSyntaxException(loc, "Pointer dereference of incomplete type");
+			return new ExpressionWithIncompleteTypeResult(rop.getStatements(),
+					LRValueFactory.constructHeapLValue(mTypeHandler, rValue.getValue(), pointedType, null),
+					rop.getDeclarations(), rop.getAuxVars(), rop.getOverapprs());
+
 		}
 
 		return new ExpressionResult(rop.getStatements(),
@@ -3711,8 +3707,8 @@ public class CHandler {
 			if (witnessInvariant != null) {
 				specList.add(witnessInvariant);
 			}
-			if ((node instanceof IASTForStatement) || (node instanceof IASTWhileStatement)
-					|| (node instanceof IASTDoStatement)) {
+			if (node instanceof IASTForStatement || node instanceof IASTWhileStatement
+					|| node instanceof IASTDoStatement) {
 				for (int i = 0; i < mContract.size(); i++) {
 					// retranslate ACSL specification needed e.g., in cases
 					// where ids of function parameters differ from is in ACSL
@@ -3875,7 +3871,7 @@ public class CHandler {
 			throw new UnsupportedOperationException("operands have to have integer types");
 		}
 		final ExpressionResult leftPromoted = mExprResultTransformer.doIntegerPromotion(loc, left);
-		final CPrimitive typeOfResult = (CPrimitive) leftPromoted.getLrValue().getCType();
+		final CPrimitive typeOfResult = (CPrimitive) leftPromoted.getLrValue().getCType().getUnderlyingType();
 		final ExpressionResult rightConverted =
 				mExprResultTransformer.performImplicitConversion(right, typeOfResult, loc);
 

@@ -38,6 +38,7 @@ import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.Union;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.SmtUtils;
 import de.uni_freiburg.informatik.ultimate.logic.Rational;
 import de.uni_freiburg.informatik.ultimate.logic.Term;
+import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.Pair;
 
 /**
  * This class provides methods to construct automata that correspond to a given MSOD-Formula over the set of integer
@@ -913,5 +914,32 @@ public final class MSODFormulaOperationsInt extends MSODFormulaOperations {
 		}
 
 		return automaton;
+	}
+
+	/**
+	 * @throws IllegalArgumentException
+	 *             if index is less than 0.
+	 */
+	@Override
+	public int indexToInteger(final int index) {
+		if (index < 0) {
+			throw new IllegalArgumentException("Index must be >= 0.");
+		}
+
+		return (index % 2 == 0 ? 1 : -1) * (index + 1) / 2;
+	}
+
+	/**
+	 * @throws IllegalArgumentException
+	 *             if length is less than 0.
+	 */
+	@Override
+	public Pair<Integer, Integer> stemBounds(final int length) {
+		if (length < 0) {
+			throw new IllegalArgumentException("Length must be >= 0.");
+		}
+
+		return new Pair<>(Math.min(indexToInteger(length), indexToInteger(length + 1)),
+				Math.max(indexToInteger(length), indexToInteger(length + 1)));
 	}
 }

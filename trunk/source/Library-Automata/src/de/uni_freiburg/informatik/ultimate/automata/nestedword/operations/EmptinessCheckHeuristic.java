@@ -25,7 +25,6 @@
  * to convey the resulting work.
  */
 
-
 package de.uni_freiburg.informatik.ultimate.automata.nestedword.operations;
 
 import java.util.HashMap;
@@ -34,15 +33,13 @@ import de.uni_freiburg.informatik.ultimate.core.model.services.ILogger;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.transitions.UnmodifiableTransFormula;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.SMTFeatureExtractionTermClassifier;
 import de.uni_freiburg.informatik.ultimate.logic.Term;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.SequentialComposition;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.StatementSequence;
 
 public class EmptinessCheckHeuristic<STATE, LETTER> implements IHeuristic<STATE, LETTER> {
 
 	public enum ScoringMethod {
-		NUM_FUNCTIONS,
-		NUM_VARIABLES,
-		DAGSIZE,
-		DEPENDENCY
+		NUM_FUNCTIONS, NUM_VARIABLES, DAGSIZE, DEPENDENCY, BIGGEST_EQUIVALENCE_CLASS
 	}
 
 	private final ILogger mLogger;
@@ -50,7 +47,7 @@ public class EmptinessCheckHeuristic<STATE, LETTER> implements IHeuristic<STATE,
 	private final HashMap<LETTER, Integer> mCheckedTransitions;
 	private final ScoringMethod mScoringMethod;
 
-	public EmptinessCheckHeuristic(final ILogger logger, final ScoringMethod scoringMethod){
+	public EmptinessCheckHeuristic(final ILogger logger, final ScoringMethod scoringMethod) {
 		mLogger = logger;
 		mTermClassifier = new SMTFeatureExtractionTermClassifier(mLogger);
 		mCheckedTransitions = new HashMap<>();
@@ -58,26 +55,33 @@ public class EmptinessCheckHeuristic<STATE, LETTER> implements IHeuristic<STATE,
 	}
 
 	public void checkTransition(final LETTER trans) {
-		if(trans instanceof StatementSequence) {
-			final UnmodifiableTransFormula transformula = ((StatementSequence) trans).getTransformula();
-			final Term formula = transformula.getFormula();
-			mTermClassifier.checkTerm(formula);
-			int score = 0;
-			if (mScoringMethod == ScoringMethod.DEPENDENCY) {
-				score = mTermClassifier.getDependencyScore();
-			}else if (mScoringMethod == ScoringMethod.NUM_FUNCTIONS) {
-				score = mTermClassifier.getNumberOfFunctions();
-			}else if (mScoringMethod == ScoringMethod.NUM_VARIABLES) {
-				score = mTermClassifier.getNumberOfVariables();
-			}else if (mScoringMethod == ScoringMethod.DAGSIZE) {
-				score = mTermClassifier.getDAGSize();
-			} else {
-				throw new UnsupportedOperationException("Unsupported ScoringMethod " + mScoringMethod.toString());
-			}
-			mCheckedTransitions.put(trans, score);
+		UnmodifiableTransFormula transformula = null;
+		if (trans instanceof StatementSequence) {
+			transformula = ((StatementSequence) trans).getTransformula();
+		} else if (trans instanceof SequentialComposition) {
+			transformula = ((SequentialComposition) trans).getTransformula();
 		} else {
-			throw new UnsupportedOperationException("Currently this function only supports transitions of type 'StatementSequence'. The passed transition has type: " + trans.getClass().getCanonicalName());
+			throw new UnsupportedOperationException(
+					"Currently this function only supports transitions of type 'StatementSequence' or 'SequentialComposition'. The passed transition has type: "
+							+ trans.getClass().getCanonicalName());
 		}
+		final Term formula = transformula.getFormula();
+		mTermClassifier.checkTerm(formula);
+		int score = 0;
+		if (mScoringMethod == ScoringMethod.DEPENDENCY) {
+			score = mTermClassifier.getDependencyScore();
+		} else if (mScoringMethod == ScoringMethod.NUM_FUNCTIONS) {
+			score = mTermClassifier.getNumberOfFunctions();
+		} else if (mScoringMethod == ScoringMethod.NUM_VARIABLES) {
+			score = mTermClassifier.getNumberOfVariables();
+		} else if (mScoringMethod == ScoringMethod.DAGSIZE) {
+			score = mTermClassifier.getDAGSize();
+		} else if (mScoringMethod == ScoringMethod.BIGGEST_EQUIVALENCE_CLASS) {
+			score = mTermClassifier.getBiggestEquivalenceClass();
+		} else {
+			throw new UnsupportedOperationException("Unsupported ScoringMethod " + mScoringMethod.toString());
+		}
+		mCheckedTransitions.put(trans, score);
 	}
 
 	@Override

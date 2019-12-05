@@ -33,10 +33,14 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import de.uni_freiburg.informatik.ultimate.core.model.services.ILogger;
 import de.uni_freiburg.informatik.ultimate.core.model.services.ILogger.LogLevel;
 import de.uni_freiburg.informatik.ultimate.core.model.services.IUltimateServiceProvider;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.PartialQuantifierElimination;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.SmtSortUtils;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.SmtUtils;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.SmtUtils.SimplificationTechnique;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.SmtUtils.XnfConversionTechnique;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.linearterms.AffineRelation;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.linearterms.NotAffineException;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.linearterms.SolvedBinaryRelation;
@@ -46,6 +50,7 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.polynomial.
 import de.uni_freiburg.informatik.ultimate.logic.LoggingScript;
 import de.uni_freiburg.informatik.ultimate.logic.Logics;
 import de.uni_freiburg.informatik.ultimate.logic.Script;
+import de.uni_freiburg.informatik.ultimate.logic.Script.LBool;
 import de.uni_freiburg.informatik.ultimate.logic.Sort;
 import de.uni_freiburg.informatik.ultimate.logic.Term;
 import de.uni_freiburg.informatik.ultimate.smtsolver.external.TermParseUtils;
@@ -57,7 +62,9 @@ import de.uni_freiburg.informatik.ultimate.test.mocks.UltimateMocks;
 public class AffineRelationTest {
 
 	private static final boolean WRITE_SCRIPT_TO_FILE = false;
+	private static final boolean USE_QUANTIFIER_ELIMINATION_TO_SIMPLIFY_INPUT_OF_EQUIVALENCE_CHECK = false;
 	private IUltimateServiceProvider mServices;
+	private ILogger mLogger;
 	private Script mScript;
 	private ManagedScript mMgdScript;
 	private Sort mRealSort;
@@ -66,6 +73,7 @@ public class AffineRelationTest {
 	@Before
 	public void setUp() {
 		mServices = UltimateMocks.createUltimateServiceProviderMock();
+		mLogger = mServices.getLoggingService().getLogger(this.getClass().getSimpleName());
 		mScript = UltimateMocks.createZ3Script(LogLevel.INFO);
 		if (WRITE_SCRIPT_TO_FILE) {
 			final String file = "AffineRelationTestScript.smt2";
@@ -301,7 +309,19 @@ public class AffineRelationTest {
 		final MultiCaseSolvedBinaryRelation mcsbr = AffineRelation.convert(mScript, inputAsTerm)
 				.solveForSubject(mScript, x, xnf);
 		final Term solvedAsTerm = mcsbr.asTerm(mScript);
-		Assert.assertTrue(SmtUtils.areFormulasEquivalent(inputAsTerm, solvedAsTerm, mScript));
+		final Term tmp;
+		if (USE_QUANTIFIER_ELIMINATION_TO_SIMPLIFY_INPUT_OF_EQUIVALENCE_CHECK) {
+		tmp = PartialQuantifierElimination.tryToEliminate(mServices, mLogger, mMgdScript, solvedAsTerm,
+				SimplificationTechnique.NONE, XnfConversionTechnique.BOTTOM_UP_WITH_LOCAL_SIMPLIFICATION);
+		} else {
+			tmp = solvedAsTerm;
+		}
+		final LBool equivalent = SmtUtils.checkEquivalence(inputAsTerm, tmp, mScript);
+		if (equivalent == LBool.UNKNOWN) {
+			mLogger.warn("unable to check equivalence of input " + inputAsTerm + " and output " + solvedAsTerm);
+		}
+		Assert.assertTrue("Unable to confirm equivalence of input " + inputAsTerm + " and output " + solvedAsTerm,
+				equivalent == LBool.UNSAT);
 	}
 
 	private boolean assumptionsImpliesEquality(final Term originalTerm, final SolvedBinaryRelation sbr) {

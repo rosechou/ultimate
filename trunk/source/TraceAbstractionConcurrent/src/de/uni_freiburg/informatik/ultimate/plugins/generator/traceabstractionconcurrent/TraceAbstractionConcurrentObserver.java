@@ -67,6 +67,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.Ce
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.TraceAbstractionBenchmarks;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.TraceAbstractionStarter;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.TraceAbstractionStarter.AllErrorsAtOnceDebugIdentifier;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.concurrency.CegarLoopForPetriNet;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TAPreferences;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TAPreferences.Concurrency;
 import de.uni_freiburg.informatik.ultimate.util.csv.ICsvProviderProvider;
@@ -92,8 +93,9 @@ public class TraceAbstractionConcurrentObserver implements IUnmanagedObserver {
 	@Override
 	public boolean process(final IElement root) {
 		final IIcfg<? extends IcfgLocation> inputIcfg = (IIcfg) root;
-		final IcfgPetrifier icfgPetrifier =
-				new IcfgPetrifier(mServices, inputIcfg, IcfgConstructionMode.ASSUME_THREAD_INSTANCE_SUFFICIENCY);
+		final int numberOfThreadInstances = 3;
+		final IcfgPetrifier icfgPetrifier = new IcfgPetrifier(mServices, inputIcfg,
+				IcfgConstructionMode.ASSUME_THREAD_INSTANCE_SUFFICIENCY, numberOfThreadInstances);
 		final IIcfg<? extends IcfgLocation> petrifiedIcfg = icfgPetrifier.getPetrifiedIcfg();
 		mServices.getBacktranslationService().addTranslator(icfgPetrifier.getBacktranslator());
 		final TAPreferences taPrefs = new TAPreferences(mServices);
@@ -124,7 +126,7 @@ public class TraceAbstractionConcurrentObserver implements IUnmanagedObserver {
 		BasicCegarLoop<?> abstractCegarLoop;
 		final AllErrorsAtOnceDebugIdentifier name = TraceAbstractionStarter.AllErrorsAtOnceDebugIdentifier.INSTANCE;
 		if (taPrefs.getConcurrency() == Concurrency.PETRI_NET) {
-			abstractCegarLoop = new CegarLoopJulian<>(name, petrifiedIcfg, csToolkit, predicateFactory,
+			abstractCegarLoop = new CegarLoopForPetriNet<>(name, petrifiedIcfg, csToolkit, predicateFactory,
 					timingStatistics, taPrefs, errNodesOfAllProc, mServices);
 		} else if (taPrefs.getConcurrency() == Concurrency.FINITE_AUTOMATA) {
 			abstractCegarLoop = new CegarLoopConcurrentAutomata<>(name, petrifiedIcfg, csToolkit, predicateFactory,
@@ -182,9 +184,9 @@ public class TraceAbstractionConcurrentObserver implements IUnmanagedObserver {
 		// abstractCegarLoop.mBiggestAbstractionIteration + " had ";
 		// stat += abstractCegarLoop.mBiggestAbstractionSize;
 
-		if (abstractCegarLoop instanceof CegarLoopJulian) {
+		if (abstractCegarLoop instanceof CegarLoopForPetriNet) {
 			stat += " conditions ";
-			final CegarLoopJulian<?> clj = (CegarLoopJulian<?>) abstractCegarLoop;
+			final CegarLoopForPetriNet<?> clj = (CegarLoopForPetriNet<?>) abstractCegarLoop;
 			stat += "and " + clj.mBiggestAbstractionTransitions + " transitions. ";
 			stat += "Overall " + clj.mCoRelationQueries + "co-relation queries";
 		} else if (abstractCegarLoop instanceof CegarLoopConcurrentAutomata) {

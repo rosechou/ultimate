@@ -182,6 +182,7 @@ public class Configuration<LETTER, PLACE> extends AbstractSet<Event<LETTER, PLAC
 	}
 
 	/**
+	 * improved implementation of removeMin.
 	 * @return A new Configuration that contains the set difference between the original configuration and its minimum
 	 *         regarding the casual relation.
 	 *         <p>
@@ -197,8 +198,14 @@ public class Configuration<LETTER, PLACE> extends AbstractSet<Event<LETTER, PLAC
 		final HashSet<Event<LETTER, PLACE>> newmin = new HashSet<>();
 		for (final Event<LETTER, PLACE> e : min) {
 			final Set<Event<LETTER, PLACE>> predEventsOfE = e.getPredecessorEvents();
-			predEventsOfE.retainAll(mEvents);
-			if (mMin.containsAll(predEventsOfE)) {
+			boolean eIsInMin = true;
+			for (final Event<LETTER, PLACE> predEvent : predEventsOfE) {
+				if (events.contains(predEvent)) {
+					eIsInMin = false;
+					break;
+				}
+			}
+			if (eIsInMin) {
 				newmin.add(e);
 			}
 		}

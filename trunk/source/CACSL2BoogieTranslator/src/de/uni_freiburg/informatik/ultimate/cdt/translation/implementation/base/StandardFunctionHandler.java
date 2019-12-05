@@ -32,6 +32,7 @@ package de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.base;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -259,6 +260,13 @@ public class StandardFunctionHandler {
 		fill(map, "alloca", this::handleAlloc);
 		fill(map, "__builtin_alloca", this::handleAlloc);
 		fill(map, "memset", this::handleMemset);
+
+		/*
+		 * See https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
+		 */
+		fill(map, "__builtin_popcount", die);
+		fill(map, "__builtin_popcountl", die);
+		fill(map, "__builtin_popcountll", die);
 
 		/*
 		 * The GNU C online documentation at https://gcc.gnu.org/onlinedocs/gcc/Return-Address.html on 09 Nov 2016 says:
@@ -618,10 +626,12 @@ public class StandardFunctionHandler {
 		 *
 		 * 7.22.5.1 The bsearch function
 		 * 7.22.5.2 The qsort function
+		 * void qsort( void *ptr, size_t count, size_t size, int (*comp)(const void *, const void *) );
 		 * @formatter:on
 		 */
 		fill(map, "bsearch", die);
-		fill(map, "qsort", die);
+		fill(map, "qsort", (main, node, loc, name) -> handleByOverapproximation(main, node, loc, name, 4,
+				new CPointer(new CPrimitive(CPrimitives.VOID))));
 
 		/**
 		 * @formatter:off
@@ -1875,12 +1885,34 @@ public class StandardFunctionHandler {
 	private Result handleErrorFunction(final IDispatcher main, final IASTFunctionCallExpression node,
 			final ILocation loc) {
 		final boolean checkSvcompErrorfunction = mSettings.checkSvcompErrorFunction();
+		final boolean checkMemoryleakInMain = mSettings.checkMemoryLeakInMain()
+				&& mMemoryHandler.getRequiredMemoryModelFeatures().isMemoryModelInfrastructureRequired();
 		final Expression falseLiteral = ExpressionFactory.createBooleanLiteral(loc, false);
 		Statement st;
-		if (checkSvcompErrorfunction) {
-			final Check check = new Check(Spec.ERROR_FUNCTION);
+		if (checkSvcompErrorfunction || checkMemoryleakInMain) {
+			// TODO 2017-11-26 Matthias: Workaround for memcleanup property.
+			// Rationale: If we reach the SV-COMP error function (which has
+			// is similar to the abort function) memory was not deallocated.
+			// Proper solution: Check #valid array for all functions that
+			// do not return (e.g., also abort and exit). Depending on the
+			// discussion about the exact meaning of valid-memcleanup we
+			// need separate arrays for stack and heap.
+			// https://github.com/sosy-lab/sv-benchmarks/pull/1001
+			final Check check;
+			if (checkSvcompErrorfunction) {
+				if (checkMemoryleakInMain) {
+					check = new Check(EnumSet.of(Spec.ERROR_FUNCTION, Spec.MEMORY_LEAK));
+				} else {
+					check = new Check(Spec.ERROR_FUNCTION);
+				}
+			} else {
+				check = new Check(EnumSet.of(Spec.MEMORY_LEAK));
+			}
 			st = new AssertStatement(loc, falseLiteral);
 			check.annotate(st);
+			if (checkMemoryleakInMain && mSettings.isSvcompMemtrackCompatibilityMode()) {
+				new Overapprox("memtrack", loc).annotate(st);
+			}
 		} else {
 			st = new AssumeStatement(loc, falseLiteral);
 		}

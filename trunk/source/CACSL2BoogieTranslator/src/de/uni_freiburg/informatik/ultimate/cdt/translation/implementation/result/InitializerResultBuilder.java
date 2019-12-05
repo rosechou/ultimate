@@ -29,6 +29,10 @@ package de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.resul
 import java.util.ArrayList;
 import java.util.List;
 
+import de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.result.InitializerResult.ArrayDesignator;
+import de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.result.InitializerResult.Designator;
+import de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.result.InitializerResult.StructDesignator;
+
 /**
  * Builder of InitializerResults.
  *
@@ -41,7 +45,7 @@ public class InitializerResultBuilder {
 	 * It is possible to give a struct initializer that lists the fields out of order by giving designators for each
 	 * initialization value.
 	 */
-	private String mRootDesignator = null;
+	private Designator mRootDesignator = null;
 
 	/**
 	 * The initializer contents for this tree node.
@@ -83,7 +87,16 @@ public class InitializerResultBuilder {
 		if (mRootDesignator != null) {
 			throw new IllegalStateException("cannot set root designator twice");
 		}
-		mRootDesignator = fieldDesignatorName;
+		mRootDesignator = new StructDesignator(fieldDesignatorName);
+		return this;
+	}
+
+
+	public InitializerResultBuilder setRootDesignator(final Integer arrayDesignatorNumber) {
+		if (mRootDesignator != null) {
+			throw new IllegalStateException("cannot set root designator twice");
+		}
+		mRootDesignator = new ArrayDesignator(arrayDesignatorNumber);
 		return this;
 	}
 
@@ -94,4 +107,5 @@ public class InitializerResultBuilder {
 		mRootExpressionResult = initializerResult;
 		return this;
 	}
+
 }

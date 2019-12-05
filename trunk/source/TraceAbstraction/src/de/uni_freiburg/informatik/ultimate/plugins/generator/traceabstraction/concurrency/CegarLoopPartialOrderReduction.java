@@ -1,4 +1,4 @@
-package de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstractionconcurrent;
+package de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.concurrency;
 
 import java.util.Collection;
 
@@ -14,14 +14,15 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.I
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.debugidentifiers.DebugIdentifier;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.predicates.IPredicate;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.predicates.PredicateFactory;
+import de.uni_freiburg.informatik.ultimate.lib.tracecheckerutils.independencerelation.SemanticIndependenceRelation;
 import de.uni_freiburg.informatik.ultimate.lib.tracecheckerutils.singletracecheck.InterpolationTechnique;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.BasicCegarLoop;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TAPreferences;
 
-public class CegarLoopPartialOrderReduction<LETTER extends IIcfgTransition<?>> extends BasicCegarLoop<LETTER> {
+public class CegarLoopPartialOrderReduction extends BasicCegarLoop<IIcfgTransition<?>> {
 
-	private final IIndependenceRelation<IPredicate, LETTER> mRelation1;
-	private final IIndependenceRelation<IPredicate, LETTER> mRelation2;
+	private final IIndependenceRelation<IPredicate, IIcfgTransition<?>> mRelation1;
+	private final IIndependenceRelation<IPredicate, IIcfgTransition<?>> mRelation2;
 
 	public CegarLoopPartialOrderReduction(final DebugIdentifier name, final IIcfg<?> rootNode,
 			final CfgSmtToolkit csToolkit, final PredicateFactory predicateFactory, final TAPreferences taPrefs,
@@ -29,18 +30,19 @@ public class CegarLoopPartialOrderReduction<LETTER extends IIcfgTransition<?>> e
 		super(name, rootNode, csToolkit, predicateFactory, taPrefs, errorLocs,
 				InterpolationTechnique.Craig_TreeInterpolation, false, services);
 
-		mRelation1 = null; // TODO
-		mRelation2 = null; // TODO
+		mRelation1 = new SemanticIndependenceRelation(services, csToolkit.getManagedScript(), true, false);
+		mRelation2 = mRelation1; // TODO: independence with abstraction
 	}
 
 	@Override
 	protected boolean isAbstractionEmpty() throws AutomataOperationCanceledException {
-		final DualPartialOrderInclusionCheck<IPredicate, IPredicate, LETTER> check = new DualPartialOrderInclusionCheck<>(
-				mRelation1, mRelation2, (INestedWordAutomaton<LETTER, IPredicate>) mAbstraction, mInterpolAutomaton,
-				true);
-		if (!check.getResult()) {
+		final DualPartialOrderInclusionCheck<IPredicate, IPredicate, IIcfgTransition<?>> check = new DualPartialOrderInclusionCheck<>(
+				mRelation1, mRelation2, (INestedWordAutomaton<IIcfgTransition<?>, IPredicate>) mAbstraction,
+				mInterpolAutomaton, true);
+		final boolean result = check.getResult();
+		if (!result) {
 			mCounterexample = check.getCounterexample();
 		}
-		return check.getResult();
+		return result;
 	}
 }

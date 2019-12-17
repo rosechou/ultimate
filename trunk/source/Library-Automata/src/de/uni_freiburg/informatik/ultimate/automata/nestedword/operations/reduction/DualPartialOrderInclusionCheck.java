@@ -162,8 +162,8 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 				final STATE1 nextLocation = getSuccessor(mProgram, location, a);
 				final STATE2 nextPredicate = getSuccessor(mProof, predicate, a);
 
-				final Set<LETTER> nextSleep1 = recomputeSleep(false, sleepSet1, done, predicate, a);
-				final Set<LETTER> nextSleep2 = recomputeSleep(true, sleepSet2, done, predicate, a);
+				final Set<LETTER> nextSleep1 = recomputeSleep(false, sleepSet1, sleepSet2, done, predicate, a);
+				final Set<LETTER> nextSleep2 = recomputeSleep(true, sleepSet1, sleepSet2, done, predicate, a);
 
 				final SearchState nextNode = new SearchState(nextLocation, nextPredicate, nextSleep1, nextSleep2);
 				final boolean onStack = mStackSet.contains(nextNode);
@@ -218,14 +218,24 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 		return new Pair<>(null, switched);
 	}
 
-	private final Set<LETTER> recomputeSleep(final boolean switched, final Set<LETTER> oldSleepSet,
-			final Set<Pair<LETTER, Boolean>> done, final STATE2 context, final LETTER action) {
-		final Set<LETTER> newSleepSet = new HashSet<>(oldSleepSet.size() + done.size());
+	private final Set<LETTER> recomputeSleep(final boolean switched, final Set<LETTER> oldSleepSet1,
+			final Set<LETTER> oldSleepSet2, final Set<Pair<LETTER, Boolean>> done, final STATE2 context,
+			final LETTER action) {
+		final Set<LETTER> newSleepSet = new HashSet<>(
+				oldSleepSet1.size() + (switched ? oldSleepSet2.size() : 0) + done.size());
 		final IIndependenceRelation<STATE2, LETTER> relation = switched ? mRelation1 : mRelation2;
 
-		for (final LETTER sleepAction : oldSleepSet) {
+		for (final LETTER sleepAction : oldSleepSet1) {
 			if (relation.contains(context, sleepAction, action)) {
 				newSleepSet.add(sleepAction);
+			}
+		}
+
+		if (switched) {
+			for (final LETTER sleepAction : oldSleepSet2) {
+				if (relation.contains(context, sleepAction, action)) {
+					newSleepSet.add(sleepAction);
+				}
 			}
 		}
 

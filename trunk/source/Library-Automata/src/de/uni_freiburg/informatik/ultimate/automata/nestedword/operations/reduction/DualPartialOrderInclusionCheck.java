@@ -46,14 +46,14 @@ import de.uni_freiburg.informatik.ultimate.automata.nestedword.transitions.Outgo
 import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.Pair;
 
 /**
- * Employs a modified sleep set algorithm to check if a given proof is
- * sufficient to prove a given program correct. A proof is considered
- * sufficient, if its closure under two independence relations (in a fixed
- * order) contains the program.
+ * Employs a modified sleep set algorithm to check if a given automaton A is
+ * included in the "double-closure" of a second automaton B under two
+ * independence relations (in a fixed order), i.e., whether A ⊆ cl2( cl1( B ) ).
  *
  * As this problem is undecidable (even for a single independence relation), the
  * check implemented here is sound but not complete: Even when a counterexample
- * is found, the proof might actually have been sufficient.
+ * is found, the inclusion might still hold. When no counterexample is found
+ * however, the inclusion is guaranteed to hold.
  *
  * @author Dominik Klumpp (klumpp@informatik.uni-freiburg.de)
  *
@@ -65,8 +65,8 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	private final IIndependenceRelation<STATE2, LETTER> mRelation1;
 	private final IIndependenceRelation<STATE2, LETTER> mRelation2;
 
-	private final INestedWordAutomaton<LETTER, STATE1> mProgram;
-	private final INestedWordAutomaton<LETTER, STATE2> mProof;
+	private final INestedWordAutomaton<LETTER, STATE1> mOperandA;
+	private final INestedWordAutomaton<LETTER, STATE2> mOperandB;
 	private final NestedRun<LETTER, STATE1> mCounterexample;
 
 	private final LinkedList<SearchState> mStack = new LinkedList<>();
@@ -78,16 +78,17 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	private final boolean mAssumeProofSinkAccept;
 
 	public DualPartialOrderInclusionCheck(final IIndependenceRelation<STATE2, LETTER> relation1,
-			final IIndependenceRelation<STATE2, LETTER> relation2, final INestedWordAutomaton<LETTER, STATE1> program,
-			final INestedWordAutomaton<LETTER, STATE2> proof, final boolean assumeProofSinkAccept) {
+			final IIndependenceRelation<STATE2, LETTER> relation2, final INestedWordAutomaton<LETTER, STATE1> operandA,
+			final INestedWordAutomaton<LETTER, STATE2> operandB, final boolean assumeProofSinkAccept) {
 		mRelation1 = relation1;
 		mRelation2 = relation2;
 
-		mProgram = program;
-		mProof = proof;
+		mOperandA = operandA;
+		mOperandB = operandB;
 		mAssumeProofSinkAccept = assumeProofSinkAccept;
 
-		if (!NestedWordAutomataUtils.isFiniteAutomaton(program) || !NestedWordAutomataUtils.isFiniteAutomaton(proof)) {
+		if (!NestedWordAutomataUtils.isFiniteAutomaton(operandA)
+				|| !NestedWordAutomataUtils.isFiniteAutomaton(operandB)) {
 			throw new UnsupportedOperationException("POR does not support calls and returns.");
 		}
 
@@ -95,8 +96,8 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	}
 
 	/**
-	 * @return The result of the inclusion check: {@code true} if the program is
-	 *         guaranteed to be covered by the proof, {@code false} otherwise.
+	 * @return The result of the inclusion check: {@code true} if the double-closure
+	 *         inclusion is guaranteed to hold, {@code false} otherwise.
 	 */
 	public boolean getResult() {
 		return mCounterexample == null;
@@ -104,18 +105,18 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 
 	/**
 	 * Retrieves the counterexample found during the search, if any. This is an
-	 * automaton run leading from the program's initial location to an error
-	 * location. The corresponding word is guaranteed not to be accepted by the
-	 * proof automaton.
+	 * automaton run leading from the first operand's initial location to an
+	 * accepting state. The corresponding word is guaranteed not to be accepted by
+	 * the second operand.
 	 */
 	public NestedRun<LETTER, STATE1> getCounterexample() {
 		return mCounterexample;
 	}
 
 	private final NestedRun<LETTER, STATE1> performCheck() {
-		final STATE1 initialLoc = getInitial(mProgram);
-		final STATE2 initialPred = getInitial(mProof);
-		final SearchState initial = new SearchState(initialLoc, initialPred, Collections.emptySet(),
+		final STATE1 initialStateA = getInitial(mOperandA);
+		final STATE2 initialStateB = getInitial(mOperandB);
+		final SearchState initial = new SearchState(initialStateA, initialStateB, Collections.emptySet(),
 				Collections.emptySet());
 
 		mStack.addLast(initial);
@@ -134,21 +135,21 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	}
 
 	private final Pair<ArrayDeque<LETTER>, Boolean> search(final SearchState currentNode) {
-		final STATE1 location = currentNode.mLocation;
-		final STATE2 predicate = currentNode.mPredicate;
+		final STATE1 stateA = currentNode.mStateA;
+		final STATE2 stateB = currentNode.mStateB;
 		final Set<LETTER> sleepSet1 = currentNode.mSleep1;
 		final Set<LETTER> sleepSet2 = currentNode.mSleep2;
 
-		if (mProgram.isFinal(location) && !mProof.isFinal(predicate)) {
+		if (mOperandA.isFinal(stateA) && !mOperandB.isFinal(stateB)) {
 			// A counterexample has been found.
 			return new Pair<>(new ArrayDeque<>(), false);
-		} else if (mProof.isFinal(predicate) && mAssumeProofSinkAccept) {
-			// Assumes any final state of mProof is a sink state.
+		} else if (mOperandB.isFinal(stateB) && mAssumeProofSinkAccept) {
+			// Assumes any final state of mOperandB is a sink state.
 			// Hence we can abort the search here.
 			return new Pair<>(null, false);
 		}
 
-		final Set<LETTER> enabledActions = mProgram.lettersInternal(location);
+		final Set<LETTER> enabledActions = mOperandA.lettersInternal(stateA);
 		final Set<Pair<LETTER, Boolean>> done = new HashSet<>(enabledActions.size());
 		boolean switched = false;
 
@@ -159,13 +160,13 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 			if (sleepSet.contains(a)) {
 				callSwitched = switched;
 			} else {
-				final STATE1 nextLocation = getSuccessor(mProgram, location, a);
-				final STATE2 nextPredicate = getSuccessor(mProof, predicate, a);
+				final STATE1 nextStateA = getSuccessor(mOperandA, stateA, a);
+				final STATE2 nextStateB = getSuccessor(mOperandB, stateB, a);
 
-				final Set<LETTER> nextSleep1 = recomputeSleep(false, sleepSet1, sleepSet2, done, predicate, a);
-				final Set<LETTER> nextSleep2 = recomputeSleep(true, sleepSet1, sleepSet2, done, predicate, a);
+				final Set<LETTER> nextSleep1 = recomputeSleep(false, sleepSet1, sleepSet2, done, stateB, a);
+				final Set<LETTER> nextSleep2 = recomputeSleep(true, sleepSet1, sleepSet2, done, stateB, a);
 
-				final SearchState nextNode = new SearchState(nextLocation, nextPredicate, nextSleep1, nextSleep2);
+				final SearchState nextNode = new SearchState(nextStateA, nextStateB, nextSleep1, nextSleep2);
 				final boolean onStack = mStackSet.contains(nextNode);
 				if (onStack || mVisited.containsKey(nextNode)) {
 					callSwitched = mVisited.getOrDefault(nextNode, false);
@@ -255,10 +256,10 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 		final NestedWord<LETTER> nestedWord = NestedWord.nestedWord(word);
 
 		final ArrayList<STATE1> stateSequence = new ArrayList<>(word.length() + 1);
-		STATE1 current = getInitial(mProgram);
+		STATE1 current = getInitial(mOperandA);
 		stateSequence.add(current);
 		for (final LETTER a : word) {
-			current = getSuccessor(mProgram, current, a);
+			current = getSuccessor(mOperandA, current, a);
 			stateSequence.add(current);
 		}
 
@@ -283,14 +284,15 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	}
 
 	private final class SearchState {
-		private final STATE1 mLocation;
-		private final STATE2 mPredicate;
+		private final STATE1 mStateA;
+		private final STATE2 mStateB;
 		private final Set<LETTER> mSleep1;
 		private final Set<LETTER> mSleep2;
 
-		public SearchState(final STATE1 loc, final STATE2 pred, final Set<LETTER> sleep1, final Set<LETTER> sleep2) {
-			mLocation = loc;
-			mPredicate = pred;
+		public SearchState(final STATE1 stateA, final STATE2 stateB, final Set<LETTER> sleep1,
+				final Set<LETTER> sleep2) {
+			mStateA = stateA;
+			mStateB = stateB;
 			mSleep1 = sleep1;
 			mSleep2 = sleep2;
 		}
@@ -299,8 +301,8 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 		public int hashCode() {
 			final int prime = 31;
 			int result = 1;
-			result = prime * result + ((mLocation == null) ? 0 : mLocation.hashCode());
-			result = prime * result + ((mPredicate == null) ? 0 : mPredicate.hashCode());
+			result = prime * result + ((mStateA == null) ? 0 : mStateA.hashCode());
+			result = prime * result + ((mStateB == null) ? 0 : mStateB.hashCode());
 			result = prime * result + ((mSleep1 == null) ? 0 : mSleep1.hashCode());
 			result = prime * result + ((mSleep2 == null) ? 0 : mSleep2.hashCode());
 			return result;
@@ -315,7 +317,7 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 
 			@SuppressWarnings("unchecked")
 			SearchState other = (SearchState) obj;
-			return mLocation == other.mLocation && mPredicate == other.mPredicate && mSleep1.equals(other.mSleep1)
+			return mStateA == other.mStateA && mStateB == other.mStateB && mSleep1.equals(other.mSleep1)
 					&& mSleep2.equals(other.mSleep2);
 		}
 	}

@@ -52,7 +52,8 @@ import de.uni_freiburg.informatik.ultimate.logic.Script.LBool;
  *
  * @author Dominik Klumpp (klumpp@informatik.uni-freiburg.de)
  */
-public class SemanticIndependenceRelation implements IIndependenceRelation<IPredicate, IIcfgTransition<?>> {
+public class SemanticIndependenceRelation<LETTER extends IIcfgTransition<?>>
+		implements IIndependenceRelation<IPredicate, LETTER> {
 
 	private final IUltimateServiceProvider mServices;
 	private final ManagedScript mManagedScript;
@@ -126,7 +127,7 @@ public class SemanticIndependenceRelation implements IIndependenceRelation<IPred
 	}
 
 	@Override
-	public boolean contains(final IPredicate state, final IIcfgTransition<?> a, final IIcfgTransition<?> b) {
+	public boolean contains(final IPredicate state, final LETTER a, final LETTER b) {
 		assert a instanceof IInternalAction && b instanceof IInternalAction;
 
 		final long startTime = System.nanoTime();

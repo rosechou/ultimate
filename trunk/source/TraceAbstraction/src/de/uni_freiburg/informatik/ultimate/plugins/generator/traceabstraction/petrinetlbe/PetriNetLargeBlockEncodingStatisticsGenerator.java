@@ -164,7 +164,7 @@ public class PetriNetLargeBlockEncodingStatisticsGenerator extends StatisticsGen
 		return PetriNetLargeBlockEncodingStatisticsType.getInstance().getKeys();
 	}
 
-	public void extractStatistics(final SemanticIndependenceRelation semanticBasedCheck) {
+	public void extractStatistics(final SemanticIndependenceRelation<?> semanticBasedCheck) {
 		if (semanticBasedCheck != null) {
 			mSemBasedMoverChecksPositive = semanticBasedCheck.getPositiveQueries();
 			mSemBasedMoverChecksNegative = semanticBasedCheck.getNegativeQueries();

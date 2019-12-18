@@ -168,7 +168,7 @@ public class PetriNetLargeBlockEncoding {
 			case SEMANTIC_BASED_MOVER_CHECK:
 				// TODO: Add more detail to log message
 				mLogger.info("Semantic Check.");
-				semanticBasedCheck = new SemanticIndependenceRelation(mServices, mManagedScript, false, false);
+				semanticBasedCheck = new SemanticIndependenceRelation<>(mServices, mManagedScript, false, false);
 				mCachedSemanticBasedIr = new CachedIndependenceRelation<>(semanticBasedCheck);
 				mMoverCheck =
 						new UnionIndependenceRelation<>(Arrays.asList(mCachedVariableBasedIr, mCachedSemanticBasedIr));
@@ -213,7 +213,7 @@ public class PetriNetLargeBlockEncoding {
 			// mCachedCheck2.getNegativeCacheSize() + mCachedCheck2.getPositiveCacheSize()));
 			mLogger.info("Total number of compositions: " + mNoOfCompositions);
 			mResult = resultCurrentIteration;
-			mPetriNetLargeBlockEncodingStatistics.extractStatistics((SemanticIndependenceRelation) semanticBasedCheck);
+			mPetriNetLargeBlockEncodingStatistics.extractStatistics((SemanticIndependenceRelation<IIcfgTransition<?>>) semanticBasedCheck);
 			mPetriNetLargeBlockEncodingStatistics
 					.extractStatistics((SyntacticIndependenceRelation<?>) variableBasedCheckIr);
 		} catch (final AutomataOperationCanceledException aoce) {

@@ -19,10 +19,10 @@ import de.uni_freiburg.informatik.ultimate.lib.tracecheckerutils.singletracechec
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.BasicCegarLoop;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TAPreferences;
 
-public class CegarLoopPartialOrderReduction extends BasicCegarLoop<IIcfgTransition<?>> {
+public class CegarLoopPartialOrderReduction<LETTER extends IIcfgTransition<?>> extends BasicCegarLoop<LETTER> {
 
-	private final IIndependenceRelation<IPredicate, IIcfgTransition<?>> mRelation1;
-	private final IIndependenceRelation<IPredicate, IIcfgTransition<?>> mRelation2;
+	private final IIndependenceRelation<IPredicate, LETTER> mRelation1;
+	private final IIndependenceRelation<IPredicate, LETTER> mRelation2;
 
 	public CegarLoopPartialOrderReduction(final DebugIdentifier name, final IIcfg<?> rootNode,
 			final CfgSmtToolkit csToolkit, final PredicateFactory predicateFactory, final TAPreferences taPrefs,
@@ -30,15 +30,15 @@ public class CegarLoopPartialOrderReduction extends BasicCegarLoop<IIcfgTransiti
 		super(name, rootNode, csToolkit, predicateFactory, taPrefs, errorLocs,
 				InterpolationTechnique.Craig_TreeInterpolation, false, services);
 
-		mRelation1 = new SemanticIndependenceRelation(services, csToolkit.getManagedScript(), true, false);
+		mRelation1 = new SemanticIndependenceRelation<>(services, csToolkit.getManagedScript(), true, false);
 		mRelation2 = mRelation1; // TODO: independence with abstraction
 	}
 
 	@Override
 	protected boolean isAbstractionEmpty() throws AutomataOperationCanceledException {
-		final DualPartialOrderInclusionCheck<IPredicate, IPredicate, IIcfgTransition<?>> check = new DualPartialOrderInclusionCheck<>(
-				mRelation1, mRelation2, (INestedWordAutomaton<IIcfgTransition<?>, IPredicate>) mAbstraction,
-				mInterpolAutomaton, true);
+		final DualPartialOrderInclusionCheck<IPredicate, IPredicate, LETTER> check = new DualPartialOrderInclusionCheck<>(
+				mRelation1, mRelation2, (INestedWordAutomaton<LETTER, IPredicate>) mAbstraction, mInterpolAutomaton,
+				true);
 		final boolean result = check.getResult();
 		if (!result) {
 			mCounterexample = check.getCounterexample();

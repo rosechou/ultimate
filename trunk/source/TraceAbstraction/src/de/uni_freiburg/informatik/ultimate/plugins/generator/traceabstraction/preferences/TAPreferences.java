@@ -86,7 +86,7 @@ public final class TAPreferences {
 	}
 
 	public enum Concurrency {
-		FINITE_AUTOMATA, PETRI_NET
+		FINITE_AUTOMATA, PETRI_NET, DUAL_POR
 	}
 
 	public TAPreferences(final IUltimateServiceProvider services) {

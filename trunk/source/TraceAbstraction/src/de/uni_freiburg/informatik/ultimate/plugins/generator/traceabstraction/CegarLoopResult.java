@@ -54,6 +54,7 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.predicates.
 import de.uni_freiburg.informatik.ultimate.logic.Term;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.AbstractCegarLoop.Result;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.concurrency.CegarLoopForPetriNet;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.concurrency.CegarLoopPartialOrderReduction;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.interpolantautomata.transitionappender.AbstractInterpolantAutomaton;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TAPreferences;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TAPreferences.Concurrency;
@@ -239,6 +240,14 @@ public class CegarLoopResult<LETTER extends IIcfgTransition<?>> {
 					} else {
 						result = new CegarLoopForPetriNet<>(name, root, csToolkit, predicateFactory, taPrefs, errorLocs,
 								services);
+					}
+				}
+					break;
+				case DUAL_POR: {
+					if (taPrefs.getFloydHoareAutomataReuse() != FloydHoareAutomataReuse.NONE) {
+						throw new UnsupportedOperationException("Reuse with POR-based analysis");
+					} else {
+						result = new CegarLoopPartialOrderReduction<>(name, root, csToolkit, predicateFactory, taPrefs, errorLocs, services);
 					}
 				}
 					break;

@@ -75,17 +75,32 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	private final ArrayDeque<Integer> mRestartQueue = new ArrayDeque<>();
 	private final Map<SearchState, Boolean> mVisited = new HashMap<>();
 
-	private final boolean mAssumeProofSinkAccept;
+	private final boolean mAcceptIsSinkB;
 
+	/**
+	 * Creates a new instance of the check.
+	 *
+	 * @param relation1
+	 *            The independence relation whose closure is applied first.
+	 * @param relation2
+	 *            The independence relation whose closure is applied second.
+	 * @param operandA
+	 *            The left side of the inclusion to check.
+	 * @param operandB
+	 *            The automaton on the right side of the inclusion to check.
+	 * @param acceptIsSinkB
+	 *            If true, the check assumes all accepting states of operandB are
+	 *            sink states.
+	 */
 	public DualPartialOrderInclusionCheck(final IIndependenceRelation<STATE2, LETTER> relation1,
 			final IIndependenceRelation<STATE2, LETTER> relation2, final INestedWordAutomaton<LETTER, STATE1> operandA,
-			final INestedWordAutomaton<LETTER, STATE2> operandB, final boolean assumeProofSinkAccept) {
+			final INestedWordAutomaton<LETTER, STATE2> operandB, final boolean acceptIsSinkB) {
 		mRelation1 = relation1;
 		mRelation2 = relation2;
 
 		mOperandA = operandA;
 		mOperandB = operandB;
-		mAssumeProofSinkAccept = assumeProofSinkAccept;
+		mAcceptIsSinkB = acceptIsSinkB;
 
 		if (!NestedWordAutomataUtils.isFiniteAutomaton(operandA)
 				|| !NestedWordAutomataUtils.isFiniteAutomaton(operandB)) {
@@ -143,7 +158,7 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 		if (mOperandA.isFinal(stateA) && !mOperandB.isFinal(stateB)) {
 			// A counterexample has been found.
 			return new Pair<>(new ArrayDeque<>(), false);
-		} else if (mOperandB.isFinal(stateB) && mAssumeProofSinkAccept) {
+		} else if (mOperandB.isFinal(stateB) && mAcceptIsSinkB) {
 			// Assumes any final state of mOperandB is a sink state.
 			// Hence we can abort the search here.
 			return new Pair<>(null, false);

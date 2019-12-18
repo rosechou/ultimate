@@ -1,3 +1,29 @@
+/*
+ * Copyright (C) 2019 Nico Hauff (hauffn@informatik.uni-freiburg.de)
+ * Copyright (C) 2019 University of Freiburg
+ *
+ * This file is part of the ULTIMATE Library-srParse plug-in.
+ *
+ * The ULTIMATE Library-srParse plug-in is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The ULTIMATE Library-srParse plug-in is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with the ULTIMATE Library-srParse plug-in. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Additional permission under GNU GPL version 3 section 7:
+ * If you modify the ULTIMATE Library-srParse plug-in, or any covered work, by linking
+ * or combining it with Eclipse RCP (or a modified version of Eclipse RCP),
+ * containing parts covered by the terms of the Eclipse Public License, the
+ * licensors of the ULTIMATE Library-srParse plug-in grant you additional permission
+ * to convey the resulting work.
+ */
 package de.uni_freiburg.informatik.ultimate.srparse.test;
 
 import java.io.BufferedWriter;
@@ -17,6 +43,7 @@ import java.util.stream.Stream;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -46,11 +73,12 @@ import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.Pair;
  */
 @RunWith(Parameterized.class)
 public class PeaToDotTestSuite {
+	// Set to true, if you want to create new svg and markdown files for the hanfor documentation.
+	private static final Boolean createNewFiles = false;
 
 	private static final File ROOT_DIR = new File("/mnt/Daten/projects/hanfor/documentation/docs");
 	private static final File MARKDOWN_DIR = new File(ROOT_DIR + "/references/patterns");
 	private static final File IMAGE_DIR = new File(ROOT_DIR + "/img/patterns");
-	private static final int TOC_DEPTH = 3;
 
 	private static final String LINE_SEP = System.lineSeparator();
 
@@ -77,10 +105,14 @@ public class PeaToDotTestSuite {
 		mScopeName = scopeName.replace(scopePrefix, "");
 	}
 
-	// @Test
+	@Test
 	public void testDot() throws IOException, InterruptedException {
 		final PhaseEventAutomata pea;
 		final CounterTrace counterTrace;
+
+		if (!createNewFiles) {
+			return;
+		}
 
 		try {
 			pea = mPattern.transformToPea(mLogger, mDurationToBounds);
@@ -99,6 +131,11 @@ public class PeaToDotTestSuite {
 		final String[] command = new String[] { "dot", "-Tsvg", "-o", file.toString() };
 		final MonitoredProcess process = MonitoredProcess.exec(command, null, null, mServiceProvider);
 		final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
+
+		if (!createNewFiles) {
+			return;
+		}
+
 		writer.write(dot.toString());
 		writer.close();
 
@@ -106,6 +143,10 @@ public class PeaToDotTestSuite {
 	}
 
 	private void writeMarkdownFile(final String counterTrace) throws IOException {
+		if (!createNewFiles) {
+			return;
+		}
+
 		final File file = new File(MARKDOWN_DIR + "/" + mPatternName + ".md");
 		final StringBuilder stringBuilder = new StringBuilder();
 		final Formatter fmt = new Formatter(stringBuilder);
@@ -129,6 +170,10 @@ public class PeaToDotTestSuite {
 
 	@BeforeClass
 	public static void beforeClass() {
+		if (!createNewFiles) {
+			return;
+		}
+
 		// Check if root directory exists.
 		assert (Files.isDirectory(ROOT_DIR.toPath())) : "Directory not found: " + ROOT_DIR;
 
@@ -147,6 +192,10 @@ public class PeaToDotTestSuite {
 
 	@AfterClass
 	public static void afterClass() throws IOException {
+		if (!createNewFiles) {
+			return;
+		}
+
 		final StringBuilder stringBuilder = new StringBuilder();
 		final Formatter fmt = new Formatter(stringBuilder);
 		// fmt.format("toc_depth: %d%s%s", TOC_DEPTH, LINE_SEP, LINE_SEP);

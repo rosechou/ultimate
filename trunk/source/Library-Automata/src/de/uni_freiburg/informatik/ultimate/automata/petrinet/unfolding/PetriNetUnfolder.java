@@ -78,7 +78,7 @@ public final class PetriNetUnfolder<LETTER, PLACE> {
 
 	private final PetriNetUnfolder<LETTER, PLACE>.Statistics mStatistics = new Statistics();
 
-	private final boolean mUseCutoffChekingPossibleExtention = false;
+	private static final boolean USE_FIRSTBORN_CUTOFF_CHECK = true;
 
 
 	/**
@@ -119,12 +119,8 @@ public final class PetriNetUnfolder<LETTER, PLACE> {
 			default:
 				throw new IllegalArgumentException();
 		}
-		mUnfolding = new BranchingProcess<>(mServices, operand, mOrder, mUseCutoffChekingPossibleExtention);
-		if (mUseCutoffChekingPossibleExtention) {
-			mPossibleExtensions = new CuttOffCheckingPossibleExtensions<>(mUnfolding, mOrder);
-		} else {
-			mPossibleExtensions = new PossibleExtensions<>(mUnfolding, mOrder);
-		}
+		mUnfolding = new BranchingProcess<>(mServices, operand, mOrder, USE_FIRSTBORN_CUTOFF_CHECK);
+		mPossibleExtensions = new PossibleExtensions<>(mUnfolding, mOrder, USE_FIRSTBORN_CUTOFF_CHECK);
 
 		computeUnfolding();
 		mLogger.info(mStatistics.prettyprintCutOffInformation());
@@ -178,7 +174,7 @@ public final class PetriNetUnfolder<LETTER, PLACE> {
 	private boolean computeUnfoldingHelper(final Event<LETTER, PLACE> event) throws PetriNetNot1SafeException {
 		assert !parentIsCutoffEvent(event) : "We must not construct successors of cut-off events.";
 		boolean isCutOffEvent;
-		if (!mUseCutoffChekingPossibleExtention) {
+		if (!USE_FIRSTBORN_CUTOFF_CHECK) {
 			isCutOffEvent = mUnfolding.isCutoffEvent(event, mOrder, mSameTransitionCutOff);
 		}
 		else {
@@ -369,16 +365,22 @@ public final class PetriNetUnfolder<LETTER, PLACE> {
 				events = new HashSet<>();
 				mark2Events.put(marking, events);
 			}
-			if (!events.isEmpty()) {
-				mLogger.info("inserting again Event for Transition " + transition + " and Marking " + marking);
-				mLogger.info("new Event has " + event.getAncestors() + " ancestors and is "
+			if (events.size() > 2) {
+				// 2019-12-15 Matthias: Adding an event twice for a transition-marking pair is
+				// very natural.
+				// We write log messages only if an event was added three or more times. This
+				// should only happen if we use an order that is not total.
+				mLogger.info("inserting event number " + (events.size() + 1) + " for the transition-marking pair ("
+						+ transition + ", " + marking + ")");
+				mLogger.info("this new event has " + event.getAncestors() + " ancestors and is "
 						+ (event.isCutoffEvent() ? "" : "not ") + "cut-off event");
 				for (final Event<LETTER, PLACE> event2 : events) {
 					mLogger.info("  existing Event has " + event2.getAncestors() + " ancestors and is "
 							+ (event.isCutoffEvent() ? "" : "not ") + "cut-off event");
-					assert event2.getAncestors() == event.getAncestors() || event.isCutoffEvent() ||event2.isCutoffEvent() : "if there is "
-							+ "already an event that has the same marking and a different size of "
-							+ "local configuration then the new event must be cut-off event";
+					assert event2.getAncestors() == event.getAncestors() || event.isCutoffEvent()
+							|| event2.isCutoffEvent() : "if there is "
+									+ "already an event that has the same marking and a different size of "
+									+ "local configuration then the new event must be cut-off event";
 				}
 			}
 			events.add(event);

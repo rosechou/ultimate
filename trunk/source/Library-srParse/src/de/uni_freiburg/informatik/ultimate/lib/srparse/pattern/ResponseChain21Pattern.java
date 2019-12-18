@@ -1,3 +1,29 @@
+/*
+ * Copyright (C) 2018 Daniel Dietsch (dietsch@informatik.uni-freiburg.de)
+ * Copyright (C) 2018 University of Freiburg
+ *
+ * This file is part of the ULTIMATE Library-srParse plug-in.
+ *
+ * The ULTIMATE Library-srParse plug-in is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The ULTIMATE Library-srParse plug-in is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with the ULTIMATE Library-srParse plug-in. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Additional permission under GNU GPL version 3 section 7:
+ * If you modify the ULTIMATE Library-srParse plug-in, or any covered work, by linking
+ * or combining it with Eclipse RCP (or a modified version of Eclipse RCP),
+ * containing parts covered by the terms of the Eclipse Public License, the
+ * licensors of the ULTIMATE Library-srParse plug-in grant you additional permission
+ * to convey the resulting work.
+ */
 package de.uni_freiburg.informatik.ultimate.lib.srparse.pattern;
 
 import java.util.List;
@@ -9,10 +35,7 @@ import de.uni_freiburg.informatik.ultimate.lib.srparse.SrParseScopeBefore;
 import de.uni_freiburg.informatik.ultimate.lib.srparse.SrParseScopeBetween;
 
 /**
- * TODO: fix description
- *
- * {scope}, it is always the case that if "" holds and is succeeded by "P", then
- * "S" eventually holds after "T"
+ * {scope}, it is always the case that if "U" holds and is succeeded by "T", then "S" eventually holds after "R"
  *
  * @author Daniel Dietsch (dietsch@informatik.uni-freiburg.de)
  *
@@ -28,23 +51,27 @@ public class ResponseChain21Pattern extends PatternType {
 	public CounterTrace transform(final CDD[] cdds, final int[] durations) {
 		final SrParseScope scope = getScope();
 		// note: P and Q are reserved for scope, cdds are parsed in reverse order
-		final CDD R = getCdds().get(2);
-		final CDD S = getCdds().get(1);
-		final CDD T = getCdds().get(0);
+		final CDD U = cdds[0];
+		final CDD T = cdds[1];
+		final CDD S = cdds[2];
+		final CDD R = cdds[3];
 
+		final CounterTrace ct;
 		if (scope instanceof SrParseScopeBefore) {
 			final CDD P = getScope().getCdd1();
-			final CounterTrace ct = counterTrace(phase(P.negate()), phase(S.and(P.negate()).and(T.negate())),
-					phase(P.negate()), phase(T.and(P.negate())), phase(R.negate().and(P.negate())), phase(P), phaseT());
+			// TODO: fix countertrace
+			ct = counterTrace(phase(P.negate()), phase(R.and(P.negate()).and(S.negate())),
+					phase(P.negate().and(S).and(R.negate())), phase(P.negate()), phase(P.negate().and(U)),
+					phase(P.negate().and(T.negate())), phase(P), phaseT());
 
 			return ct;
 		} else if (scope instanceof SrParseScopeBetween) {
 			final CDD P = getScope().getCdd1();
 			final CDD Q = getScope().getCdd2();
-			final CounterTrace ct = counterTrace(phaseT(), phase(P.and(Q.negate())), phase(Q.negate()),
-					phase(S.and(Q.negate()).and(T.negate())), phase(Q.negate()), phase(T.and(Q.negate())),
-					phase(R.negate().and(Q.negate())), phase(Q), phaseT());
-
+			// TODO: fix countertrace
+			ct = counterTrace(phaseT(), phase(P.and(Q.negate())), phase(Q.negate()), phase(Q.negate().and(R)),
+					phase(Q.negate().and(S)), phase(Q.negate()), phase(Q.negate().and(U)),
+					phase(Q.negate().and(T.negate())), phase(Q), phaseT());
 			return ct;
 		}
 		throw new PatternScopeNotImplemented(scope.getClass(), getClass());

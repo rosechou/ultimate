@@ -156,16 +156,6 @@ public class StrategyModuleFactory<LETTER extends IIcfgTransition<?>> {
 				mCounterexample, mPredicateUnifier, mPrefs));
 	}
 
-	public StrategyModuleMcr<LETTER> createStrategyModuleMcr(final StrategyFactory<LETTER> strategyFactory) {
-		isOnlyDefaultPrePostConditions();
-		final boolean useInterpolantConsolidation = mPrefs.getUseInterpolantConsolidation();
-		if (useInterpolantConsolidation) {
-			throw new UnsupportedOperationException("Interpolant consolidation and MCR cannot be combined");
-		}
-		return new StrategyModuleMcr<>(mLogger, mPrefs, mPredicateUnifier, mEmptyStackFactory, strategyFactory,
-				mCounterexample, mAbstraction, mTaskIdentifier);
-	}
-
 	public IIpTcStrategyModule<?, LETTER> createIpTcStrategyModulePreferences() {
 		return createModuleWrapperIfNecessary(new IpTcStrategyModulePreferences<>(mTaskIdentifier, mServices, mPrefs,
 				mCounterexample, mPrecondition, mPostcondition,
@@ -197,6 +187,8 @@ public class StrategyModuleFactory<LETTER extends IIcfgTransition<?>> {
 		case ABSTRACT_INTERPRETATION:
 			return createIpAbStrategyModuleAbstractInterpretation(
 					(IpTcStrategyModuleAbstractInterpretation<LETTER>) preferenceIpTc);
+		case MCR:
+			return createIpAbStrategyModuleMcr();
 		case TOTALINTERPOLATION:
 		default:
 			throw new IllegalArgumentException("Setting " + mTaPrefs.interpolantAutomaton() + " is unsupported");
@@ -221,6 +213,11 @@ public class StrategyModuleFactory<LETTER extends IIcfgTransition<?>> {
 	public IIpAbStrategyModule<LETTER> createIpAbStrategyModuleCanonical() {
 		return new IpAbStrategyModuleCanonical<>(mServices, mLogger, mAbstraction, mCounterexample, mEmptyStackFactory,
 				mPredicateUnifier);
+	}
+
+	public IIpAbStrategyModule<LETTER> createIpAbStrategyModuleMcr() {
+		return new IpAbStrategyModuleMcr<>(mCounterexample.getWord().asList(), mPredicateUnifier, mEmptyStackFactory,
+				mLogger, mPrefs, mAbstraction.getAlphabet());
 	}
 
 	public TermClassifier getTermClassifierForTrace() {

@@ -2,7 +2,7 @@
 [![Build Status Jenkins](https://monteverdi.informatik.uni-freiburg.de/ci/buildStatus/icon?job=Ultimate%20(GitHub))](https://monteverdi.informatik.uni-freiburg.de/ci/job/Ultimate%20(GitHub)/)
 [![Build Status](https://travis-ci.org/ultimate-pa/ultimate.svg)](https://travis-ci.org/ultimate-pa/ultimate)
 [![LGPL License](https://img.shields.io/badge/license-LGPLv3+LE-brightgreen.svg)](https://github.com/ultimate-pa/ultimate/wiki/License)
-[![Jenkins tests](https://img.shields.io/jenkins/t/https/monteverdi.informatik.uni-freiburg.de/ci/job/Ultimate%20Nightly.svg?maxAge=1800)](https://monteverdi.informatik.uni-freiburg.de/ci/job/Ultimate%20Nightly/lastBuild/testReport/)
+[![Jenkins tests](https://img.shields.io/jenkins/tests?jobUrl=https%3A%2F%2Fmonteverdi.informatik.uni-freiburg.de%2Fci%2Fjob%2FUltimate%2520Nightly%2F)](https://monteverdi.informatik.uni-freiburg.de/ci/job/Ultimate%20Nightly/lastBuild/testReport/)
 [![SonarQube Coverage](https://monteverdi.informatik.uni-freiburg.de/sonar/api/badges/measure?key=de.uni_freiburg.informatik.ultimate:mavenparent&metric=coverage)](https://monteverdi.informatik.uni-freiburg.de/sonar/component_measures/domain/Coverage?id=de.uni_freiburg.informatik.ultimate%3Amavenparent)
 [![SonarQube Tech Debt](https://monteverdi.informatik.uni-freiburg.de/sonar/api/badges/measure?key=de.uni_freiburg.informatik.ultimate:mavenparent&metric=sqale_debt_ratio)](https://monteverdi.informatik.uni-freiburg.de/sonar/component_measures/domain/Maintainability?id=de.uni_freiburg.informatik.ultimate%3Amavenparent)
 [![SonarQube LOC](https://monteverdi.informatik.uni-freiburg.de/sonar/api/badges/measure?key=de.uni_freiburg.informatik.ultimate:mavenparent&metric=ncloc)](https://monteverdi.informatik.uni-freiburg.de/sonar/component_measures/domain/Maintainability?id=de.uni_freiburg.informatik.ultimate%3Amavenparent)
@@ -14,3 +14,5 @@ Ultimate is a program analysis framework. Ultimate consists of several plugins t
 The [official website](https://ultimate.informatik.uni-freiburg.de/) includes a web interface which allows you to use several toolchains online, a list of all developers, and a list of awards Ultimate received over the years.
 
 The available documentation can be found in [our wiki](https://github.com/ultimate-pa/ultimate/wiki).
+
+You can download the [latest release from GitHub's release page](https://github.com/ultimate-pa/ultimate/releases/latest) or try our [nightly builds](https://monteverdi.informatik.uni-freiburg.de/ultimate-nightly/). 

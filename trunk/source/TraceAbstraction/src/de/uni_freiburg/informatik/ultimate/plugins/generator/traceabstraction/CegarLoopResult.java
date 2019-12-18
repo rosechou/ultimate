@@ -53,8 +53,10 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.predicates.
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.predicates.PredicateFactory;
 import de.uni_freiburg.informatik.ultimate.logic.Term;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.AbstractCegarLoop.Result;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.concurrency.CegarLoopForPetriNet;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.interpolantautomata.transitionappender.AbstractInterpolantAutomaton;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TAPreferences;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TAPreferences.Concurrency;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.FloydHoareAutomataReuse;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.InterpolantAutomaton;
@@ -77,7 +79,8 @@ public class CegarLoopResult<LETTER extends IIcfgTransition<?>> {
 
 	public CegarLoopResult(final Result overallResult,
 			final IProgramExecution<IIcfgTransition<IcfgLocation>, Term> programExecution,
-			final List<UnprovabilityReason> unprovabilityReasons, final IRunningTaskStackProvider runningTaskStackProvider,
+			final List<UnprovabilityReason> unprovabilityReasons,
+			final IRunningTaskStackProvider runningTaskStackProvider,
 			final CegarLoopStatisticsGenerator cegarLoopStatisticsGenerator, final IElement artifact,
 			final List<Pair<AbstractInterpolantAutomaton<LETTER>, IPredicateUnifier>> floydHoareAutomata) {
 		super();
@@ -118,22 +121,21 @@ public class CegarLoopResult<LETTER extends IIcfgTransition<?>> {
 		return mFloydHoareAutomata;
 	}
 
-
-	public static <LETTER extends IIcfgTransition<?>> CegarLoopResult iterate(final IUltimateServiceProvider services,
-			final DebugIdentifier name, final IIcfg<IcfgLocation> root, final TAPreferences taPrefs,
-			final CfgSmtToolkit csToolkit, final PredicateFactory predicateFactory,
+	public static <LETTER extends IIcfgTransition<?>> CegarLoopResult<LETTER> iterate(
+			final IUltimateServiceProvider services, final DebugIdentifier name, final IIcfg<IcfgLocation> root,
+			final TAPreferences taPrefs, final CfgSmtToolkit csToolkit, final PredicateFactory predicateFactory,
 			final TraceAbstractionBenchmarks taBenchmark, final Collection<IcfgLocation> errorLocs,
 			final INwaOutgoingLetterAndTransitionProvider<WitnessEdge, WitnessNode> witnessAutomaton,
 			final List<INestedWordAutomaton<String, String>> rawFloydHoareAutomataFromFile,
-			final boolean computeHoareAnnotation) {
+			final boolean computeHoareAnnotation, final Concurrency automataType) {
 		final Map<String, Set<IcfgLocation>> proc2errNodes = root.getProcedureErrorNodes();
 		final Collection<IcfgLocation> errNodesOfAllProc = new ArrayList<>();
 		for (final Collection<IcfgLocation> errNodeOfProc : proc2errNodes.values()) {
 			errNodesOfAllProc.addAll(errNodeOfProc);
 		}
-		final BasicCegarLoop<LETTER> basicCegarLoop = constructCegarLoop(services, name, root, taPrefs,
-				root.getCfgSmtToolkit(), predicateFactory, errNodesOfAllProc, rawFloydHoareAutomataFromFile,
-				computeHoareAnnotation);
+		final BasicCegarLoop<LETTER> basicCegarLoop =
+				constructCegarLoop(services, name, root, taPrefs, root.getCfgSmtToolkit(), predicateFactory,
+						errNodesOfAllProc, rawFloydHoareAutomataFromFile, computeHoareAnnotation, automataType);
 		basicCegarLoop.setWitnessAutomaton(witnessAutomaton);
 
 		final Result result = basicCegarLoop.iterate();
@@ -169,8 +171,8 @@ public class CegarLoopResult<LETTER extends IIcfgTransition<?>> {
 
 		final List<Pair<AbstractInterpolantAutomaton<LETTER>, IPredicateUnifier>> floydHoareAutomata;
 		if (taPrefs.getFloydHoareAutomataReuse() != FloydHoareAutomataReuse.NONE) {
-			final LinkedHashSet<Pair<AbstractInterpolantAutomaton<LETTER>, IPredicateUnifier>> fhs = basicCegarLoop
-					.getFloydHoareAutomata();
+			final LinkedHashSet<Pair<AbstractInterpolantAutomaton<LETTER>, IPredicateUnifier>> fhs =
+					basicCegarLoop.getFloydHoareAutomata();
 			floydHoareAutomata = new ArrayList<>();
 			floydHoareAutomata.addAll(fhs);
 		} else {
@@ -188,14 +190,16 @@ public class CegarLoopResult<LETTER extends IIcfgTransition<?>> {
 			writeHoareAnnotationToLogger(services, root);
 		}
 
-		return new CegarLoopResult<LETTER>(result, programExecution, unprovabilityReasons, runningTaskStackProvider,
+		return new CegarLoopResult<>(result, programExecution, unprovabilityReasons, runningTaskStackProvider,
 				cegarLoopBenchmarkGenerator, basicCegarLoop.getArtifact(), floydHoareAutomata);
 	}
 
-	private static <LETTER extends IIcfgTransition<?>> BasicCegarLoop<LETTER> constructCegarLoop(final IUltimateServiceProvider services, final DebugIdentifier name, final IIcfg<IcfgLocation> root,
+	private static <LETTER extends IIcfgTransition<?>> BasicCegarLoop<LETTER> constructCegarLoop(
+			final IUltimateServiceProvider services, final DebugIdentifier name, final IIcfg<IcfgLocation> root,
 			final TAPreferences taPrefs, final CfgSmtToolkit csToolkit, final PredicateFactory predicateFactory,
-			final Collection<IcfgLocation> errorLocs, final List<INestedWordAutomaton<String, String>> rawFloydHoareAutomataFromFile,
-			final boolean computeHoareAnnotation) {
+			final Collection<IcfgLocation> errorLocs,
+			final List<INestedWordAutomaton<String, String>> rawFloydHoareAutomataFromFile,
+			final boolean computeHoareAnnotation, final Concurrency automataType) {
 		final LanguageOperation languageOperation = services.getPreferenceProvider(Activator.PLUGIN_ID)
 				.getEnum(TraceAbstractionPreferenceInitializer.LABEL_LANGUAGE_OPERATION, LanguageOperation.class);
 
@@ -205,24 +209,41 @@ public class CegarLoopResult<LETTER extends IIcfgTransition<?>> {
 				result = new CegarLoopSWBnonRecursive<>(name, root, csToolkit, predicateFactory, taPrefs, errorLocs,
 						taPrefs.interpolation(), taPrefs.computeHoareAnnotation(), services);
 			} else {
-				final List<Pair<AbstractInterpolantAutomaton<LETTER>, IPredicateUnifier>> mFloydHoareAutomataFromOtherErrorLocations = null;
-				switch (taPrefs.getFloydHoareAutomataReuse()) {
-				case EAGER:
-					result = new EagerReuseCegarLoop<>(name, root, csToolkit, predicateFactory, taPrefs, errorLocs,
-							taPrefs.interpolation(), computeHoareAnnotation, services,
-							mFloydHoareAutomataFromOtherErrorLocations, rawFloydHoareAutomataFromFile);
+				switch (automataType) {
+				case FINITE_AUTOMATA: {
+					// FIXME: Assign this variable properly
+					final List<Pair<AbstractInterpolantAutomaton<LETTER>, IPredicateUnifier>> mFloydHoareAutomataFromOtherErrorLocations = null;
+					switch (taPrefs.getFloydHoareAutomataReuse()) {
+					case EAGER:
+						result = new EagerReuseCegarLoop<>(name, root, csToolkit, predicateFactory, taPrefs, errorLocs,
+								taPrefs.interpolation(), computeHoareAnnotation, services,
+								mFloydHoareAutomataFromOtherErrorLocations, rawFloydHoareAutomataFromFile);
+						break;
+					case LAZY_IN_ORDER:
+						result = new LazyReuseCegarLoop<>(name, root, csToolkit, predicateFactory, taPrefs, errorLocs,
+								taPrefs.interpolation(), computeHoareAnnotation, services,
+								mFloydHoareAutomataFromOtherErrorLocations, rawFloydHoareAutomataFromFile);
+						break;
+					case NONE:
+						result = new BasicCegarLoop<>(name, root, csToolkit, predicateFactory, taPrefs, errorLocs,
+								taPrefs.interpolation(), computeHoareAnnotation, services);
+						break;
+					default:
+						throw new AssertionError("unknown value: " + taPrefs.getFloydHoareAutomataReuse());
+					}
+				}
 					break;
-				case LAZY_IN_ORDER:
-					result = new LazyReuseCegarLoop<>(name, root, csToolkit, predicateFactory, taPrefs, errorLocs,
-							taPrefs.interpolation(), computeHoareAnnotation, services,
-							mFloydHoareAutomataFromOtherErrorLocations, rawFloydHoareAutomataFromFile);
-					break;
-				case NONE:
-					result = new BasicCegarLoop<>(name, root, csToolkit, predicateFactory, taPrefs, errorLocs,
-							taPrefs.interpolation(), computeHoareAnnotation, services);
+				case PETRI_NET: {
+					if (taPrefs.getFloydHoareAutomataReuse() != FloydHoareAutomataReuse.NONE) {
+						throw new UnsupportedOperationException("Reuse with Petri net-based analysis");
+					} else {
+						result = new CegarLoopForPetriNet<>(name, root, csToolkit, predicateFactory, taPrefs, errorLocs,
+								services);
+					}
+				}
 					break;
 				default:
-					throw new AssertionError();
+					throw new AssertionError("unknown value: " + automataType);
 				}
 			}
 		} else {
@@ -232,7 +253,8 @@ public class CegarLoopResult<LETTER extends IIcfgTransition<?>> {
 		return result;
 	}
 
-	private static void writeHoareAnnotationToLogger(final IUltimateServiceProvider services, final IIcfg<IcfgLocation> root) {
+	private static void writeHoareAnnotationToLogger(final IUltimateServiceProvider services,
+			final IIcfg<IcfgLocation> root) {
 		final ILogger logger = services.getLoggingService().getLogger(Activator.PLUGIN_ID);
 		for (final Entry<String, Map<DebugIdentifier, IcfgLocation>> proc2label2pp : root.getProgramPoints()
 				.entrySet()) {
@@ -270,9 +292,5 @@ public class CegarLoopResult<LETTER extends IIcfgTransition<?>> {
 		}
 		return sb.toString();
 	}
-
-
-
-
 
 }

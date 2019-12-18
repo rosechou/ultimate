@@ -32,14 +32,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import de.uni_freiburg.informatik.ultimate.automata.AutomataLibraryException;
@@ -55,7 +53,9 @@ import de.uni_freiburg.informatik.ultimate.automata.petrinet.netdatastructures.B
 import de.uni_freiburg.informatik.ultimate.automata.petrinet.operations.PetriNet2FiniteAutomaton;
 import de.uni_freiburg.informatik.ultimate.automata.statefactory.IFinitePrefix2PetriNetStateFactory;
 import de.uni_freiburg.informatik.ultimate.util.datastructures.UnionFind;
+import de.uni_freiburg.informatik.ultimate.util.datastructures.UniqueQueue;
 import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.HashRelation3;
+import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.Pair;
 import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.Triple;
 
 /**
@@ -71,11 +71,16 @@ public final class FinitePrefix2PetriNet<LETTER, PLACE>
 		extends GeneralOperation<LETTER, PLACE, IPetriNetAndAutomataInclusionStateFactory<PLACE>> {
 	private final BranchingProcess<LETTER, PLACE> mInput;
 	private final BoundedPetriNet<LETTER, PLACE> mNet;
-	private final UnionFind<Condition<LETTER, PLACE>> mRepresentatives;
+	private final UniqueQueue <Pair<Event<LETTER, PLACE>, Event<LETTER, PLACE>>> mMergingCandidates;
+	private final UnionFind<Condition<LETTER, PLACE>> mConditionRepresentatives;
+	private final UnionFind<Event<LETTER, PLACE>> mEventRepresentatives;
 	private final IFinitePrefix2PetriNetStateFactory<PLACE> mStateFactory;
 	private final boolean mUsePetrification = false;
 	private final boolean mUseBackfoldingIds = false;
-
+	private int mNumberOfCallsOfMergeCondidates = 0;
+	private int mNumberOfMergingCondidates = 0;
+	private int mNumberOfMergedEventPairs = 0;
+	private int mNumberOfAddOperationsToTheCandQueue = 0;
 	/**
 	 * Constructor.
 	 *
@@ -104,10 +109,14 @@ public final class FinitePrefix2PetriNet<LETTER, PLACE>
 		final BoundedPetriNet<LETTER, PLACE> oldNet = (BoundedPetriNet<LETTER, PLACE>) mInput.getNet();
 		if (mUsePetrification) {
 			mNet = buildPetrification(bp);
-			mRepresentatives = null;
+			mMergingCandidates = null;
+			mConditionRepresentatives = null;
+			mEventRepresentatives = null;
 		} else {
+			mMergingCandidates = new UniqueQueue<>();
 			mNet = new BoundedPetriNet<>(mServices, oldNet.getAlphabet(), false);
-			mRepresentatives = new UnionFind<>();
+			mConditionRepresentatives = new UnionFind<>();
+			mEventRepresentatives = new UnionFind<>();
 			constructNet(bp, oldNet);
 		}
 
@@ -156,41 +165,43 @@ public final class FinitePrefix2PetriNet<LETTER, PLACE>
 			assert e == bp.getDummyRoot() || visited.contains(e);
 		}
 		*/
+		
 
-		final TreeSet<Event<LETTER, PLACE>> events = new TreeSet<>(bp.getOrder());
-		events.addAll(bp.getEvents());
-
-		for (final Condition<LETTER, PLACE> c : bp.getDummyRoot().getSuccessorConditions()) {
-			mRepresentatives.makeEquivalenceClass(c);
+		for (Event<LETTER, PLACE> e: bp.getEvents()) {
+			mEventRepresentatives.makeEquivalenceClass(e);
+			for (final Condition<LETTER, PLACE> c : e.getSuccessorConditions()) {
+				assert mConditionRepresentatives.find(c) == null;
+				mConditionRepresentatives.makeEquivalenceClass(c);
+			}
 		}
-		final Iterator<Event<LETTER, PLACE>> it = events.iterator();
-		final Event<LETTER, PLACE> first = it.next();
-		// equality intended here
-		assert first == bp.getDummyRoot();
-		Event<LETTER, PLACE> previous;
-		Event<LETTER, PLACE> current = first;
-		while (it.hasNext()) {
-			previous = current;
-			current = it.next();
-			assert bp.getOrder().compare(previous, current) < 0;
+		
 
-			for (final Condition<LETTER, PLACE> c : current.getConditionMark()) {
-				final Condition<LETTER, PLACE> representative = mRepresentatives.find(c);
-				if (representative == null) {
-					mRepresentatives.makeEquivalenceClass(c);
+		// equality intended here
+		for (Event<LETTER, PLACE> e: bp.getEvents()) {
+			if (e.isCutoffEvent()) {
+				final Event<LETTER, PLACE> companion = e.getCompanion();
+				final ConditionMarking<LETTER, PLACE> companionCondMark = companion.getConditionMark();
+				final ConditionMarking<LETTER, PLACE> eCondMark = e.getConditionMark();
+				mergeConditions(companionCondMark, eCondMark);
+				
+				while (!mMergingCandidates.isEmpty()) {
+					mNumberOfMergingCondidates++;
+					final Pair<Event<LETTER, PLACE>, Event<LETTER, PLACE>> candidate = mMergingCandidates.poll();
+					final Event<LETTER, PLACE> e1 = candidate.getFirst();
+					final Event<LETTER, PLACE> e2 = candidate.getSecond();
+					if (mConditionRepresentatives.find(e1.getPredecessorConditions())
+							.equals(mConditionRepresentatives.find(e2.getPredecessorConditions()))&& !mEventRepresentatives.find(e1).equals(mEventRepresentatives.find(e2))) {
+						mEventRepresentatives.union(e1, e2);
+						mNumberOfMergedEventPairs++;
+						mergeConditions(e1.getSuccessorConditions(), e2.getSuccessorConditions());
+					}
 				}
 			}
-
-			if (current.isCutoffEvent()) {
-				final Event<LETTER, PLACE> companion = current.getCompanion();
-				final ConditionMarking<LETTER, PLACE> companionCondMark = companion.getConditionMark();
-				final ConditionMarking<LETTER, PLACE> eCondMark = current.getConditionMark();
-				mergeConditions(companionCondMark, eCondMark);
-			}
-
 		}
-
-		Map<Event<LETTER, PLACE>, Integer> BackfoldingId = new HashMap<>();
+		//final Set<Event<LETTER, PLACE>> releventEvents=new HashSet<>(mEventRepresentatives.getAllRepresentatives());
+		final Set<Event<LETTER, PLACE>> releventEvents=new HashSet<>(mEventRepresentatives.getAllRepresentatives());
+		releventEvents.remove(bp.getDummyRoot());
+		Map<Event<LETTER, PLACE>, Integer> backfoldingId = new HashMap<>();
 		
 		if (mUseBackfoldingIds) {
 			ArrayList<Event<LETTER, PLACE>> eventList = new ArrayList<>(bp.getEvents());
@@ -198,6 +209,7 @@ public final class FinitePrefix2PetriNet<LETTER, PLACE>
 			int i = 0;
 			int numberOfEventsWithLessAnsc = 0;
 			int indexOfNextElemWithMoreAnsc = 0;
+
 			while (i < eventList.size()) {
 				if (i == indexOfNextElemWithMoreAnsc) {
 					numberOfEventsWithLessAnsc = i;
@@ -207,55 +219,28 @@ public final class FinitePrefix2PetriNet<LETTER, PLACE>
 						indexOfNextElemWithMoreAnsc++;
 					}
 				}
-				BackfoldingId.put(eventList.get(i),
-						eventList.size() - indexOfNextElemWithMoreAnsc + i - numberOfEventsWithLessAnsc);
+				int respectiveBackfoldingId = eventList.size() - indexOfNextElemWithMoreAnsc + i
+						- numberOfEventsWithLessAnsc;
+				backfoldingId.put(eventList.get(i), respectiveBackfoldingId);
 				i++;
 			}
 		}
-
-		PriorityQueue<Event<LETTER, PLACE>> eventQueue;
-		final Set<Event<LETTER, PLACE>> releventEvents = new HashSet<>(bp.getEvents());
-
-		eventQueue = new PriorityQueue<>(bp.getOrder());
-		eventQueue.addAll(bp.getEvents());
-		while (!eventQueue.isEmpty()) {
-			final Event<LETTER, PLACE> e1 = eventQueue.poll();
-			if (e1.getPredecessorConditions().isEmpty())
-				continue;
-			assert (releventEvents
-					.contains(e1)) : "The events in the PQ must be relevent events according to our order";
-			for (final Event<LETTER, PLACE> e2 : releventEvents) {
-				if (e1.equals(e2)) {
-					continue;
-				}
-				if (e1.getTransition().equals(e2.getTransition())
-						&& mRepresentatives.find(e1.getPredecessorConditions())
-								.equals(mRepresentatives.find(e2.getPredecessorConditions()))) {
-					if (!mRepresentatives.find(e1.getSuccessorConditions())
-							.equals(mRepresentatives.find(e2.getSuccessorConditions()))) {
-						mergeConditions(e1.getSuccessorConditions(), e2.getSuccessorConditions());
-						assert (eventQueue.containsAll(
-								e1.getSuccessorEvents())) : "Succesors of an Event in the PQ must be in the PQ";
-
-					}
-					releventEvents.remove(e1);
-					if (mUseBackfoldingIds) {
-						BackfoldingId.put(e2, BackfoldingId.get(e1));
-					}
-					break;
-				}
+		/*
+		for (Event<LETTER, PLACE>e1: releventEvents) {
+			for (Event<LETTER, PLACE>e2: releventEvents) {
+				assert e1.equals(e2) || !(e1.getTransition().equals(e2.getTransition())&&(mConditionRepresentatives.find(e1.getPredecessorConditions())
+								.equals(mConditionRepresentatives.find(e2.getPredecessorConditions())))): "There exists no 2 events with same predecessors conditions and transition";
 			}
-		}
+		}*/
 		
-
 		final Map<Condition<LETTER, PLACE>, PLACE> placeMap = new HashMap<>();
 		for (final Condition<LETTER, PLACE> c : bp.getConditions()) {
-			assert mRepresentatives.find(c) != null;
+			assert mConditionRepresentatives.find(c) != null;
 			// equality intended here
-			if (c == mRepresentatives.find(c)) {
-				final boolean isInitial = containsInitial(mRepresentatives.getEquivalenceClassMembers(c),
+			if (c == mConditionRepresentatives.find(c)) {
+				final boolean isInitial = containsInitial(mConditionRepresentatives.getEquivalenceClassMembers(c),
 						bp.initialConditions());
-				final boolean isAccepting = containsAccepting(mRepresentatives.getEquivalenceClassMembers(c),
+				final boolean isAccepting = containsAccepting(mConditionRepresentatives.getEquivalenceClassMembers(c),
 						bp.getNet());
 				final PLACE place = mNet.addPlace(mStateFactory.finitePrefix2net(c), isInitial, isAccepting);
 				placeMap.put(c, place);
@@ -263,8 +248,8 @@ public final class FinitePrefix2PetriNet<LETTER, PLACE>
 		}
 
 		if (mUseBackfoldingIds) {
-			Comparator<Event<LETTER, PLACE>> idBasedComparator = new IdBasedEventSorting(BackfoldingId);
-			eventQueue = new PriorityQueue<>(idBasedComparator);
+			Comparator<Event<LETTER, PLACE>> idBasedComparator = new IdBasedEventSorting(backfoldingId);
+			final PriorityQueue<Event<LETTER, PLACE>> eventQueue = new PriorityQueue<>(idBasedComparator);
 			eventQueue.addAll(releventEvents);
 			while (!eventQueue.isEmpty()) {
 				Event<LETTER, PLACE> e = eventQueue.poll();
@@ -275,16 +260,32 @@ public final class FinitePrefix2PetriNet<LETTER, PLACE>
 				final Set<PLACE> succs = new HashSet<>();
 
 				for (final Condition<LETTER, PLACE> c : e.getPredecessorConditions()) {
-					final Condition<LETTER, PLACE> representative = mRepresentatives.find(c);
+					final Condition<LETTER, PLACE> representative = mConditionRepresentatives.find(c);
 					preds.add(placeMap.get(representative));
 				}
 				for (final Condition<LETTER, PLACE> c : e.getSuccessorConditions()) {
-					final Condition<LETTER, PLACE> representative = mRepresentatives.find(c);
+					final Condition<LETTER, PLACE> representative = mConditionRepresentatives.find(c);
 					succs.add(placeMap.get(representative));
 				}
 				mNet.addTransition(e.getTransition().getSymbol(), preds, succs);
 			}
 		} else {
+			for (Event<LETTER, PLACE> e : releventEvents) {
+				final Set<PLACE> preds = new HashSet<>();
+				final Set<PLACE> succs = new HashSet<>();
+
+				for (final Condition<LETTER, PLACE> c : e.getPredecessorConditions()) {
+					final Condition<LETTER, PLACE> representative = mConditionRepresentatives.find(c);
+					preds.add(placeMap.get(representative));
+				}
+				for (final Condition<LETTER, PLACE> c : e.getSuccessorConditions()) {
+					final Condition<LETTER, PLACE> representative = mConditionRepresentatives.find(c);
+					succs.add(placeMap.get(representative));
+				}
+				mNet.addTransition(e.getTransition().getSymbol(), preds, succs, e.getTotalOrderId());
+			}
+		}
+		/*{
 			final TransitionSet transitionSet = new TransitionSet();
 			for (final Event<LETTER, PLACE> e : releventEvents) {
 				// equality intended here
@@ -295,19 +296,19 @@ public final class FinitePrefix2PetriNet<LETTER, PLACE>
 				final Set<PLACE> succs = new HashSet<>();
 
 				for (final Condition<LETTER, PLACE> c : e.getPredecessorConditions()) {
-					final Condition<LETTER, PLACE> representative = mRepresentatives.find(c);
+					final Condition<LETTER, PLACE> representative = mConditionRepresentatives.find(c);
 					preds.add(placeMap.get(representative));
 				}
 
 				for (final Condition<LETTER, PLACE> c : e.getSuccessorConditions()) {
-					final Condition<LETTER, PLACE> representative = mRepresentatives.find(c);
+					final Condition<LETTER, PLACE> representative = mConditionRepresentatives.find(c);
 					succs.add(placeMap.get(representative));
 				}
 				transitionSet.addTransition(e.getTransition().getSymbol(), preds, succs);
 				// mNet.addTransition(e.getTransition().getSymbol(), preds, succs);
 			}
 			transitionSet.addAllTransitionsToNet(mNet);
-		}
+		}*/
 
 		/*
 		for (final Condition<LETTER, PLACE> c : bp.getConditions()) {
@@ -419,22 +420,36 @@ public final class FinitePrefix2PetriNet<LETTER, PLACE>
 	*/
 
 	private void mergeConditions(final Iterable<Condition<LETTER, PLACE>> set1, final Iterable<Condition<LETTER, PLACE>> set2) {
+		mNumberOfCallsOfMergeCondidates++;
 		final Map<PLACE, Condition<LETTER, PLACE>> origPlace2Condition = new HashMap<>();
-		for (final Condition<LETTER, PLACE> cond1 : set1) {
-			origPlace2Condition.put(cond1.getPlace(), cond1);
+		for (final Condition<LETTER, PLACE> c1 : set1) {
+			origPlace2Condition.put(c1.getPlace(), c1);
 		}
 
-		for (final Condition<LETTER, PLACE> cond2 : set2) {
-			final PLACE p2 = cond2.getPlace();
-			assert p2 != null : "no place for condition " + cond2;
+		for (final Condition<LETTER, PLACE> c2 : set2) {
+			final PLACE p2 = c2.getPlace();
+			assert p2 != null : "no place for condition " + c2;
 			final Condition<LETTER, PLACE> c1 = origPlace2Condition.get(p2);
 			assert c1 != null : "no condition for place " + p2;
-			final Condition<LETTER, PLACE> c1representative = mRepresentatives.find(c1);
+			final Condition<LETTER, PLACE> c1representative = mConditionRepresentatives.find(c1);
 			assert c1representative != null : "condition " + c1 + " does not have a representative";
-			final Condition<LETTER, PLACE> c2representative = mRepresentatives.find(cond2);
-			assert c2representative != null : "condition " + cond2 + " does not have a representative";
-
-			mRepresentatives.union(c1representative, c2representative);
+			final Condition<LETTER, PLACE> c2representative = mConditionRepresentatives.find(c2);
+			assert c2representative != null : "condition " + c2 + " does not have a representative";
+			if (!c1representative.equals(c2representative)) {
+				for (Condition<LETTER, PLACE> c3: mConditionRepresentatives.getEquivalenceClassMembers(c1)){
+					for (Condition<LETTER, PLACE> c4: mConditionRepresentatives.getEquivalenceClassMembers(c2)){
+						for (Event<LETTER, PLACE> e1: c3.getSuccessorEvents()) {
+							for(Event<LETTER, PLACE> e2: c4.getSuccessorEvents()) {
+								if (e1.getTransition().equals(e2.getTransition())){
+									mMergingCandidates.add(new Pair<>(mEventRepresentatives.find(e1),mEventRepresentatives.find(e2)));
+									mNumberOfAddOperationsToTheCandQueue++;
+								}
+							}
+						}
+					}
+				}
+				mConditionRepresentatives.union(c1representative, c2representative);
+			}
 		}
 	}
 

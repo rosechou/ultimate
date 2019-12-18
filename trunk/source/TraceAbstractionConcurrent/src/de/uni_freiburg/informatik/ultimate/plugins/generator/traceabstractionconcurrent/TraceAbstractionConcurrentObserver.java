@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import de.uni_freiburg.informatik.ultimate.core.lib.exceptions.IRunningTaskStackProvider;
 import de.uni_freiburg.informatik.ultimate.core.lib.results.AllSpecificationsHoldResult;
@@ -109,8 +108,7 @@ public class TraceAbstractionConcurrentObserver implements IUnmanagedObserver {
 			// no fork or join
 			threadErrorLocations = Collections.emptySet();
 		} else {
-			threadErrorLocations = csToolkit.getConcurrencyInformation().getThreadInstanceMap().entrySet().stream()
-					.flatMap(x -> x.getValue().stream().map(y -> y.getErrorLocation())).collect(Collectors.toSet());
+			throw new UnsupportedOperationException();
 		}
 
 		final Map<String, Set<? extends IcfgLocation>> proc2errNodes = (Map) petrifiedIcfg.getProcedureErrorNodes();
@@ -127,7 +125,7 @@ public class TraceAbstractionConcurrentObserver implements IUnmanagedObserver {
 		final AllErrorsAtOnceDebugIdentifier name = TraceAbstractionStarter.AllErrorsAtOnceDebugIdentifier.INSTANCE;
 		if (taPrefs.getConcurrency() == Concurrency.PETRI_NET) {
 			abstractCegarLoop = new CegarLoopForPetriNet<>(name, petrifiedIcfg, csToolkit, predicateFactory,
-					timingStatistics, taPrefs, errNodesOfAllProc, mServices);
+					taPrefs, errNodesOfAllProc, mServices);
 		} else if (taPrefs.getConcurrency() == Concurrency.FINITE_AUTOMATA) {
 			abstractCegarLoop = new CegarLoopConcurrentAutomata<>(name, petrifiedIcfg, csToolkit, predicateFactory,
 					timingStatistics, taPrefs, errNodesOfAllProc, mServices);

@@ -106,7 +106,7 @@ public class IcfgPetrifier {
 		// TODO Matthias: Variables only needed for predicates in monitor
 		final boolean addThreadInUseViolationVariablesAndErrorLocation = true;
 				// (icfgConstructionMode == IcfgConstructionMode.CHECK_THREAD_INSTANCE_SUFFICIENCY);
-		final Map<IIcfgForkTransitionThreadCurrent<IcfgLocation>, List<ThreadInstance>> threadInstanceMap = adder
+		final Map<IIcfgForkTransitionThreadCurrent<IcfgLocation>, List<ThreadInstance>> threadInstanceMap = ThreadInstanceAdder
 				.constructThreadInstances(mPetrifiedIcfg, newForkCurrentThreads,
 						addThreadInUseViolationVariablesAndErrorLocation, numberOfThreadInstances);
 		final Map<IIcfgForkTransitionThreadCurrent<IcfgLocation>, IcfgLocation> inUseErrorNodeMap = new HashMap<>();
@@ -157,9 +157,6 @@ public class IcfgPetrifier {
 			final boolean addThreadInUseViolationEdges) {
 		final Set<Term> result = new HashSet<>();
 		for (final ThreadInstance ti : values) {
-			if (addThreadInUseViolationEdges) {
-				result.add(ti.getInUseVar().getTerm());
-			}
 			for (final IProgramNonOldVar idVar : ti.getIdVars()) {
 				result.add(idVar.getTerm());
 			}

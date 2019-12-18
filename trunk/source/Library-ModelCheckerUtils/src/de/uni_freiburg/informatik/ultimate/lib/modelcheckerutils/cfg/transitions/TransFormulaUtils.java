@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import de.uni_freiburg.informatik.ultimate.core.lib.exceptions.RunningTaskInfo;
@@ -66,6 +67,7 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.SmtUtils.Xn
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.Substitution;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.SubstitutionWithLocalSimplification;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.SubtermPropertyChecker;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.linearterms.PrenexNormalForm;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.linearterms.QuantifierPusher;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.linearterms.QuantifierPusher.PqeTechniques;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.managedscript.ManagedScript;
@@ -221,14 +223,26 @@ public final class TransFormulaUtils {
 			} catch (final ToolchainCanceledException tce) {
 				final String taskDescription =
 						"doing sequential composition of " + transFormula.size() + " TransFormulas";
-				tce.addRunningTaskInfo(new RunningTaskInfo(PartialQuantifierElimination.class, taskDescription));
+				tce.addRunningTaskInfo(new RunningTaskInfo(TransFormulaUtils.class, taskDescription));
 				throw tce;
 			}
 		}
 
 		if (tryAuxVarElimination) {
-			final Term eliminated = PartialQuantifierElimination.elim(mgdScript, QuantifiedFormula.EXISTS, auxVars,
-					formula, services, logger, simplificationTechnique, xnfConversionTechnique);
+			final Term eliminated;
+//			eliminated = PartialQuantifierElimination.elim(mgdScript, QuantifiedFormula.EXISTS, auxVars,
+//					formula, services, logger, simplificationTechnique, xnfConversionTechnique);
+			final Term quantified = SmtUtils.quantifier(script, QuantifiedFormula.EXISTS, auxVars, formula);
+			auxVars.clear();
+			final Term partiallyEliminated = PartialQuantifierElimination.tryToEliminate(services, logger, mgdScript, quantified, simplificationTechnique, xnfConversionTechnique);
+			final Term pnf = new PrenexNormalForm(mgdScript).transform(partiallyEliminated);
+			if (pnf instanceof QuantifiedFormula && ((QuantifiedFormula) pnf).getQuantifier() == QuantifiedFormula.EXISTS) {
+				final QuantifiedFormula qf = (QuantifiedFormula) pnf;
+				auxVars.addAll(Arrays.asList(qf.getVariables()));
+				eliminated = qf.getSubformula();
+			} else {
+				eliminated = pnf;
+			}
 			logger.debug(new DebugMessage("DAG size before PQE {0}, DAG size after PQE {1}",
 					new DagSizePrinter(formula), new DagSizePrinter(eliminated)));
 			formula = eliminated;
@@ -1093,6 +1107,18 @@ public final class TransFormulaUtils {
 		return tfb.finishConstruction(mgdScript);
 	}
 
+	public static UnmodifiableTransFormula constructHavoc(final Set<IProgramVar> havocedVars,
+			final ManagedScript mgdScript) {
+		final Function<IProgramVar, TermVariable> valueMap = x -> mgdScript.constructFreshCopy(x.getTermVariable());
+		final Map<IProgramVar, TermVariable> outVars = havocedVars.stream()
+				.collect(Collectors.toMap(Function.identity(), valueMap));
+		final TransFormulaBuilder tfb = new TransFormulaBuilder(Collections.emptyMap(), outVars, false,
+				Collections.emptySet(), true, null, false);
+		tfb.setFormula(mgdScript.getScript().term("true"));
+		tfb.setInfeasibility(Infeasibility.UNPROVEABLE);
+		return tfb.finishConstruction(mgdScript);
+	}
+
 	/**
 	 * This method first computes the guards of the input {@link UnmodifiableTransFormula}s. It then returns a
 	 * {@link UnmodifiableTransFormula} that is satisfied for some input variables iff none of the guards is satisfied.
@@ -1203,8 +1229,8 @@ public final class TransFormulaUtils {
 		return result;
 	}
 
-	private static Term constructExplicitEqualities(Script script, Set<IProgramVar> variables) {
-		List<Term> equalities = new ArrayList<>(variables.size());
+	private static Term constructExplicitEqualities(final Script script, final Set<IProgramVar> variables) {
+		final List<Term> equalities = new ArrayList<>(variables.size());
 		for (final IProgramVar progVar : variables) {
 			final Term equality = SmtUtils.binaryEquality(script, progVar.getDefaultConstant(),
 					progVar.getPrimedConstant());

@@ -32,6 +32,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Formatter;
@@ -55,6 +56,7 @@ import de.uni_freiburg.informatik.ultimate.core.model.services.IUltimateServiceP
 import de.uni_freiburg.informatik.ultimate.lib.pea.CounterTrace;
 import de.uni_freiburg.informatik.ultimate.lib.pea.PhaseEventAutomata;
 import de.uni_freiburg.informatik.ultimate.lib.pea.modelchecking.DotWriterNew;
+import de.uni_freiburg.informatik.ultimate.lib.srparse.PatternUtil;
 import de.uni_freiburg.informatik.ultimate.lib.srparse.SrParseScope;
 import de.uni_freiburg.informatik.ultimate.lib.srparse.SrParseScopeAfter;
 import de.uni_freiburg.informatik.ultimate.lib.srparse.SrParseScopeAfterUntil;
@@ -64,6 +66,7 @@ import de.uni_freiburg.informatik.ultimate.lib.srparse.SrParseScopeGlobally;
 import de.uni_freiburg.informatik.ultimate.lib.srparse.pattern.PatternScopeNotImplemented;
 import de.uni_freiburg.informatik.ultimate.lib.srparse.pattern.PatternType;
 import de.uni_freiburg.informatik.ultimate.test.mocks.UltimateMocks;
+import de.uni_freiburg.informatik.ultimate.util.CoreUtil;
 import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.Pair;
 
 /**
@@ -74,13 +77,13 @@ import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.Pair;
 @RunWith(Parameterized.class)
 public class PeaToDotTestSuite {
 	// Set to true, if you want to create new svg and markdown files for the hanfor documentation.
-	private static final Boolean createNewFiles = false;
+	private static final boolean CREATE_NEW_FILES = false;
 
-	private static final File ROOT_DIR = new File("/mnt/Daten/projects/hanfor/documentation/docs");
+	private static final File ROOT_DIR = new File("/media/Daten/projects/hanfor/documentation/docs");
 	private static final File MARKDOWN_DIR = new File(ROOT_DIR + "/references/patterns");
-	private static final File IMAGE_DIR = new File(ROOT_DIR + "/img/patterns");
-
-	private static final String LINE_SEP = System.lineSeparator();
+	private static final File PEA_IMAGE_DIR = new File(ROOT_DIR + "/img/patterns");
+	private static final File FAILURE_PATH_IMAGE_DIR = new File(ROOT_DIR + "/img/failure_paths");
+	private static final String LINE_SEP = CoreUtil.getPlatformLineSeparator();
 
 	private final IUltimateServiceProvider mServiceProvider;
 	private final ILogger mLogger;
@@ -99,10 +102,8 @@ public class PeaToDotTestSuite {
 		mPattern = pattern;
 		mPatternName = pattern.getClass().getSimpleName();
 		mPatternString = pattern.toString().replace(pattern.getId() + ": ", "");
-
-		final String scopeName = pattern.getScope().getClass().getSimpleName();
-		final String scopePrefix = pattern.getScope().getClass().getSuperclass().getSimpleName();
-		mScopeName = scopeName.replace(scopePrefix, "");
+		mScopeName = pattern.getScope().getClass().getSimpleName()
+				.replace(pattern.getScope().getClass().getSuperclass().getSimpleName(), "");
 	}
 
 	@Test
@@ -110,7 +111,7 @@ public class PeaToDotTestSuite {
 		final PhaseEventAutomata pea;
 		final CounterTrace counterTrace;
 
-		if (!createNewFiles) {
+		if (!CREATE_NEW_FILES) {
 			return;
 		}
 
@@ -126,78 +127,85 @@ public class PeaToDotTestSuite {
 	}
 
 	private void writeSvgFile(final String dot) throws IOException, InterruptedException {
-		final File file = new File(IMAGE_DIR + "/" + mPatternName + "_" + mScopeName + ".svg");
+		final File file = new File(PEA_IMAGE_DIR + "/" + mPatternName + "_" + mScopeName + ".svg");
 
 		final String[] command = new String[] { "dot", "-Tsvg", "-o", file.toString() };
 		final MonitoredProcess process = MonitoredProcess.exec(command, null, null, mServiceProvider);
 		final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
 
-		if (!createNewFiles) {
-			return;
-		}
-
 		writer.write(dot.toString());
 		writer.close();
 
-		process.waitfor();
+		final int returnCode = process.waitfor().getReturnCode();
+		if (returnCode != 0) {
+			throw new RuntimeException(String.format("%s did return %s. Stdout: %s Stderr: %s",
+					Arrays.stream(command).collect(Collectors.joining(" ")), returnCode,
+					CoreUtil.convertStreamToString(process.getInputStream()),
+					CoreUtil.convertStreamToString(process.getErrorStream())));
+		}
 	}
 
 	private void writeMarkdownFile(final String counterTrace) throws IOException {
-		if (!createNewFiles) {
-			return;
-		}
+		final File markdownFile = new File(MARKDOWN_DIR + "/" + mPatternName + ".md");
+		final File peaImage = new File(PEA_IMAGE_DIR + "/" + mPatternName + "_" + mScopeName + ".svg");
+		final File failurePathImage =
+				new File(FAILURE_PATH_IMAGE_DIR + "/" + mPatternName + "_" + mScopeName + "_0.svg");
 
-		final File file = new File(MARKDOWN_DIR + "/" + mPatternName + ".md");
-		final StringBuilder stringBuilder = new StringBuilder();
-		final Formatter fmt = new Formatter(stringBuilder);
+		final Formatter fmt = new Formatter();
 
-		if (!file.exists()) {
+		if (!markdownFile.exists()) {
 			fmt.format("<!-- Auto generated file, do not make any changes here. -->%s%s", LINE_SEP, LINE_SEP);
-			fmt.format("## %s%s%s", mPatternName, LINE_SEP, LINE_SEP);
+			fmt.format("## %s%s", mPatternName, LINE_SEP);
 		}
 
+		fmt.format(LINE_SEP);
 		fmt.format("### %s %s%s", mPatternName, mScopeName, LINE_SEP);
 		fmt.format("```%s%s%s```%s", LINE_SEP, mPatternString, LINE_SEP, LINE_SEP);
 		fmt.format("```%sCounterexample: %s%s```%s", LINE_SEP, counterTrace, LINE_SEP, LINE_SEP);
-		fmt.format("![](%s/%s/%s_%s.svg)%s", "..", ROOT_DIR.toPath().relativize(IMAGE_DIR.toPath()), mPatternName,
-				mScopeName, LINE_SEP);
-		fmt.close();
 
-		final BufferedWriter writer = new BufferedWriter(new FileWriter(file, true));
-		writer.write(stringBuilder.toString());
+		if (failurePathImage.exists()) {
+			fmt.format(LINE_SEP);
+			fmt.format("![](%s/%s/%s_%s_0.svg)%s", "..", ROOT_DIR.toPath().relativize(FAILURE_PATH_IMAGE_DIR.toPath()),
+					mPatternName, mScopeName, LINE_SEP);
+		}
+
+		if (peaImage.exists()) {
+			fmt.format(LINE_SEP);
+			fmt.format("![](%s/%s/%s_%s.svg)%s", "..", ROOT_DIR.toPath().relativize(PEA_IMAGE_DIR.toPath()),
+					mPatternName, mScopeName, LINE_SEP);
+		}
+
+		final BufferedWriter writer = new BufferedWriter(new FileWriter(markdownFile, true));
+		writer.write(fmt.toString());
 		writer.close();
+		fmt.close();
 	}
 
 	@BeforeClass
 	public static void beforeClass() {
-		if (!createNewFiles) {
+		if (!CREATE_NEW_FILES) {
 			return;
 		}
 
 		// Check if root directory exists.
 		assert (Files.isDirectory(ROOT_DIR.toPath())) : "Directory not found: " + ROOT_DIR;
 
-		// Check if parent directories exist.
-		assert (IMAGE_DIR.getParentFile().isDirectory()) : "Directory not found: " + IMAGE_DIR.getParentFile();
-		assert (MARKDOWN_DIR.getParentFile().isDirectory()) : "Directory not found: " + MARKDOWN_DIR.getParentFile();
-
-		// Check if markdown, image directory exist, otherwise create them.
-		assert (IMAGE_DIR.isDirectory() || IMAGE_DIR.mkdir()) : "Failed to create directory: " + IMAGE_DIR;
-		assert (MARKDOWN_DIR.isDirectory() || MARKDOWN_DIR.mkdir()) : "Failed to create directory: " + MARKDOWN_DIR;
+		// Check if markdown, pea image directory exist, otherwise create them.
+		assert (PEA_IMAGE_DIR.isDirectory() || PEA_IMAGE_DIR.mkdirs()) : "Failed to create directory: " + PEA_IMAGE_DIR;
+		assert (MARKDOWN_DIR.isDirectory() || MARKDOWN_DIR.mkdirs()) : "Failed to create directory: " + MARKDOWN_DIR;
 
 		// Delete auto generated files.
-		Stream.of(IMAGE_DIR.listFiles()).filter(a -> a.getName().endsWith(".svg")).forEach(a -> a.delete());
+		Stream.of(PEA_IMAGE_DIR.listFiles()).filter(a -> a.getName().endsWith(".svg")).forEach(a -> a.delete());
 		Stream.of(MARKDOWN_DIR.listFiles()).filter(a -> a.getName().endsWith(".md")).forEach(a -> a.delete());
 	}
 
 	@AfterClass
 	public static void afterClass() throws IOException {
-		if (!createNewFiles) {
+		if (!CREATE_NEW_FILES) {
 			return;
 		}
 
-		final StringBuilder stringBuilder = new StringBuilder();
-		final Formatter fmt = new Formatter(stringBuilder);
+		final Formatter fmt = new Formatter();
 		// fmt.format("toc_depth: %d%s%s", TOC_DEPTH, LINE_SEP, LINE_SEP);
 		fmt.format("<!-- Auto generated file, do not make any changes here. -->%s%s", LINE_SEP, LINE_SEP);
 		// fmt.format("# Patterns%s", LINE_SEP);
@@ -206,12 +214,12 @@ public class PeaToDotTestSuite {
 		for (final File file : files) {
 			fmt.format("{!%s/%s!}%s", ROOT_DIR.toPath().relativize(MARKDOWN_DIR.toPath()), file.getName(), LINE_SEP);
 		}
-		fmt.close();
 
 		final File file = new File(MARKDOWN_DIR + "/includeAllPatterns.md");
 		final BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-		writer.write(stringBuilder.toString());
+		writer.write(fmt.toString());
 		writer.close();
+		fmt.close();
 	}
 
 	@Parameters()

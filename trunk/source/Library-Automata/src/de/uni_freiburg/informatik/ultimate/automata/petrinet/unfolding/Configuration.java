@@ -26,10 +26,9 @@
  */
 package de.uni_freiburg.informatik.ultimate.automata.petrinet.unfolding;
 
-import java.util.AbstractSet;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -37,7 +36,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import de.uni_freiburg.informatik.ultimate.automata.petrinet.netdatastructures.Transition;
-import de.uni_freiburg.informatik.ultimate.util.datastructures.SetOperations;
 
 // TODO: rewrite this class, possibly split it up to resolve this horrible ambiguity
 /**
@@ -54,11 +52,14 @@ import de.uni_freiburg.informatik.ultimate.util.datastructures.SetOperations;
  * @param <PLACE>
  *            place content type
  */
-public class Configuration<LETTER, PLACE> extends AbstractSet<Event<LETTER, PLACE>> implements Comparable<Configuration<LETTER, PLACE>> {
+public class Configuration<LETTER, PLACE> implements Comparable<Configuration<LETTER, PLACE>>, Iterable<Event<LETTER, PLACE>> {
 	private final Set<Event<LETTER, PLACE>> mEvents;
 	private Set<Event<LETTER, PLACE>> mMin;
 	private ArrayList<Transition<LETTER, PLACE>> mPhi;
-
+	private List<Event<LETTER, PLACE>> mSortedConfiguration;
+	private final int mRemovedMin;
+	private int mDepth;
+//	private SortedMap<Integer, T<Event<LETTER, PLACE>>> mSortedEvents;
 	/**
 	 * Constructs a Configuration (Not a Suffix). The set given as parameter has to be causally closed and
 	 * conflict-free.
@@ -67,7 +68,7 @@ public class Configuration<LETTER, PLACE> extends AbstractSet<Event<LETTER, PLAC
 	 *            set of events
 	 */
 	public Configuration(final Set<Event<LETTER, PLACE>> events) {
-		this(events, null);
+		this(events, 0);
 	}
 
 	/**
@@ -78,15 +79,12 @@ public class Configuration<LETTER, PLACE> extends AbstractSet<Event<LETTER, PLAC
 	 * @param min
 	 *            minimum set of events
 	 */
-	private Configuration(final Set<Event<LETTER, PLACE>> events, final Set<Event<LETTER, PLACE>> min) {
-		if (min != null && min.isEmpty()) {
-			throw new AssertionError("minium must not be empty");
-		}
+	private Configuration(final Set<Event<LETTER, PLACE>> events, final int removedMin) {
 		mEvents = events;
-		mMin = min;
+		mRemovedMin = removedMin;
 	}
 
-	public List<Transition<LETTER, PLACE>> getPhi() {
+	private List<Transition<LETTER, PLACE>> getPhi() {
 		if (mPhi == null) {
 			mPhi = new ArrayList<>(mEvents.size());
 			for (final Event<LETTER, PLACE> e : mEvents) {
@@ -106,17 +104,36 @@ public class Configuration<LETTER, PLACE> extends AbstractSet<Event<LETTER, PLAC
 	 */
 	public Configuration<LETTER, PLACE> getMin() {
 		if (mMin == null) {
-			//We assume that we only compute minimums of local configurations.
-			//The removeMin Method computes the new minimum after a cut.
-			mMin = computeMinOfLocalConfiguration();
-			//mMin = computeMin();
+			mMin = computeMin();
 		}
 		return new Configuration<>(mMin);
+	}
+	public Configuration<LETTER, PLACE> getMin(final int depth){
+		final Set<Event<LETTER, PLACE>> result = mEvents.stream()
+				.filter(event -> event.getDepth() == depth)
+				.collect(Collectors.toCollection(HashSet::new));
+		if (result.isEmpty()) {
+			throw new AssertionError("minimum must not be empty");
+		}
+		return new Configuration<>(result);
+	}
+	public void setDepth(final int depth) {
+		mDepth = depth;
+	}
+	public int getDepth() {
+		return mDepth;
+	}
+	
+	public List<Event<LETTER, PLACE>> getSortedConfiguration(final Comparator<Event<LETTER, PLACE>> comparator) {
+		if (mSortedConfiguration == null) {
+			mSortedConfiguration = mEvents.stream().sorted(comparator).collect(Collectors.toList());
+		}
+		return mSortedConfiguration; 
 	}
 
 	private Set<Event<LETTER, PLACE>> computeMin() {
 		final Set<Event<LETTER, PLACE>> result = mEvents.stream()
-				.filter(event -> SetOperations.disjoint(event.getPredecessorEvents(), mEvents))
+				.filter(event -> event.getDepth() == mRemovedMin + 1)
 				.collect(Collectors.toCollection(HashSet::new));
 		if (result.isEmpty()) {
 			throw new AssertionError("minimum must not be empty");
@@ -124,73 +141,17 @@ public class Configuration<LETTER, PLACE> extends AbstractSet<Event<LETTER, PLAC
 		return result;
 	}
 	
-	private Set<Event<LETTER, PLACE>> computeMinOfLocalConfiguration() {
-		final Set<Event<LETTER, PLACE>> result = mEvents.stream()
-				.filter(event -> event.getAncestors() == 1)
-				.collect(Collectors.toCollection(HashSet::new));
-		if (result.isEmpty()) {
-			throw new AssertionError("minimum must not be empty");
-		}
-		return result;
-	}
-
 	@Override
 	public Iterator<Event<LETTER, PLACE>> iterator() {
 		return mEvents.iterator();
 	}
 
-	@Override
 	public int size() {
 		return mEvents.size();
 	}
 
-	@Override
 	public boolean add(final Event<LETTER, PLACE> arg0) {
 		return mEvents.add(arg0);
-	}
-
-	@Override
-	public boolean addAll(final Collection<? extends Event<LETTER, PLACE>> arg0) {
-		return mEvents.addAll(arg0);
-	}
-
-	@Override
-	public void clear() {
-		mEvents.clear();
-	}
-
-	@Override
-	public boolean contains(final Object arg0) {
-		return mEvents.contains(arg0);
-	}
-
-	@Override
-	public boolean containsAll(final Collection<?> arg0) {
-		return mEvents.containsAll(arg0);
-	}
-
-	/**
-	 * @param events
-	 *            Some events.
-	 * @return {@code true} iff the configuration contains any of the specified events
-	 */
-	public boolean containsAny(final Collection<Event<LETTER, PLACE>> events) {
-		for (final Event<LETTER, PLACE> place : events) {
-			if (mEvents.contains(place)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	@Override
-	public boolean isEmpty() {
-		return mEvents.isEmpty();
-	}
-
-	@Override
-	public boolean remove(final Object arg0) {
-		return mEvents.remove(arg0);
 	}
 
 	/**
@@ -205,43 +166,7 @@ public class Configuration<LETTER, PLACE> extends AbstractSet<Event<LETTER, PLAC
 		assert !mMin.isEmpty() : "The minimum of a configuration must not be empty.";
 		final HashSet<Event<LETTER, PLACE>> events = new HashSet<>(mEvents);
 		events.removeAll(mMin);
-		final Set<Event<LETTER, PLACE>> min = Event.getSuccessorEvents(mMin);
-		min.retainAll(events);
-		final HashSet<Event<LETTER, PLACE>> newmin = new HashSet<>();
-		for (final Event<LETTER, PLACE> e : min) {
-			final Set<Event<LETTER, PLACE>> predEventsOfE = e.getPredecessorEvents();
-			boolean eIsInMin = true;
-			for (final Event<LETTER, PLACE> predEvent : predEventsOfE) {
-				if (events.contains(predEvent)) {
-					eIsInMin = false;
-					break;
-				}
-			}
-			if (eIsInMin) {
-				newmin.add(e);
-			}
-		}
-		return new Configuration<>(events, newmin);
-	}
-
-	@Override
-	public boolean removeAll(final Collection<?> arg0) {
-		return mEvents.removeAll(arg0);
-	}
-
-	@Override
-	public boolean retainAll(final Collection<?> arg0) {
-		return mEvents.retainAll(arg0);
-	}
-
-	@Override
-	public Object[] toArray() {
-		return mEvents.toArray();
-	}
-
-	@Override
-	public <T> T[] toArray(final T[] arg0) {
-		return mEvents.toArray(arg0);
+		return new Configuration<>(events, mRemovedMin +1);
 	}
 
 	/**
@@ -265,44 +190,4 @@ public class Configuration<LETTER, PLACE> extends AbstractSet<Event<LETTER, PLAC
 		}
 		return 0;
 	}
-
-	/**
-	 * TODO Christian 2016-08-16: This does not override the Object.equals() method. It may be confusing when using in
-	 * Collections.
-	 *
-	 * @param other
-	 *            another configuration
-	 * @return {@code true} iff two given configurations have the same events.
-	 */
-	public boolean equals(final Configuration<LETTER, PLACE> other) {
-		return containsAll(other) && other.containsAll(this);
-	}
-
-	/*
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result
-				+ ((mEvents == null) ? 0 : mEvents.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (!super.equals(obj))
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		Configuration<LETTER, PLACE> other = (Configuration) obj;
-		if (mEvents == null) {
-			if (other.mEvents != null)
-				return false;
-		} else if (!mEvents.equals(other.mEvents))
-			return false;
-		return true;
-	}
-	*/
 }

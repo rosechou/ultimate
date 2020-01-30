@@ -5,6 +5,7 @@ import java.util.Set;
 
 import de.uni_freiburg.informatik.ultimate.automata.IAutomaton;
 import de.uni_freiburg.informatik.ultimate.automata.petrinet.netdatastructures.ISuccessorTransitionProvider;
+import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.HashRelation;
 
 public interface IPetriNetSuccessorProvider<LETTER, PLACE> extends IAutomaton<LETTER, PLACE> {
 
@@ -17,8 +18,18 @@ public interface IPetriNetSuccessorProvider<LETTER, PLACE> extends IAutomaton<LE
 	/** @return Incoming places of given transition. */
 	Set<PLACE> getPredecessors(final ITransition<LETTER, PLACE> transition);
 
-	Collection<ISuccessorTransitionProvider<LETTER, PLACE>> getSuccessorTransitionProviders(Collection<PLACE> places);
-
+	/**
+	 *
+	 * @param place2allowedSiblings
+	 * @return all {@link ISuccessorTransitionProvider}s such that for its predecessors {p1,...,pn}
+	 * there exists some i such that pi is in the domain of the place2allowedSiblings and all
+	 * elements of {p1,...,p_{i-1},p_{i+1},pn} are in relation with pi.
+	 */
+	Collection<ISuccessorTransitionProvider<LETTER, PLACE>> getSuccessorTransitionProviders(
+			final HashRelation<PLACE, PLACE> place2allowedSiblings);
+	Collection<ISuccessorTransitionProvider<LETTER, PLACE>> getSuccessorTransitionProviders(
+			final Set<PLACE> placesOfNewConditions,
+			final Set<PLACE> correlatedPlaces);
 	/**
 	 * @param marking
 	 *            A marking.

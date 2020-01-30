@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -47,8 +48,8 @@ import de.uni_freiburg.informatik.ultimate.automata.petrinet.Marking;
 import de.uni_freiburg.informatik.ultimate.automata.petrinet.PetriNetNot1SafeException;
 import de.uni_freiburg.informatik.ultimate.automata.petrinet.netdatastructures.ISuccessorTransitionProvider;
 import de.uni_freiburg.informatik.ultimate.automata.petrinet.netdatastructures.SimpleSuccessorTransitionProvider;
-import de.uni_freiburg.informatik.ultimate.util.datastructures.DataStructureUtils;
 import de.uni_freiburg.informatik.ultimate.util.datastructures.TreePriorityQueue;
+import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.HashRelation;
 
 /**
  * Implementation of a possible extension.
@@ -66,12 +67,14 @@ public class PossibleExtensions<LETTER, PLACE> implements IPossibleExtensions<LE
 	 * Use the optimization that is outlined in observation B07 in the following
 	 * issue. https://github.com/ultimate-pa/ultimate/issues/448
 	 */
-	private static final boolean BUMBLEBEE_B07_OPTIMIZAION = true;
+	private static final boolean USE_FORWARD_CHECKING = false;
 	private final Queue<Event<LETTER, PLACE>> mPe;
 	private final Map<Marking<LETTER, PLACE>, Event<LETTER, PLACE>> mMarkingEventMap = new HashMap<>();
 	private int mMaximalSize = 0;
 	private static final boolean USE_PQ = true;
 	private final boolean mUseFirstbornCutoffCheck;
+	private final boolean mUseB32Optimization;
+	private final boolean mFinishedPetrinet;
 	/**
 	 * If {@link Event} is known to be cut-off event we can move it immediately
 	 * to front because it will not create descendants. This optimization keeps
@@ -83,7 +86,8 @@ public class PossibleExtensions<LETTER, PLACE> implements IPossibleExtensions<LE
 	private final Comparator<Event<LETTER, PLACE>> mOrder;
 	private final ArrayDeque<Event<LETTER, PLACE>> mFastpathCutoffEventList;
 	private final BranchingProcess<LETTER, PLACE> mBranchingProcess;
-	private final boolean mLazySuccessorComputation = true;
+	private final static boolean LAZY_SUCCESSOR_COMPUTATION = true;
+	private final static boolean USE_SuccessorTransitionProvider_Optimization = false;
 
 	/**
 	 * A candidate is useful if it lead to at least one new possible extension.
@@ -91,18 +95,25 @@ public class PossibleExtensions<LETTER, PLACE> implements IPossibleExtensions<LE
 	private int mUsefulExtensionCandidates = 0;
 	private int mUselessExtensionCandidates = 0;
 
-	public PossibleExtensions(final BranchingProcess<LETTER, PLACE> branchingProcess, final Comparator<Event<LETTER, PLACE>> order,
-			boolean useFirstbornCutoffCheck) {
+	public PossibleExtensions(final BranchingProcess<LETTER, PLACE> branchingProcess,
+			final EventOrder<LETTER, PLACE> order, final boolean useFirstbornCutoffCheck,
+			final boolean useB32Optimization) {
 		mUseFirstbornCutoffCheck = useFirstbornCutoffCheck;
 		mBranchingProcess = branchingProcess;
+		mFinishedPetrinet = USE_SuccessorTransitionProvider_Optimization && mBranchingProcess.getNet() instanceof IPetriNet<?, ?> ;
 		if (USE_PQ) {
 			mPe = new PriorityQueue<>(order);
 		} else {
+			if (!order.isTotal()) {
+				throw new UnsupportedOperationException(TreePriorityQueue.class.getSimpleName()
+						+ " can only be used in combination with total orders.");
+			}
 			mPe = new TreePriorityQueue<>(order);
 		}
 		mFastpathCutoffEventList = new ArrayDeque<>();
 		mOrder = order;
 		mMarkingEventMap.put(mBranchingProcess.getDummyRoot().getMark(), mBranchingProcess.getDummyRoot());
+		mUseB32Optimization = useB32Optimization;
 	}
 
 	@Override
@@ -122,7 +133,11 @@ public class PossibleExtensions<LETTER, PLACE> implements IPossibleExtensions<LE
 				throw new AssertionError("at least one place has to be instantiated");
 			}
 			final int possibleExtensionsBefore = size();
-			evolveCandidate(candidate);
+			if (USE_FORWARD_CHECKING) {
+				evolveCandidateWithForwardChecking(candidate);
+			} else {
+				evolveCandidate(candidate);
+			}
 			if (size() > possibleExtensionsBefore) {
 				mUsefulExtensionCandidates++;
 			} else {
@@ -131,8 +146,8 @@ public class PossibleExtensions<LETTER, PLACE> implements IPossibleExtensions<LE
 		}
 	}
 
-	private boolean firstbornCutoffCheck(Event<LETTER, PLACE> newEvent) {
-		Event<LETTER, PLACE> eventWithSameMarking = mMarkingEventMap.get(newEvent.getMark());
+	private boolean firstbornCutoffCheck(final Event<LETTER, PLACE> newEvent) {
+		final Event<LETTER, PLACE> eventWithSameMarking = mMarkingEventMap.get(newEvent.getMark());
 		if (eventWithSameMarking == null) {
 			return false;
 		}
@@ -153,89 +168,135 @@ public class PossibleExtensions<LETTER, PLACE> implements IPossibleExtensions<LE
 	 * Evolves a {@code Candidate} for a new possible Event in all possible ways and, as a side-effect, adds valid
 	 * extensions (ones whose predecessors are a co-set) to he possible extension set.
 	 */
-	@SuppressWarnings("squid:S1698")
-	private void evolveCandidate(final Candidate<LETTER, PLACE> cand) throws PetriNetNot1SafeException {
-		if (cand.isFullyInstantiated()) {
-			for (final ITransition<LETTER, PLACE> trans : cand.getTransition().getTransitions()) {
-				final Event<LETTER, PLACE> newEvent = new Event<>(cand.getInstantiated(), trans, mBranchingProcess);
-				if (mUseFirstbornCutoffCheck) {
-					if (firstbornCutoffCheck(newEvent)) {
-						mFastpathCutoffEventList.add(newEvent);
-					} else {
-						mMarkingEventMap.put(newEvent.getMark(), newEvent);
-						final boolean somethingWasAdded = mPe.add(newEvent);
-						mMaximalSize = Integer.max(mMaximalSize, mPe.size());
-						if (!somethingWasAdded) {
-							throw new AssertionError("Event was already in queue.");
-						}
-					}
+	
+	private void addFullyInstantiatedCandidate(final Candidate<LETTER, PLACE> cand) throws PetriNetNot1SafeException {
+		for (final ITransition<LETTER, PLACE> trans : cand.getTransition().getTransitions()) {
+			final Event<LETTER, PLACE> newEvent = new Event<>(cand.getInstantiated(), trans, mBranchingProcess);
+			if (mUseFirstbornCutoffCheck) {
+				if (firstbornCutoffCheck(newEvent)) {
+					mFastpathCutoffEventList.add(newEvent);
 				} else {
+					mMarkingEventMap.put(newEvent.getMark(), newEvent);
 					final boolean somethingWasAdded = mPe.add(newEvent);
 					mMaximalSize = Integer.max(mMaximalSize, mPe.size());
 					if (!somethingWasAdded) {
 						throw new AssertionError("Event was already in queue.");
 					}
 				}
+			} else {
+				final boolean somethingWasAdded = mPe.add(newEvent);
+				mMaximalSize = Integer.max(mMaximalSize, mPe.size());
+				if (!somethingWasAdded) {
+					throw new AssertionError("Event was already in queue.");
+				}
 			}
+		}
+	}
+	@SuppressWarnings("squid:S1698")
+	private void evolveCandidate(final Candidate<LETTER, PLACE> cand) throws PetriNetNot1SafeException {
+		if (cand.isFullyInstantiated()) {
+			addFullyInstantiatedCandidate(cand);
 			return;
 		}
 		final PLACE nextUninstantiated = cand.getNextUninstantiatedPlace();
-		if (BUMBLEBEE_B07_OPTIMIZAION) {
-			final List<Condition<LETTER, PLACE>> yetInstantiated = cand.getInstantiated();
-			// list that contains one set for each instantiated condition c
-			// the set contains all conditions that are in co-relation to c and
-			// whose place is 'nextUninstantiated'
-			final List<Set<Condition<LETTER, PLACE>>> coRelatedWithInstantiated = new ArrayList<>();
-			for (final Condition<LETTER, PLACE> instantiated : yetInstantiated) {
-				final Set<Condition<LETTER, PLACE>> coRelatedToInstantiated = mBranchingProcess.getCoRelation()
-						.computeCoRelatatedConditions(instantiated, nextUninstantiated);
-				// 2019-10-18 Matthias Optimization: Use construction cache
-				// because while backtracking same set is computed several times
-				coRelatedWithInstantiated.add(coRelatedToInstantiated);
-			}
-			final Set<Condition<LETTER, PLACE>> inCoRelationWithAllInstantiated = DataStructureUtils
-					.intersection(coRelatedWithInstantiated);
-			for (final Condition<LETTER, PLACE> c : inCoRelationWithAllInstantiated) {
-				assert cand.getTransition().getPredecessorPlaces().contains(c.getPlace());
-				// equality intended here
-				assert c.getPlace().equals(nextUninstantiated);
-				assert !cand.getInstantiated().contains(c);
-				if (!c.getPredecessorEvent().isCutoffEvent()) {
-					cand.instantiateNext(c);
-					evolveCandidate(cand);
-					cand.undoOneInstantiation();
+		final ICoRelation<LETTER, PLACE> coRelation = mBranchingProcess.getCoRelation();
+		final List<Condition<LETTER, PLACE>> yetInstantiated = cand.getInstantiatedButNotInitially();
+		final Set<Condition<LETTER, PLACE>> inCoRelationWithAllInstantiated =
+				cand.getPossibleInstantiations(nextUninstantiated).stream()
+				.filter(x -> coRelation.isCoset(yetInstantiated, x)).collect(Collectors.toSet());
+		for (final Condition<LETTER, PLACE> c : inCoRelationWithAllInstantiated) {
+			assert cand.getTransition().getPredecessorPlaces().contains(c.getPlace());
+			// equality intended here
+			assert c.getPlace().equals(nextUninstantiated);
+			assert !cand.getInstantiated().contains(c);
+			cand.instantiateNext(c);
+			evolveCandidate(cand);
+			cand.undoOneInstantiation();
+		}
+	}
+	
+	private void evolveCandidateWithForwardChecking(final Candidate<LETTER, PLACE> cand) throws PetriNetNot1SafeException  {
+		if (cand.isFullyInstantiated()) {
+			addFullyInstantiatedCandidate(cand);
+			return;
+		}
+		final PLACE nextUninstantiated = cand.getNextUninstantiatedPlace();
+		final ICoRelation<LETTER, PLACE> coRelation = mBranchingProcess.getCoRelation();
+		final Map<PLACE, Set<Condition<LETTER, PLACE>>> possibleInstantiationsMap = cand.getPossibleInstantiationsMap();
+		final Set<Condition<LETTER, PLACE>> possibleInstantiations = cand.getPossibleInstantiations(nextUninstantiated);
+		possibleInstantiationsMap.remove(nextUninstantiated);
+		for (final Condition<LETTER, PLACE> condition : possibleInstantiations) {
+			final Map<PLACE, Set<Condition<LETTER, PLACE>>> newPossibleInstantiations = new HashMap<>();
+			boolean uselessCandidate = false;
+			for (final PLACE p : possibleInstantiationsMap.keySet()) {
+				final Set<Condition<LETTER, PLACE>> possibleInstantiationsforP = 
+						possibleInstantiationsMap.get(p).stream()
+						.filter(x -> coRelation.isInCoRelation(condition, x)).collect(Collectors.toSet());
+				if (possibleInstantiationsforP.isEmpty()) {
+					uselessCandidate = true;
+					break;
 				}
+				newPossibleInstantiations.put(p, possibleInstantiationsforP);
 			}
-		} else {
-			for (final Condition<LETTER, PLACE> c : mBranchingProcess.place2cond(nextUninstantiated)) {
-				assert cand.getTransition().getPredecessorPlaces().contains(c.getPlace());
-				// equality intended here
-				assert c.getPlace().equals(nextUninstantiated);
-				assert !cand.getInstantiated().contains(c);
-				if (!c.getPredecessorEvent().isCutoffEvent()) {
-					if (mBranchingProcess.getCoRelation().isCoset(cand.getInstantiated(), c)) {
-						cand.instantiateNext(c);
-						evolveCandidate(cand);
-						cand.undoOneInstantiation();
-					}
-				}
+			if (!uselessCandidate) {
+				final LinkedList<Condition<LETTER, PLACE>> newInstantiated = new LinkedList<>(
+						cand.getInstantiated());
+				newInstantiated.add(condition);
+				final LinkedList<PLACE> newNotInstantiated = new LinkedList<>(cand.getNotInstantiated());
+				newNotInstantiated.remove(newNotInstantiated.size() - 1);
+				evolveCandidateWithForwardChecking(new Candidate<LETTER, PLACE>(cand.getTransition(), newNotInstantiated,
+						newInstantiated, newPossibleInstantiations));
 			}
 		}
 	}
 
 
-
 	/**
-	 * @return All {@code Candidate}s for possible extensions that are successors of the {@code Event}.
+	 * @return All {@code Candidate}s for possible extensions that are successors of
+	 *         the {@code Event}.
 	 */
 	private Collection<Candidate<LETTER, PLACE>> computeCandidates(final Event<LETTER, PLACE> event) {
-		if (mLazySuccessorComputation) {
-			final Set<Condition<LETTER, PLACE>> conditions = event.getSuccessorConditions();
-			final Set<PLACE> correspondingPlaces = conditions.stream().map(Condition::getPlace).collect(Collectors.toSet());
-			final Collection<ISuccessorTransitionProvider<LETTER, PLACE>> successorTransitionProviders = mBranchingProcess
-					.getNet().getSuccessorTransitionProviders(correspondingPlaces);
+		if (event.getSuccessorConditions().isEmpty()) {
+			return Collections.emptySet();
+		}
+		if (LAZY_SUCCESSOR_COMPUTATION) {
+			final Set<Condition<LETTER, PLACE>> newConditions = event.getSuccessorConditions();
+			final ICoRelation<LETTER, PLACE> coRelation = mBranchingProcess.getCoRelation();
+			final Set<Condition<LETTER, PLACE>> coRelatedConditions;
+			final HashRelation<PLACE, Condition<LETTER, PLACE>> place2coRelatedConditions = new HashRelation<>();
+			if (mUseB32Optimization) {
+				coRelatedConditions = coRelation.computeNonCutoffCoRelatatedConditions(newConditions.iterator().next());
+				for (final Condition<LETTER, PLACE> c : coRelatedConditions) {
+					place2coRelatedConditions.addPair(c.getPlace(), c);
+				}
+			} else {
+				coRelatedConditions = coRelation.computeCoRelatatedConditions(newConditions.iterator().next());
+				for (final Condition<LETTER, PLACE> c : coRelatedConditions) {
+					if (!c.getPredecessorEvent().isCutoffEvent()) {
+						place2coRelatedConditions.addPair(c.getPlace(), c);
+					}
+				}
+			}
+			final Collection<ISuccessorTransitionProvider<LETTER, PLACE>> successorTransitionProviders;
+			
+            if (mFinishedPetrinet) {
+            	final Set<PLACE> placesOfNewConditions = new HashSet<>();
+    			for (final Condition<LETTER, PLACE> c : newConditions) {
+    				placesOfNewConditions.add(c.getPlace());
+    			}
+    			successorTransitionProviders = mBranchingProcess
+    					.getNet().getSuccessorTransitionProviders(placesOfNewConditions, place2coRelatedConditions.getDomain());
+            } else {
+            	final HashRelation<PLACE, PLACE> place2allowedSiblings = new HashRelation<>();
+    			for (final Condition<LETTER, PLACE> c : newConditions) {
+    				place2allowedSiblings.addAllPairs(c.getPlace(), place2coRelatedConditions.getDomain());
+    			}
+    			successorTransitionProviders = mBranchingProcess
+    					.getNet().getSuccessorTransitionProviders(place2allowedSiblings);
+            }
+			
 			final List<Candidate<LETTER, PLACE>> candidates = successorTransitionProviders.stream()
-					.map(x -> new Candidate<LETTER, PLACE>(x, conditions)).collect(Collectors.toList());
+					.map(x -> new Candidate<LETTER, PLACE>(x, newConditions, place2coRelatedConditions)).collect(Collectors.toList());
 			return candidates;
 		} else {
 			if (!(mBranchingProcess.getNet() instanceof IPetriNet)) {
@@ -250,14 +311,14 @@ public class PossibleExtensions<LETTER, PLACE> implements IPossibleExtensions<LE
 			}
 			final List<Candidate<LETTER, PLACE>> candidates = new ArrayList<>();
 			for (final ITransition<LETTER, PLACE> transition : transitions) {
-				final Candidate<LETTER, PLACE> candidate = new Candidate<>(new SimpleSuccessorTransitionProvider<>(
-						Collections.singleton(transition), fullPetriNet), event.getSuccessorConditions());
+				final Candidate<LETTER, PLACE> candidate = new Candidate<>(
+						new SimpleSuccessorTransitionProvider<>(Collections.singleton(transition), fullPetriNet),
+						event.getSuccessorConditions(), null);
 				candidates.add(candidate);
 			}
 			return candidates;
 		}
 	}
-
 
 	@Override
 	public boolean isEmpy() {
@@ -269,14 +330,17 @@ public class PossibleExtensions<LETTER, PLACE> implements IPossibleExtensions<LE
 		return mPe.size() + mFastpathCutoffEventList.size();
 	}
 
+	@Override
 	public int getUsefulExtensionCandidates() {
 		return mUsefulExtensionCandidates;
 	}
 
+	@Override
 	public int getUselessExtensionCandidates() {
 		return mUselessExtensionCandidates;
 	}
 
+	@Override
 	public int getMaximalSize() {
 		return mMaximalSize;
 	}

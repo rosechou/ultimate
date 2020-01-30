@@ -192,21 +192,6 @@ public abstract class AbstractGeneralizedAffineRelation<AGAT extends AbstractGen
 		return TrivialityStatus.EQUIVALENT_TO_FALSE;
 	}
 
-	protected static LBool isEquivalent(final Script script, final Term term1, final Term term2) {
-		Term comp = script.term("=", term1, term2);
-		comp = script.term("not", comp);
-		final LBool sat = Util.checkSat(script, comp);
-		return sat;
-	}
-
-	protected static LBool assumptionImpliesEquivalence(final Script script, final Term originalTerm,
-			final Term relationToTerm, final Map<AssumptionForSolvability, Term> additionalAssumptions) {
-		final Term konJ = SmtUtils.and(script, additionalAssumptions.values());
-		final Term impli1 = SmtUtils.implies(script, konJ, relationToTerm);
-		final Term impli2 = SmtUtils.implies(script, konJ, originalTerm);
-		return isEquivalent(script, impli1, impli2);
-	}
-
 	public RelationSymbol getRelationSymbol() {
 		return mRelationSymbol;
 	}
@@ -272,20 +257,6 @@ public abstract class AbstractGeneralizedAffineRelation<AGAT extends AbstractGen
 
 	public AGAT getAffineTerm() {
 		return mAffineTerm;
-	}
-
-	private void makeRealAssumptions(final AssumptionMapBuilder assuMapBuilder, final Term divisor) {
-		assuMapBuilder.putDivisorNotZero(divisor);
-	}
-
-	private void makeIntAssumptions(final AssumptionMapBuilder assuMapBuilder, final Script script, final Term divisor,
-			final Term dividend) {
-		assuMapBuilder.putDivisorNotZero(divisor);
-		// EQ and DISTINCT need Modulo Assumption
-		if ((mRelationSymbol.equals(RelationSymbol.EQ)) || (mRelationSymbol.equals(RelationSymbol.DISTINCT))) {
-			assuMapBuilder.putDivisibleByVariable(dividend, divisor);
-		}
-		// cases LEQ, LESS, GREATER, GEQ do nothing
 	}
 
 	private Term integerDivision(final Script script, final Rational coeffOfSubject,
@@ -445,6 +416,13 @@ public abstract class AbstractGeneralizedAffineRelation<AGAT extends AbstractGen
 				return null;
 			}
 		}
+		if (divisionByVariablesNecessary(abstractVarOfSubject)) {
+			if (THROW_EXCEPTION_IF_NOT_SOLVABLE) {
+				throw new UnsupportedOperationException("Division by variables needs case distinction");
+			} else {
+				return null;
+			}
+		}
 		final Rational coeffOfSubject = mAffineTerm.getAbstractVariable2Coefficient().get(abstractVarOfSubject);
 		if (coeffOfSubject.equals(Rational.ZERO)) {
 			throw new AssertionError("no abstract variable must have coefficient zero");
@@ -489,45 +467,6 @@ public abstract class AbstractGeneralizedAffineRelation<AGAT extends AbstractGen
 			resultRelationSymbol = mRelationSymbol;
 		}
 
-		if (divisionByVariablesNecessary(abstractVarOfSubject)) {
-			// TODO 13.11.2019: When we divide by variables we could actually sometimes simplify the resulting division,
-			// in the case that this variable is not zero (and therefore we can simplify f.ex. x/x to 1).
-			// At the moment this seems like much work relative to little effect, so I was asked to leave this comment
-			// here for the future.
-			for (final Entry<Term, Rational> var2exp : ((Monomial) abstractVarOfSubject).getVariable2Exponent()
-					.entrySet()) {
-				if (var2exp.getKey() == subject) {
-					// do nothing
-				} else {
-					// TODO: Integer sort tests
-					assert var2exp.getValue().isIntegral();
-					final int exponent = var2exp.getValue().numerator().intValueExact();
-					final Term[] rhsDivision = new Term[exponent + 1];
-					rhsDivision[0] = rhsTerm;
-					if (exponent >= 2) {
-						for (int i = 1; i < exponent + 1; i++) {
-							rhsDivision[i] = var2exp.getKey();
-						}
-					} else {
-						rhsDivision[1] = var2exp.getKey();
-					}
-					// Asked Matthias whether it matters much, that redundant assumptions could
-					// get added
-					// e.g. when you already have x != 0 and you have to divide by x again.
-					// Better detect it before adding them.
-					if (SmtSortUtils.isRealSort(mAffineTerm.getSort())) {
-						makeRealAssumptions(assumptionMapBuilder, var2exp.getKey());
-						rhsTerm = SmtUtils.divReal(script, rhsDivision);
-					} else if (SmtSortUtils.isIntSort(mAffineTerm.getSort())) {
-						makeIntAssumptions(assumptionMapBuilder, script, var2exp.getKey(), rhsTerm);
-						rhsTerm = SmtUtils.divInt(script, rhsDivision);
-					} else {
-						throw new UnsupportedOperationException("PolynomialRelations of this sort are not supported.");
-					}
-				}
-			}
-		}
-
 		final SolvedBinaryRelation result = new SolvedBinaryRelation(subject, rhsTerm, resultRelationSymbol,
 				assumptionMapBuilder.getExplicitAssumptionMap());
 		final Term relationToTerm = result.relationToTerm(script);
@@ -540,6 +479,21 @@ public abstract class AbstractGeneralizedAffineRelation<AGAT extends AbstractGen
 					relationToTerm) != LBool.SAT : "transformation to AffineRelation unsound";
 		}
 		return result;
+	}
+
+	protected static LBool isEquivalent(final Script script, final Term term1, final Term term2) {
+		Term comp = script.term("=", term1, term2);
+		comp = script.term("not", comp);
+		final LBool sat = Util.checkSat(script, comp);
+		return sat;
+	}
+
+	protected static LBool assumptionImpliesEquivalence(final Script script, final Term originalTerm,
+			final Term relationToTerm, final Map<AssumptionForSolvability, Term> additionalAssumptions) {
+		final Term konJ = SmtUtils.and(script, additionalAssumptions.values());
+		final Term impli1 = SmtUtils.implies(script, konJ, relationToTerm);
+		final Term impli2 = SmtUtils.implies(script, konJ, originalTerm);
+		return isEquivalent(script, impli1, impli2);
 	}
 
 	/**
@@ -775,8 +729,6 @@ public abstract class AbstractGeneralizedAffineRelation<AGAT extends AbstractGen
 					result.asTerm(script)) != LBool.SAT : "solveForSubject unsound";
 		}
 		return result;
-		// TODO: Ask Matthias whether the subjectInAllowedSubterm-case is disjunct to the abstractVarOfSubject being a
-		// Monomial.
 	}
 
 	private boolean divisionByVariablesNecessary(final Term abstractVarOfSubject) {

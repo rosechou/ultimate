@@ -63,7 +63,7 @@ import de.uni_freiburg.informatik.ultimate.core.model.services.ILogger;
  */
 public final class PetriNetUnfolder<LETTER, PLACE> {
 	private static final boolean EXTENDED_ASSERTION_CHECKING = false;
-	private static final boolean B20_OPTIMIZATION = false;
+	private static final boolean B32_OPTIMIZATION = false;
 
 	private final AutomataLibraryServices mServices;
 	private final ILogger mLogger;
@@ -96,7 +96,7 @@ public final class PetriNetUnfolder<LETTER, PLACE> {
 	 * @throws PetriNetNot1SafeException
 	 */
 	public PetriNetUnfolder(final AutomataLibraryServices services, final IPetriNetSuccessorProvider<LETTER, PLACE> operand,
-			final UnfoldingOrder order, final boolean sameTransitionCutOff, final boolean stopIfAcceptingRunFound)
+			final EventOrderEnum order, final boolean sameTransitionCutOff, final boolean stopIfAcceptingRunFound)
 			throws AutomataOperationCanceledException, PetriNetNot1SafeException {
 		mServices = services;
 		mLogger = mServices.getLoggingService().getLogger(LibraryIdentifiers.PLUGIN_ID);
@@ -110,17 +110,20 @@ public final class PetriNetUnfolder<LETTER, PLACE> {
 			case KMM:
 				mOrder = new McMillanOrder<>();
 				break;
-			case ERV_MARK:
-				mOrder = new ErvEqualMarkingOrder<>();
-				break;
 			case ERV:
 				mOrder = new EsparzaRoemerVoglerOrder<>();
+				break;
+			case ERV2:
+				mOrder = new EsparzaRoemerVoglerOrderWithoutCut<>();
+				break;
+			case DBO:
+				mOrder = new DepthBasedOrder<>();
 				break;
 			default:
 				throw new IllegalArgumentException();
 		}
-		mUnfolding = new BranchingProcess<>(mServices, operand, mOrder, USE_FIRSTBORN_CUTOFF_CHECK);
-		mPossibleExtensions = new PossibleExtensions<>(mUnfolding, mOrder, USE_FIRSTBORN_CUTOFF_CHECK);
+		mUnfolding = new BranchingProcess<>(mServices, operand, mOrder, USE_FIRSTBORN_CUTOFF_CHECK, B32_OPTIMIZATION);
+		mPossibleExtensions = new PossibleExtensions<>(mUnfolding, mOrder, USE_FIRSTBORN_CUTOFF_CHECK, B32_OPTIMIZATION);
 
 		computeUnfolding();
 		mLogger.info(mStatistics.prettyprintCutOffInformation());
@@ -278,17 +281,16 @@ public final class PetriNetUnfolder<LETTER, PLACE> {
 		return mUnfolding;
 	}
 
-	/**
-	 * Order type.
-	 */
-	public enum UnfoldingOrder {
+	public enum EventOrderEnum {
+		DBO("Depth-based Order"),
+		ERV2("Esparza Römer Vogler without computation of cuts"),
 		ERV("Esparza Römer Vogler"),
 		KMM("Ken McMillan"),
-		ERV_MARK("ERV with equal markings");
+		;
 
 		private String mDescription;
 
-		UnfoldingOrder(final String name) {
+		EventOrderEnum(final String name) {
 			mDescription = name;
 		}
 
@@ -369,7 +371,7 @@ public final class PetriNetUnfolder<LETTER, PLACE> {
 				// 2019-12-15 Matthias: Adding an event twice for a transition-marking pair is
 				// very natural.
 				// We write log messages only if an event was added three or more times. This
-				// should only happen if we use an order that is not total.
+				// can even happen for total orders
 				mLogger.info("inserting event number " + (events.size() + 1) + " for the transition-marking pair ("
 						+ transition + ", " + marking + ")");
 				mLogger.info("this new event has " + event.getAncestors() + " ancestors and is "

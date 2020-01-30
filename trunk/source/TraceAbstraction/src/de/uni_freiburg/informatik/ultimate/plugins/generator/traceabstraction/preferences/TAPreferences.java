@@ -28,6 +28,7 @@
 package de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences;
 
 import de.uni_freiburg.informatik.ultimate.automata.AutomatonDefinitionPrinter.Format;
+import de.uni_freiburg.informatik.ultimate.automata.petrinet.unfolding.PetriNetUnfolder.EventOrderEnum;
 import de.uni_freiburg.informatik.ultimate.core.model.preferences.IPreferenceProvider;
 import de.uni_freiburg.informatik.ultimate.core.model.services.IUltimateServiceProvider;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.SMTFeatureExtractionTermClassifier.ScoringMethod;
@@ -75,6 +76,7 @@ public final class TAPreferences {
 	private final ScoringMethod mHeuristicEmptinessCheckScoringMethod;
 	private final boolean mSMTFeatureExtraction;
 	private final String mSMTFeatureExtractionDumpPath;
+	private final boolean mOverrideInterpolantAutomaton;
 
 	public enum Artifact {
 		ABSTRACTION, INTERPOLANT_AUTOMATON, NEG_INTERPOLANT_AUTOMATON, RCFG
@@ -156,6 +158,8 @@ public final class TAPreferences {
 		mSMTFeatureExtraction = mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_SMT_FEATURE_EXTRACTION);
 		mSMTFeatureExtractionDumpPath =
 				mPrefs.getString(TraceAbstractionPreferenceInitializer.LABEL_SMT_FEATURE_EXTRACTION_DUMP_PATH);
+		mOverrideInterpolantAutomaton =
+				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_OVERRIDE_INTERPOLANT_AUTOMATON);
 
 	}
 
@@ -307,11 +311,11 @@ public final class TAPreferences {
 	}
 
 	public boolean unfoldingToNet() {
-		return mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_UNFOLDING2NET);
+		return mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_BACKFOLDING);
 	}
 
-	public String order() {
-		return mPrefs.getString(TraceAbstractionPreferenceInitializer.LABEL_ORDER);
+	public EventOrderEnum eventOrder() {
+		return mPrefs.getEnum(TraceAbstractionPreferenceInitializer.LABEL_CONFIGURATION_ORDER, EventOrderEnum.class);
 	}
 
 	public PetriNetLbe useLbeInConcurrentAnalysis() {
@@ -388,5 +392,9 @@ public final class TAPreferences {
 
 	public String getSMTFeatureExtractionDumpPath() {
 		return mSMTFeatureExtractionDumpPath;
+	}
+
+	public boolean overrideInterpolantAutomaton() {
+		return mOverrideInterpolantAutomaton;
 	}
 }

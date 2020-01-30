@@ -103,6 +103,7 @@ public class SMTFeatureExtractionTermClassifier extends NonRecursive {
 	}
 
 	public enum ScoringMethod {
+		ZERO,
 		NUM_FUNCTIONS,
 		NUM_VARIABLES,
 		DAGSIZE,
@@ -110,6 +111,8 @@ public class SMTFeatureExtractionTermClassifier extends NonRecursive {
 		BIGGEST_EQUIVALENCE_CLASS,
 		AVERAGE_EQUIVALENCE_CLASS,
 		NUMBER_OF_EQUIVALENCE_CLASSES,
+		NUMBER_OF_SELECT_FUNCTIONS,
+		NUMBER_OF_STORE_FUNCTIONS,
 		COMPARE_FEATURES,
 	}
 
@@ -193,14 +196,25 @@ public class SMTFeatureExtractionTermClassifier extends NonRecursive {
 			score = (int) getVariableEquivalenceClassSizes().stream().mapToInt(val -> val).average().orElse(0);
 		} else if (scoringMethod == ScoringMethod.NUMBER_OF_EQUIVALENCE_CLASSES) {
 			score = getVariableEquivalenceClassSizes().size();
-		}else {
+		} else if (scoringMethod == ScoringMethod.NUMBER_OF_SELECT_FUNCTIONS) {
+			score = getOccuringFunctionNames().getOrDefault("select", 0);
+		} else if (scoringMethod == ScoringMethod.NUMBER_OF_STORE_FUNCTIONS) {
+			score = getOccuringFunctionNames().getOrDefault("store", 0);
+		} else if (scoringMethod == ScoringMethod.ZERO) {
+			score = 0;
+		}
+		else {
 			throw new UnsupportedOperationException("Unsupported ScoringMethod " + scoringMethod.toString());
 		}
-		mLogger.warn("stack " + mAssertionStack.toString());
-		mLogger.warn("eqclass " + mVariableEquivalenceClasses.getAllEquivalenceClasses().toString());
-		mLogger.warn("eqclass_sizes " + getVariableEquivalenceClassSizes());
-		mLogger.warn("score " + (score));
-		return score;
+		final double normalized = 1.0 - ( 1.0 / (score != 0 ? (double)score : 1.0));
+		if(mLogger.isDebugEnabled()) {
+			mLogger.debug("stack " + mAssertionStack.toString());
+			mLogger.debug("eqclass " + mVariableEquivalenceClasses.getAllEquivalenceClasses().toString());
+			mLogger.debug("eqclass_sizes " + getVariableEquivalenceClassSizes());
+			mLogger.debug("score " + (score));
+			mLogger.debug("normalized_score " + (normalized));
+		}
+		return normalized;
 	}
 
 	private boolean isApplicationTermWithArityZero(final Term term) {

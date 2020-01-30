@@ -27,15 +27,16 @@
  */
 package de.uni_freiburg.informatik.ultimate.automata.petrinet.unfolding;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import de.uni_freiburg.informatik.ultimate.automata.AutomataLibraryServices;
 import de.uni_freiburg.informatik.ultimate.automata.AutomataOperationCanceledException;
 import de.uni_freiburg.informatik.ultimate.automata.AutomatonDefinitionPrinter;
-import de.uni_freiburg.informatik.ultimate.automata.AutomatonDefinitionPrinter.Format;
 import de.uni_freiburg.informatik.ultimate.automata.IAutomaton;
 import de.uni_freiburg.informatik.ultimate.automata.LibraryIdentifiers;
 import de.uni_freiburg.informatik.ultimate.automata.petrinet.IPetriNetSuccessorProvider;
@@ -122,7 +123,8 @@ public final class BranchingProcess<LETTER, PLACE> implements IAutomaton<LETTER,
 	private final boolean mUseFirstbornCutoffCheck;
 
 	public BranchingProcess(final AutomataLibraryServices services, final IPetriNetSuccessorProvider<LETTER, PLACE> net,
-			final EventOrder<LETTER, PLACE> order, final boolean useCutoffChekingPossibleExtention) throws PetriNetNot1SafeException {
+			final EventOrder<LETTER, PLACE> order, final boolean useCutoffChekingPossibleExtention,
+			final boolean useB32Optimization) throws PetriNetNot1SafeException {
 		mServices = services;
 		mLogger = mServices.getLoggingService().getLogger(LibraryIdentifiers.PLUGIN_ID);
 		mNet = net;
@@ -130,11 +132,17 @@ public final class BranchingProcess<LETTER, PLACE> implements IAutomaton<LETTER,
 		mPlace2Conds = new HashRelation<>();
 		mConditions = new HashSet<>();
 		mEvents = new HashSet<>();
-		mCoRelation = new ConditionEventsCoRelation<>(this);
+		if (useB32Optimization) {
+			mCoRelation = new ConditionEventsCoRelationB32<>(this);
+		} else {
+			mCoRelation = new ConditionEventsCoRelation<>(this);
+		}
+
 		mUseFirstbornCutoffCheck = useCutoffChekingPossibleExtention;
 
 		// add a dummy event as root. its successors are the initial conditions.
 		mDummyRoot = new Event<>(this);
+		//mCoRelation.initialize(mDummyRoot.getSuccessorConditions());
 		addEvent(mDummyRoot);
 	}
 
@@ -468,6 +476,58 @@ public final class BranchingProcess<LETTER, PLACE> implements IAutomaton<LETTER,
 		return result;
 	}
 
+	/**
+	 * We call a transition "vital" if there is an accepting firing sequence in
+	 * which this transition occurs.
+	 */
+	public Set<ITransition<LETTER, PLACE>> computeVitalTransitions() {
+		final HashRelation<Event<LETTER, PLACE>, Event<LETTER, PLACE>> companion2cutoff = new HashRelation<>();
+		for (final Event<LETTER, PLACE> e : getEvents()) {
+			if (e.isCutoffEvent()) {
+				companion2cutoff.addPair(e.getCompanion(), e);
+			}
+		}
+		final Set<Condition<LETTER, PLACE>> acceptingConditions = new HashSet<>();
+		for (final Condition<LETTER, PLACE> c : getConditions()) {
+			if (mNet.isAccepting(c.getPlace())) {
+				acceptingConditions.add(c);
+			}
+		}
+		final Set<Event<LETTER, PLACE>> ancestorsWithCutoffLinks = new HashSet<>();
+		final ArrayDeque<Event<LETTER, PLACE>> worklist = new ArrayDeque<>();
+		for (final Condition<LETTER, PLACE> c : acceptingConditions) {
+			ancestorsWithCutoffLinks.add(c.getPredecessorEvent());
+			worklist.add(c.getPredecessorEvent());
+		}
+		while (!worklist.isEmpty()) {
+			final Event<LETTER, PLACE> e = worklist.remove();
+			for (final Condition<LETTER, PLACE> c : e.getPredecessorConditions()) {
+				final Event<LETTER, PLACE> pred = c.getPredecessorEvent();
+				if (!ancestorsWithCutoffLinks.contains(pred)) {
+					ancestorsWithCutoffLinks.add(pred);
+					worklist.add(pred);
+				}
+			}
+			for (final Event<LETTER, PLACE> eco : companion2cutoff.getImage(e)) {
+				if (!ancestorsWithCutoffLinks.contains(eco)) {
+					ancestorsWithCutoffLinks.add(eco);
+					worklist.add(eco);
+				}
+			}
+		}
+		final Set<Event<LETTER, PLACE>> vitalEvents = new HashSet<>();
+		for (final Event<LETTER, PLACE> anc : ancestorsWithCutoffLinks) {
+			vitalEvents.addAll(mCoRelation.computeCoRelatatedEvents(anc));
+		}
+		for (final Condition<LETTER, PLACE> c : acceptingConditions) {
+			vitalEvents.addAll(mCoRelation.computeCoRelatatedEvents(c));
+		}
+		vitalEvents.addAll(ancestorsWithCutoffLinks);
+		final Set<ITransition<LETTER, PLACE>> vitalTransitions = vitalEvents.stream().filter(x -> x != mDummyRoot)
+				.map(Event::getTransition).collect(Collectors.toSet());
+		return vitalTransitions;
+	}
+
 	@Override
 	public String sizeInformation() {
 		// Subtract one from size of events because of auxiliary/dummy initial event.
@@ -506,7 +566,6 @@ public final class BranchingProcess<LETTER, PLACE> implements IAutomaton<LETTER,
 
 	@Override
 	public String toString() {
-		return (new AutomatonDefinitionPrinter<String, String>(mServices, "branchingProcess", Format.ATS, this))
-				.getDefinitionAsString();
+		return (AutomatonDefinitionPrinter.toString(mServices, "branchingProcess", this));
 	}
 }

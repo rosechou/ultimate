@@ -107,10 +107,28 @@ public class ConditionEventsCoRelation<LETTER, PLACE> implements ICoRelation<LET
 		return streamCoRelatedConditions(c, mCoRelation.projectToSnd(c));
 	}
 
+	/**
+	 * @return Stream of all conditions that are
+	 *         <ul>
+	 *         <li>in the condition marking of c's predecessor event or
+	 *         <li>in co-relation to the {@link Condition} c and whose predecessor
+	 *         is an event whose transition is in the given set.
+	 *         </ul>
+	 */
 	private Stream<Condition<LETTER, PLACE>> streamCoRelatedConditions(final Condition<LETTER, PLACE> c,
 			final Set<ITransition<LETTER, PLACE>> transitions) {
 		return Stream.concat(c.getPredecessorEvent().getConditionMark().stream(),
 				streamCoRelatedEvents(c, transitions).flatMap(x -> x.getSuccessorConditions().stream()));
+	}
+
+	private Stream<Condition<LETTER, PLACE>> streamNonCutoffCoRelatedConditions(final Condition<LETTER, PLACE> c) {
+		return streamNonCutoffCoRelatedConditions(c, mCoRelation.projectToSnd(c));
+	}
+
+	private Stream<Condition<LETTER, PLACE>> streamNonCutoffCoRelatedConditions(final Condition<LETTER, PLACE> c,
+			final Set<ITransition<LETTER, PLACE>> transitions) {
+		return Stream.concat(c.getPredecessorEvent().getConditionMark().stream(),
+				(streamCoRelatedEvents(c, transitions).filter(x -> !x.isCutoffEvent())).flatMap(x -> x.getSuccessorConditions().stream()));
 	}
 
 
@@ -137,10 +155,9 @@ public class ConditionEventsCoRelation<LETTER, PLACE> implements ICoRelation<LET
 			}
 		}
 		for (final Condition<LETTER, PLACE> c : e.getConditionMark()) {
-			if (!e.getSuccessorConditions().contains(c))
+			if (!c.getPredecessorEvent().equals(e))
 				mCoRelation.addTriple(c, e.getTransition(), e);
 		}
-
 	}
 
 
@@ -148,8 +165,7 @@ public class ConditionEventsCoRelation<LETTER, PLACE> implements ICoRelation<LET
 	public boolean isInCoRelation(final Condition<LETTER, PLACE> c1, final Condition<LETTER, PLACE> c2) {
 		final boolean result = mCoRelation.containsTriple(c1, c2.getPredecessorEvent().getTransition(),
 				c2.getPredecessorEvent())
-				|| mCoRelation.containsTriple(c2, c1.getPredecessorEvent().getTransition(), c1.getPredecessorEvent())
-				|| (c1.getPredecessorEvent() == c2.getPredecessorEvent());
+				|| (c1.getPredecessorEvent().conditionMarkContains(c2));
 		assert result == isInCoRelationNaive(c1, c2) :
 				String.format("contradictory co-Relation for %s,%s: normal=%b != %b=naive", c1, c2, result, !result);
 		if (result) {
@@ -243,6 +259,7 @@ public class ConditionEventsCoRelation<LETTER, PLACE> implements ICoRelation<LET
 		return mCoRelation.toStringAsTable();
 	}
 
+
 	@Override
 	public Set<Condition<LETTER, PLACE>> computeCoRelatatedConditions(final Condition<LETTER, PLACE> cond) {
 		final Set<Condition<LETTER, PLACE>> result = streamCoRelatedConditions(cond).collect(Collectors.toSet());
@@ -253,6 +270,11 @@ public class ConditionEventsCoRelation<LETTER, PLACE> implements ICoRelation<LET
 		return result;
 	}
 
+	@Override
+	public Set<Condition<LETTER, PLACE>> computeNonCutoffCoRelatatedConditions(final Condition<LETTER, PLACE> cond) {
+		final Set<Condition<LETTER, PLACE>> result = streamNonCutoffCoRelatedConditions(cond).collect(Collectors.toSet());
+		return result;
+	}
 	private Set<Condition<LETTER, PLACE>> computeCoRelatatedConditionsInefficient(final Condition<LETTER, PLACE> cond) {
 		final Set<Condition<LETTER, PLACE>> result = new HashSet<>();
 		for (final Condition<LETTER, PLACE> c2 : mBranchingProcess.getConditions()) {
@@ -298,6 +320,11 @@ public class ConditionEventsCoRelation<LETTER, PLACE> implements ICoRelation<LET
 			result.retainAll(coRelated);
 		}
 		return result;
+	}
+
+	@Override
+	public Set<Event<LETTER, PLACE>> computeCoRelatatedEvents(final Condition<LETTER, PLACE> c) {
+		return streamCoRelatedEvents(c).collect(Collectors.toSet());
 	}
 
 

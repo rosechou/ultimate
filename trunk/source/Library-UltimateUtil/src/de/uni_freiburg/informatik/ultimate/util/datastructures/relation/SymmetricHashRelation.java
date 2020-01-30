@@ -33,7 +33,13 @@ import java.util.Set;
 import de.uni_freiburg.informatik.ultimate.util.datastructures.Doubleton;
 
 /**
- * Implementation of the AbstractRelation that uses HashMap and HashSet.
+ * Implementation of an HashRelation where the add method and the remove method
+ * make sure that that relation contains a pair (a,b) iff the relation contains
+ * the pair (b,a).
+ * <p>
+ * WARNING: If you use other ways to modify this relation (e.g., removal during
+ * iteration, the result might not be symmetric any more.
+ * </p>
  *
  * @author Matthias Heizmann (heizmann@informatik.uni-freiburg.de)
  * @author Daniel Tischner {@literal <zabuza.dev@gmail.com>}
@@ -44,7 +50,7 @@ public class SymmetricHashRelation<E> extends HashRelation<E, E> {
 		super();
 	}
 
-	public SymmetricHashRelation(final AbstractRelation<E, E, ?> rel) {
+	public SymmetricHashRelation(final AbstractRelation<E, E, ?, ?> rel) {
 		super(rel);
 	}
 
@@ -75,7 +81,7 @@ public class SymmetricHashRelation<E> extends HashRelation<E, E> {
 
 	public Set<Doubleton<E>> buildSetOfDoubletons() {
 		final Set<Doubleton<E>> result = new HashSet<>();
-		for (final Entry<E, E> entry : entrySet()) {
+		for (final Entry<E, E> entry : getSetOfPairs()) {
 			result.add(new Doubleton<>(entry.getKey(), entry.getValue()));
 		}
 		return result;
@@ -83,7 +89,7 @@ public class SymmetricHashRelation<E> extends HashRelation<E, E> {
 
 	public Set<Doubleton<E>> buildSetOfNonSymmetricDoubletons() {
 		final Set<Doubleton<E>> result = new HashSet<>();
-		for (final Entry<E, E> entry : entrySet()) {
+		for (final Entry<E, E> entry : getSetOfPairs()) {
 			if (!entry.getKey().equals(entry.getValue())) {
 				result.add(new Doubleton<>(entry.getKey(), entry.getValue()));
 			}

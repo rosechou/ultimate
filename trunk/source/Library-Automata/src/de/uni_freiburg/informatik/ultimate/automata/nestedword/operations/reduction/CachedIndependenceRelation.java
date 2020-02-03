@@ -93,18 +93,6 @@ public class CachedIndependenceRelation<STATE, LETTER> implements IIndependenceR
 		return result;
 	}
 
-	public int getNegativeCacheSize() {
-		final int negativeSize = mNegativeCache.entrySet().stream()
-				.collect(Collectors.summingInt(e -> e.getValue().size()));
-		return negativeSize;
-	}
-
-	public int getPositiveCacheSize() {
-		final int positiveSize = mPositiveCache.entrySet().stream()
-				.collect(Collectors.summingInt(e -> e.getValue().size()));
-		return positiveSize;
-	}
-
 	/**
 	 * Merges cached independencies for two letters into a combined letter. If both
 	 * are independent from some third letter c, the combined letter will be
@@ -152,5 +140,22 @@ public class CachedIndependenceRelation<STATE, LETTER> implements IIndependenceR
 			relation.removeDomainElement(a);
 			relation.removeRangeElement(a);
 		}
+	}
+
+	public void clearCache() {
+		mPositiveCache.clear();
+		mNegativeCache.clear();
+	}
+
+	public int getNegativeCacheSize() {
+		final int negativeSize = mNegativeCache.entrySet().stream()
+				.collect(Collectors.summingInt(e -> e.getValue().size()));
+		return negativeSize;
+	}
+
+	public int getPositiveCacheSize() {
+		final int positiveSize = mPositiveCache.entrySet().stream()
+				.collect(Collectors.summingInt(e -> e.getValue().size()));
+		return positiveSize;
 	}
 }

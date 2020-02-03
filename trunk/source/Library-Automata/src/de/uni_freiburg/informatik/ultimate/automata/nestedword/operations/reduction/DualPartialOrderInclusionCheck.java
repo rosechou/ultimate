@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
@@ -38,7 +39,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import de.uni_freiburg.informatik.ultimate.automata.Word;
-import de.uni_freiburg.informatik.ultimate.automata.nestedword.INestedWordAutomaton;
+import de.uni_freiburg.informatik.ultimate.automata.nestedword.INwaOutgoingLetterAndTransitionProvider;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.NestedRun;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.NestedWord;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.NestedWordAutomataUtils;
@@ -65,8 +66,8 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	private final IIndependenceRelation<STATE2, LETTER> mRelation1;
 	private final IIndependenceRelation<STATE2, LETTER> mRelation2;
 
-	private final INestedWordAutomaton<LETTER, STATE1> mOperandA;
-	private final INestedWordAutomaton<LETTER, STATE2> mOperandB;
+	private final INwaOutgoingLetterAndTransitionProvider<LETTER, STATE1> mOperandA;
+	private final INwaOutgoingLetterAndTransitionProvider<LETTER, STATE2> mOperandB;
 	private final NestedRun<LETTER, STATE1> mCounterexample;
 
 	private final LinkedList<SearchState> mStack = new LinkedList<>();
@@ -93,8 +94,9 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	 *            sink states.
 	 */
 	public DualPartialOrderInclusionCheck(final IIndependenceRelation<STATE2, LETTER> relation1,
-			final IIndependenceRelation<STATE2, LETTER> relation2, final INestedWordAutomaton<LETTER, STATE1> operandA,
-			final INestedWordAutomaton<LETTER, STATE2> operandB, final boolean acceptIsSinkB) {
+			final IIndependenceRelation<STATE2, LETTER> relation2,
+			final INwaOutgoingLetterAndTransitionProvider<LETTER, STATE1> operandA,
+			final INwaOutgoingLetterAndTransitionProvider<LETTER, STATE2> operandB, final boolean acceptIsSinkB) {
 		mRelation1 = relation1;
 		mRelation2 = relation2;
 
@@ -282,14 +284,16 @@ public class DualPartialOrderInclusionCheck<STATE1, STATE2, LETTER> {
 	}
 
 	// TODO: determinize automata, use built-in product automata
-	private static <STATE> STATE getInitial(final INestedWordAutomaton<?, STATE> automaton) {
-		final Set<STATE> initial = automaton.getInitialStates();
-		assert initial.size() == 1 : "Automaton must be deterministic";
-		return initial.iterator().next();
+	private static <STATE> STATE getInitial(final INwaOutgoingLetterAndTransitionProvider<?, STATE> automaton) {
+		final Iterator<STATE> initialStates = automaton.getInitialStates().iterator();
+		final STATE initial = initialStates.next();
+		assert !initialStates.hasNext() : "Automaton must be deterministic";
+		return initial;
 	}
 
-	private static <STATE, LETTER> STATE getSuccessor(final INestedWordAutomaton<LETTER, STATE> automaton,
-			final STATE state, final LETTER letter) {
+	private static <STATE, LETTER> STATE getSuccessor(
+			final INwaOutgoingLetterAndTransitionProvider<LETTER, STATE> automaton, final STATE state,
+			final LETTER letter) {
 		// TODO: there must be a much better way than this, this is horrible
 		final Set<STATE> successors = StreamSupport
 				.stream(automaton.internalSuccessors(state, letter).spliterator(), false)

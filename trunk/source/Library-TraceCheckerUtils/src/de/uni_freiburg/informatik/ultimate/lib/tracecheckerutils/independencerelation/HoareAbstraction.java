@@ -62,8 +62,6 @@ public class HoareAbstraction {
 	private final Set<IPredicate> mPredicates;
 	private final Set<IProgramVar> mAllVariables;
 
-	private final Map<IInternalAction, HashRelation<IPredicate, IPredicate>> mAbstractionCache = new HashMap<>();
-
 	private final ManagedScript mManagedScript;
 
 	public HoareAbstraction(final ManagedScript mgdScript, final IHoareTripleChecker checker,
@@ -80,10 +78,6 @@ public class HoareAbstraction {
 	}
 
 	private HashRelation<IPredicate, IPredicate> computePrePostPairs(IInternalAction action) {
-		if (mAbstractionCache.containsKey(action)) {
-			return mAbstractionCache.get(action);
-		}
-
 		final HashRelation<IPredicate, IPredicate> abstraction = new HashRelation<>();
 		for (final IPredicate pre : mPredicates) {
 			for (final IPredicate post : mPredicates) {
@@ -95,7 +89,6 @@ public class HoareAbstraction {
 
 			}
 		}
-		mAbstractionCache.put(action, abstraction);
 
 		return abstraction;
 	}
@@ -135,5 +128,9 @@ public class HoareAbstraction {
 		tfb.setFormula(SmtUtils.and(mManagedScript.getScript(), conjuncts));
 		tfb.setInfeasibility(Infeasibility.UNPROVEABLE);
 		return tfb.finishConstruction(mManagedScript);
+	}
+
+	public void addPredicates(Set<IPredicate> newPredicates) {
+		mPredicates.addAll(newPredicates);
 	}
 }

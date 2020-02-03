@@ -38,7 +38,7 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.I
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IInternalAction;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.transitions.TransFormulaBuilder;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.transitions.UnmodifiableTransFormula;
-import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramConst;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.transitions.UnmodifiableTransFormula.Infeasibility;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramVar;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.hoaretriple.IHoareTripleChecker;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.hoaretriple.IHoareTripleChecker.Validity;
@@ -122,14 +122,6 @@ public class HoareAbstraction {
 			final IPredicate pre = pair.getKey();
 			final IPredicate post = pair.getValue();
 
-			// Add program constants.
-			for (final IProgramConst constant : pre.getConstants()) {
-				tfb.addProgramConst(constant);
-			}
-			for (final IProgramConst constant : post.getConstants()) {
-				tfb.addProgramConst(constant);
-			}
-
 			// Free variables of the precondition are input variables.
 			for (final IProgramVar variable : pre.getVars()) {
 				tfb.addInVar(variable, variable.getTermVariable());
@@ -141,7 +133,7 @@ public class HoareAbstraction {
 		}
 
 		tfb.setFormula(SmtUtils.and(mManagedScript.getScript(), conjuncts));
-
+		tfb.setInfeasibility(Infeasibility.UNPROVEABLE);
 		return tfb.finishConstruction(mManagedScript);
 	}
 }

@@ -1,4 +1,4 @@
-package de.uni_frieburg.informatik.ultimate.pea2boogie.testgen;
+package de.uni_freiburg.informatik.ultimate.pea2boogie.testgen;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,6 +51,10 @@ public class ReqEffectStore {
 
 	public  Set<Integer> getEffectPhaseIndexes() {
 		return mEffectPhase;
+	}
+
+	public  Set<Integer> getEffectEdgeSourceIndexes() {
+		return mEffectEdges.keySet();
 	}
 
 	public boolean isOutputEffectPhaseIndex(Integer phaseIndex) {

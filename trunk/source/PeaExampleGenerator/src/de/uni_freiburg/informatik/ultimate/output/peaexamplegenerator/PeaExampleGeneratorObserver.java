@@ -55,10 +55,10 @@ import de.uni_freiburg.informatik.ultimate.lib.srparse.pattern.InitializationPat
 import de.uni_freiburg.informatik.ultimate.lib.srparse.pattern.PatternType;
 import de.uni_freiburg.informatik.ultimate.output.peaexamplegenerator.preferences.PeaExampleGeneratorPreferenceInitializer;
 import de.uni_freiburg.informatik.ultimate.pea2boogie.PatternContainer;
+import de.uni_freiburg.informatik.ultimate.pea2boogie.testgen.ReqTestResultTest;
+import de.uni_freiburg.informatik.ultimate.pea2boogie.testgen.TestStep;
 import de.uni_freiburg.informatik.ultimate.util.CoreUtil;
 import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.Pair;
-import de.uni_frieburg.informatik.ultimate.pea2boogie.testgen.ReqTestResultTest;
-import de.uni_frieburg.informatik.ultimate.pea2boogie.testgen.TestStep;
 
 /**
  * @author Daniel Dietsch (dietsch@informatik.uni-freiburg.de)
@@ -107,11 +107,12 @@ public class PeaExampleGeneratorObserver extends BaseObserver {
 
 		final List<PatternType> nonInitPatterns =
 				patterns.stream().filter(e -> !(e instanceof InitializationPattern)).collect(Collectors.toList());
-		if (nonInitPatterns.size() > 1) {
-			throw new UnsupportedOperationException("Cannot handle more than one pattern, ask Nico to implement it.");
-		}
+
 		if (nonInitPatterns.isEmpty()) {
 			throw new UnsupportedOperationException("No non-init pattern in: " + PatternContainer.class);
+		}
+		if (nonInitPatterns.size() > 1) {
+			throw new UnsupportedOperationException("Cannot handle more than one pattern, ask Nico to implement it.");
 		}
 
 		final PatternType pattern = nonInitPatterns.iterator().next();

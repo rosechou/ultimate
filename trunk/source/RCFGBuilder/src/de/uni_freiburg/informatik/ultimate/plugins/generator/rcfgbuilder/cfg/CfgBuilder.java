@@ -474,11 +474,11 @@ public class CfgBuilder {
 		final Overapprox oa = Overapprox.getAnnotation(st);
 		return oa != null;
 	}
-	
+
 	private static boolean isStartOfAtomicBlock(final IcfgLocation node) {
 		return AtomicBlockInfo.isStartOfAtomicBlock(node);
 	}
-	
+
 	private static boolean isEndOfAtomicBlock(final IcfgLocation node) {
 		return AtomicBlockInfo.isEndOfAtomicBlock(node);
 	}
@@ -494,38 +494,36 @@ public class CfgBuilder {
 	 */
 	private static class ForkAndGotoInformation {
 
-		private final boolean mHasSomeForkStatement;
+		private boolean mHasSomeForkStatement;
 		private final Set<String> mAllGotoTargets;
 
 		public ForkAndGotoInformation(final BoogieDeclarations boogieDeclarations) {
 			mAllGotoTargets = new HashSet<>();
-			boolean hasSomeForkStatement = false;
 			for (final Entry<String, Procedure> entry : boogieDeclarations.getProcImplementation().entrySet()) {
 				final Procedure proc = entry.getValue();
 				final Body body = proc.getBody();
-				hasSomeForkStatement = hasSomeForkStatement || processStatements(body.getBlock());
+				processStatements(body.getBlock());
 			}
-			mHasSomeForkStatement = hasSomeForkStatement;
 		}
 
-		private boolean processStatements(final Statement[] statements) {
-			boolean hasSomeForkStatement = false;
+		private void processStatements(final Statement[] statements) {
 			for (final Statement st : statements) {
 				if (st instanceof ForkStatement) {
-					hasSomeForkStatement = true;
+					mHasSomeForkStatement = true;
 				} else if (st instanceof GotoStatement) {
 					mAllGotoTargets.addAll(Arrays.asList(((GotoStatement) st).getLabels()));
+				} else if (st instanceof AtomicStatement) {
+					processStatements(((AtomicStatement)st).getBody());
 				} else if (st instanceof AssignmentStatement || st instanceof AssumeStatement
 						|| st instanceof HavocStatement || st instanceof Label || st instanceof JoinStatement
 						|| st instanceof CallStatement || st instanceof ReturnStatement
-						|| st instanceof AssertStatement || st instanceof AtomicStatement) {
+						|| st instanceof AssertStatement) {
 					// do nothing
 				} else {
 					throw new UnsupportedOperationException(
 							"Did not expect statement of type " + st.getClass().getSimpleName());
 				}
 			}
-			return hasSomeForkStatement;
 		}
 
 		public boolean hasSomeForkEdge() {
@@ -1559,9 +1557,9 @@ public class CfgBuilder {
 	 * Defines which statements will be composed.
 	 */
 	enum InternalLbeMode { ONLY_ATOMIC_BLOCK, ATOMIC_BLOCK_AND_INBETWEEN_SEQUENCE_POINTS, ALL }
-	
+
 	private class LargeBlockEncoding {
-		
+
 		private final InternalLbeMode mInternalLbeMode;
 
 		Set<BoogieIcfgLocation> mSequentialQueue = new HashSet<>();
@@ -1706,8 +1704,7 @@ public class CfgBuilder {
 						|| outgoing instanceof IIcfgForkTransitionThreadOther
 						|| outgoing instanceof IIcfgJoinTransitionThreadCurrent
 						|| outgoing instanceof IIcfgJoinTransitionThreadOther) {
-					throw new IllegalStateException(
-							"fork and join should never be part of a composition. Are you accidentally using a block encoding that is not suitable for concurrent programs?");
+					return false;
 				}
 				assert outgoing instanceof StatementSequence || outgoing instanceof SequentialComposition
 						|| outgoing instanceof ParallelComposition || outgoing instanceof Summary
@@ -1782,7 +1779,7 @@ public class CfgBuilder {
 				throw new AssertionError("unknown value " + mInternalLbeMode);
 			}
 		}
-		
+
 		private boolean canBeSuccessorOfParallelComposition(final BoogieIcfgLocation pp) {
 			switch (mInternalLbeMode) {
 			case ALL:

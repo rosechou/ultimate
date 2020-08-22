@@ -162,7 +162,6 @@ public final class SolverBuilder {
 				throw new RuntimeException(e);
 			}
 		} else {
-			solverLogger.info("constructing new instance of SMTInterpol");
 			final LogProxy loggerWrapper = new SmtInterpolLogProxyWrapper(solverLogger);
 			final TerminationRequest termRequest =
 					new SMTInterpolTerminationRequest(services.getProgressMonitorService());
@@ -171,6 +170,7 @@ public final class SolverBuilder {
 			} else {
 				script = new SMTInterpol(loggerWrapper, termRequest);
 			}
+			solverLogger.info("constructed new instance of %s", script.getClass().getSimpleName());
 		}
 		if (settings.dumpSmtScriptToFile()) {
 			script = wrapScriptWithLoggingScript(services, script, solverLogger,

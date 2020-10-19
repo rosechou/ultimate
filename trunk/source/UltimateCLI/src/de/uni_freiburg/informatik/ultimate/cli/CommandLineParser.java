@@ -89,11 +89,11 @@ public final class CommandLineParser {
 		printHelp(mLogger, mOptionsForHelp, USAGE, HEADER, FOOTER);
 	}
 
-	public ParsedParameters parse(final String[] args) throws ParseException {
+	public ParsedParameter parse(final String[] args) throws ParseException {
 		final CommandLine cli = mParser.parse(mOptionsForParser, args);
 		validateParsedOptionsWithValidators(cli);
 		validateParsedOptionsByConversion(cli);
-		return new ParsedParameters(cli, mOptionBuilder);
+		return new ParsedParameter(mCore, cli, mOptionBuilder);
 	}
 
 	private static void printHelp(final ILogger logger, final Options options, final String usage, final String header,

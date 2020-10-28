@@ -17,9 +17,10 @@ import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.resource.PathResource;
+
+import de.uni_freiburg.informatik.ultimate.web.backend.util.CrossOriginFilter;
 
 
 public class WebBackend implements IApplication {

@@ -195,7 +195,6 @@
       <plugin id="org.eclipse.jetty.security"/>
       <plugin id="org.eclipse.jetty.server"/>
       <plugin id="org.eclipse.jetty.servlet"/>
-      <plugin id="org.eclipse.jetty.servlets"/>
       <plugin id="org.eclipse.jetty.util"/>
       <plugin id="org.eclipse.jface"/>
       <plugin id="org.eclipse.jface.databinding"/>

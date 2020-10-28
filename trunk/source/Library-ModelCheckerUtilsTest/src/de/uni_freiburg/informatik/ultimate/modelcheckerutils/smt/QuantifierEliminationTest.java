@@ -140,6 +140,10 @@ public class QuantifierEliminationTest {
 		mCsvWriter.reportTestFinished();
 	}
 
+	public static Sort getBv32(final Script script) {
+		return SmtSortUtils.getBitvectorSort(script, BigInteger.valueOf(32));
+	}
+
 	@Test
 	public void prenexQuantifiedCapture() {
 		final Term seventeen = mScript.numeral(BigInteger.valueOf(17));
@@ -477,7 +481,7 @@ public class QuantifierEliminationTest {
 	public void derIntPoly1Exists() {
 		final FunDecl[] funDecls = new FunDecl[] { new FunDecl(SmtSortUtils::getIntSort, "a", "t"), };
 		final String formulaAsString = "(exists ((x Int)) (and (= (* x a a a 2) t) (= (* x x x) 8)))";
-		final String expectedResultAsString = "(let ((.cse0 (= 0 a))) (or (and (= 0 (mod t (* 2 a a a))) (not .cse0) (= 8 (let ((.cse1 (div t 2 a a a))) (* .cse1 .cse1 .cse1)))) (and .cse0 (= 0 t))))";
+		final String expectedResultAsString = "(let ((.cse2 (div t 2)) (.cse1 (= (mod t 2) 0)) (.cse0 (= a 0))) (or (and .cse0 .cse1 (= .cse2 0)) (let ((.cse4 (* a a a))) (and (= (let ((.cse3 (div .cse2 .cse4))) (* .cse3 .cse3 .cse3)) 8) (= (mod .cse2 .cse4) 0) .cse1 (not .cse0)))))";
 		runQuantifierPusherTest(funDecls, formulaAsString, expectedResultAsString, true, mServices, mLogger, mMgdScript,
 				mCsvWriter);
 	}
@@ -486,7 +490,7 @@ public class QuantifierEliminationTest {
 	public void derIntPoly1Forall() {
 		final FunDecl[] funDecls = new FunDecl[] { new FunDecl(SmtSortUtils::getIntSort, "a", "t"), };
 		final String formulaAsString = "(forall ((x Int)) (or (not (= (* x a a a 2) t)) (not (= (* x x x) 8))))";
-		final String expectedResultAsString = "(let ((.cse1 (= 0 a))) (and (or (not (= 0 (mod t (* 2 a a a)))) (not (= 8 (let ((.cse0 (div t 2 a a a))) (* .cse0 .cse0 .cse0)))) .cse1) (or (not .cse1) (not (= 0 t)))))";
+		final String expectedResultAsString = "(let ((.cse2 (= a 0)) (.cse0 (div t 2)) (.cse1 (not (= (mod t 2) 0)))) (and (or (not (= .cse0 0)) .cse1 (not .cse2)) (let ((.cse3 (* a a a))) (or (not (= (mod .cse0 .cse3) 0)) .cse2 (not (= (let ((.cse4 (div .cse0 .cse3))) (* .cse4 .cse4 .cse4)) 8)) .cse1))))";
 		runQuantifierPusherTest(funDecls, formulaAsString, expectedResultAsString, true, mServices, mLogger, mMgdScript,
 				mCsvWriter);
 	}
@@ -589,8 +593,9 @@ public class QuantifierEliminationTest {
 			final boolean checkResultIsQuantifierFree, final IUltimateServiceProvider services, final ILogger logger,
 			final ManagedScript mgdScript, final QuantifierEliminationTestCsvWriter csvWriter) {
 		final Term formulaAsTerm = TermParseUtils.parseTerm(mgdScript.getScript(), eliminationInputAsString);
-		csvWriter.reportEliminationBegin(formulaAsTerm);
-		final Term result = PartialQuantifierElimination.tryToEliminate(services, logger, mgdScript, formulaAsTerm,
+		final Term letFree = new FormulaUnLet().transform(formulaAsTerm);
+		csvWriter.reportEliminationBegin(letFree);
+		final Term result = PartialQuantifierElimination.tryToEliminate(services, logger, mgdScript, letFree,
 				SimplificationTechnique.SIMPLIFY_DDA, XnfConversionTechnique.BOTTOM_UP_WITH_LOCAL_SIMPLIFICATION);
 		SmtUtils.simplifyWithStatistics(mgdScript, result, null, services, SimplificationTechnique.SIMPLIFY_DDA);
 		logger.info("Result: " + result);
@@ -601,7 +606,7 @@ public class QuantifierEliminationTest {
 		if (expectedResultAsString != null) {
 			final boolean resultIsEquivalentToExpectedResult =
 					SmtTestUtils.areLogicallyEquivalent(mgdScript.getScript(), result, expectedResultAsString);
-			Assert.assertTrue("Not equivalent to expected result " + result, resultIsEquivalentToExpectedResult);
+			Assert.assertTrue("Not equivalent to expected result: " + result, resultIsEquivalentToExpectedResult);
 		}
 		csvWriter.reportEliminationSuccess(result);
 	}
@@ -639,7 +644,7 @@ public class QuantifierEliminationTest {
 		if (expectedResultAsString != null) {
 			final boolean resultIsEquivalentToExpectedResult =
 					SmtTestUtils.areLogicallyEquivalent(mgdScript.getScript(), result, expectedResultAsString);
-			Assert.assertTrue("Not equivalent to expected result " + result, resultIsEquivalentToExpectedResult);
+			Assert.assertTrue("Not equivalent to expected result: " + result, resultIsEquivalentToExpectedResult);
 		}
 		csvWriter.reportEliminationSuccess(result);
 	}
@@ -812,6 +817,14 @@ public class QuantifierEliminationTest {
 	}
 
 	@Test
+	public void arrayEliminationBugBolivia() {
+		final FunDecl[] funDecls = new FunDecl[] { new FunDecl(SmtSortUtils::getIntSort, "b", "c", "d", "x"), };
+		final String formulaAsString = "(forall ((a1 (Array Int (Array Int Int))) (a2 (Array Int Int)) (a3 (Array Int Int)) (b Int)) (or (= x 0) (forall ((a4 (Array Int Int)) (c Int) (a5 (Array Int Int)) (a6 (Array Int (Array Int Int))) (d Int)) (or (not (= (store a2 c 4) a5)) (not (= d 0)) (not (= (select a3 c) 0)) (not (= (store a3 c 1) a4)) (not (= a6 (store a1 c (store (select a1 c) d 2)))) (= c 0) (not (< b c))))))";
+		final String expectedResult = "(= x 0)";
+		runQuantifierPusherTest(funDecls, formulaAsString, expectedResult, true, mServices, mLogger, mMgdScript, mCsvWriter);
+	}
+
+	@Test
 	public void applyDistributivity() {
 		mScript.declareFun("p", new Sort[] { SmtSortUtils.getIntSort(mMgdScript) },
 				SmtSortUtils.getBoolSort(mMgdScript));
@@ -857,6 +870,70 @@ public class QuantifierEliminationTest {
 	}
 
 	@Test
+	public void derBitvectorFail01() {
+		final FunDecl[] funDecls = { new FunDecl(QuantifierEliminationTest::getBv32, "~g~0", "main_~a~0") };
+		final String inputSTR = "(forall ((v_~g~0_24 (_ BitVec 32))) (or (not (= ~g~0 (bvadd v_~g~0_24 (_ bv4294967295 32)))) (= (bvadd main_~a~0 (_ bv1 32)) v_~g~0_24)))";
+		final String expectedResult = "(= (bvadd main_~a~0 (_ bv1 32)) (bvadd ~g~0 (_ bv1 32)))";
+		runQuantifierPusherTest(funDecls, inputSTR, expectedResult, true, mServices, mLogger, mMgdScript, mCsvWriter);
+	}
+
+	@Test
+	public void tirExistsStrict() {
+		final FunDecl[] funDecls = { new FunDecl(SmtSortUtils::getIntSort, "lo", "hi") };
+		final String inputSTR = "(exists ((x Int)) (and (> x lo) (< x hi)))";
+		final String expectedResult = "(< (+ lo 1) hi)";
+		runQuantifierPusherTest(funDecls, inputSTR, expectedResult, true, mServices, mLogger, mMgdScript, mCsvWriter);
+	}
+
+	@Test
+	public void tirExistsNonstrict() {
+		final FunDecl[] funDecls = { new FunDecl(SmtSortUtils::getIntSort, "lo", "hi") };
+		final String inputSTR = "(exists ((x Int)) (and (>= x lo) (<= x hi)))";
+		final String expectedResult = "(<= lo hi)";
+		runQuantifierPusherTest(funDecls, inputSTR, expectedResult, true, mServices, mLogger, mMgdScript, mCsvWriter);
+	}
+
+	@Test
+	public void tirExistsMixed() {
+		final FunDecl[] funDecls = { new FunDecl(SmtSortUtils::getIntSort, "lo", "hi") };
+		final String inputSTR = "(exists ((x Int)) (and (> x lo) (<= x hi)))";
+		final String expectedResult = "(< lo hi)";
+		runQuantifierPusherTest(funDecls, inputSTR, expectedResult, true, mServices, mLogger, mMgdScript, mCsvWriter);
+	}
+
+	@Test
+	public void tirForallStrict() {
+		final FunDecl[] funDecls = { new FunDecl(SmtSortUtils::getIntSort, "lo", "hi") };
+		final String inputSTR = "(forall ((x Int)) (or (> x lo) (< x hi)))";
+		final String expectedResult = "(< lo hi)";
+		runQuantifierPusherTest(funDecls, inputSTR, expectedResult, true, mServices, mLogger, mMgdScript, mCsvWriter);
+	}
+
+	@Test
+	public void tirForallNonstrict() {
+		final FunDecl[] funDecls = { new FunDecl(SmtSortUtils::getIntSort, "lo", "hi") };
+		final String inputSTR = "(forall ((x Int)) (or (>= x lo) (<= x hi)))";
+		final String expectedResult = "(<= lo (+ hi 1))";
+		runQuantifierPusherTest(funDecls, inputSTR, expectedResult, true, mServices, mLogger, mMgdScript, mCsvWriter);
+	}
+
+	@Test
+	public void tirForallMixed() {
+		final FunDecl[] funDecls = { new FunDecl(SmtSortUtils::getIntSort, "lo", "hi") };
+		final String inputSTR = "(forall ((x Int)) (or (> x lo) (<= x hi)))";
+		final String expectedResult = "(<= lo hi)";
+		runQuantifierPusherTest(funDecls, inputSTR, expectedResult, true, mServices, mLogger, mMgdScript, mCsvWriter);
+	}
+
+	@Test
+	public void tirExistsAntiDer() {
+		final FunDecl[] funDecls = { new FunDecl(SmtSortUtils::getIntSort, "lo", "hi", "di") };
+		final String inputSTR = "(exists ((x Int)) (and (>= x lo) (<= x hi) (distinct x di)))";
+		final String expectedResult = inputSTR;
+		runQuantifierPusherTest(funDecls, inputSTR, expectedResult, true, mServices, mLogger, mMgdScript, mCsvWriter);
+	}
+
+	@Test
 	public void greaterTIR() {
 		final Sort intSort = SmtSortUtils.getIntSort(mMgdScript);
 		mScript.declareFun("lo", new Sort[0], intSort);
@@ -893,6 +970,16 @@ public class QuantifierEliminationTest {
 		mScript.declareFun("hi", new Sort[0], intSort);
 		final String inputSTR = "(forall ((x Int)) 	(or (<= (* 7 x) hi ) (< lo x)))";
 		final String expectedResult = "(< lo (+ (div (+ (+ hi 1) (- 1)) 7) 1))";
+		runQuantifierPusherTest(inputSTR, expectedResult, true, mServices, mLogger, mMgdScript, mCsvWriter);
+	}
+
+	@Test
+	public void bvultTIR() {
+		final Sort bvSort = SmtSortUtils.getBitvectorSort(mScript, 8);
+		mScript.declareFun("lo", new Sort[0], bvSort);
+		mScript.declareFun("hi", new Sort[0], bvSort);
+		final String inputSTR = "(exists ((x (_ BitVec 8))) (and (bvule x hi ) (bvule lo x)))";
+		final String expectedResult = "(bvule lo hi)";
 		runQuantifierPusherTest(inputSTR, expectedResult, true, mServices, mLogger, mMgdScript, mCsvWriter);
 	}
 
@@ -977,6 +1064,13 @@ public class QuantifierEliminationTest {
 		final String expextedResultAsString = "(= a 0)";
 		runQuantifierPusherTest(new FunDecl[] { funDecl }, formulaAsString, expextedResultAsString, true, mServices,
 				mLogger, mMgdScript, mCsvWriter);
+	}
+
+	@Test
+	public void omegaTestRequired01() {
+		final FunDecl[] funDecls = { new FunDecl(SmtSortUtils::getIntSort, "c") };
+		final String formulaAsString = "(exists ((x Int) ) (and (<= (* 256 x) 93) (<= (- c 7) (* 256 x))))";
+		runQuantifierPusherTest(funDecls, formulaAsString, "(<= c 7)", true, mServices, mLogger, mMgdScript, mCsvWriter);
 	}
 
 	@Test

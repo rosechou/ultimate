@@ -485,6 +485,7 @@
 		<module>../CodeCheck</module>
 		<module>../CoreRCP</module>
 		<module>../Crocotta</module>
+		<module>../DebugPlugin</module>
 		<module>../GUIGeneratedPreferencePages</module>
 		<module>../GUILoggingWindow</module>
 		<module>../GuiRCP</module>

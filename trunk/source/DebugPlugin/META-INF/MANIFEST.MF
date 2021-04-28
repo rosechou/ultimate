@@ -15,8 +15,7 @@ Require-Bundle: de.uni_freiburg.informatik.ultimate.lib.core,
  de.uni_freiburg.informatik.ultimate.ltl2aut,
  de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder,
  com.github.jhoenicke.javacup,
- de.uni_freiburg.informatik.ultimate.lib.automata,
- de.uni_freiburg.informatik.ultimate.plugins.generator.buchiautomizer
+ de.uni_freiburg.informatik.ultimate.lib.automata
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Automatic-Module-Name: tw.ntu.svvrl.ultimate.debugplugin

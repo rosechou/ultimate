@@ -27,6 +27,7 @@
  */
 package tw.ntu.svvrl.ultimate.debugplugin;
 
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.*;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.INestedWordAutomaton;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.NestedWordAutomataSizeBenchmark;
 import de.uni_freiburg.informatik.ultimate.boogie.annotation.LTLPropertyCheck;
@@ -76,6 +77,7 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 
 		mLogger.info("Do something with these two models...");
 		//new crawler here. Do something...
+		new ModelCheckerAssistant();
 	}
 
 	private void reportSizeBenchmark(final String message, final INestedWordAutomaton<CodeBlock, String> nwa) {

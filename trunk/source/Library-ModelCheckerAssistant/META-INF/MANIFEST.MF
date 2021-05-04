@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Library-ModelCheckerUtilsAssistant
+Bundle-SymbolicName: tw.ntu.svvrl.ultimate.lib.modelcheckerassistant
+Bundle-Version: 0.2.1
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Export-Package: tw.ntu.svvrl.ultimate.lib.modelcheckerassistant
+Require-Bundle: de.uni_freiburg.informatik.ultimate.core,
+ de.uni_freiburg.informatik.ultimate.lib.util,
+ de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils,
+ de.uni_freiburg.informatik.ultimate.lib.boogieast,
+ net.sf.javabdd
+Import-Package: org.apache.commons.lang3
+Automatic-Module-Name: de.uni.freiburg.informatik.ultimate.lib.modelcheckerassistant

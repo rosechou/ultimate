@@ -44,10 +44,9 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.I
 import de.uni_freiburg.informatik.ultimate.logic.Term;
 
 /**
- * This plugin implements the product algorithm described in the Masterthesis "Automatische Generierungvon
- * Buchi-Programmen".
+ * This plugin is for the SVVRL research's debugging purpose.
  *
- * @author Langenfeld
+ * @author Hong-Yang Lin
  */
 public class DebugPlugin implements IGenerator {
 	private ILogger mLogger;
@@ -65,7 +64,7 @@ public class DebugPlugin implements IGenerator {
 		}
 
 		final List<String> filenames = new ArrayList<>();
-		filenames.add("LTL+Program Product");
+		filenames.add("Currently no model");
 		return new ModelType(Activator.PLUGIN_ID, ModelType.Type.OTHER, filenames);
 	}
 
@@ -99,14 +98,17 @@ public class DebugPlugin implements IGenerator {
 	@Override
 	public List<IObserver> getObservers() {
 		if (!mPreviousToolFoundErrors && mUseDebugPluginObserver) {
-			final DebugPluginObserver observer = getProductObserver();
+			final DebugPluginObserver observer = getDebugObserver();
 			return Collections.singletonList(observer);
 		}
 		return Collections.emptyList();
 	}
 
-	private DebugPluginObserver getProductObserver() {
-		return new DebugPluginObserver();
+	private DebugPluginObserver getDebugObserver() {
+		if (mDebugPluginObserver == null) {
+			mDebugPluginObserver = new DebugPluginObserver(mLogger, mServices);
+		}
+		return mDebugPluginObserver;
 	}
 
 	@Override
@@ -127,7 +129,7 @@ public class DebugPlugin implements IGenerator {
 
 	@Override
 	public IElement getModel() {
-		return getProductObserver().getModel();
+		return getDebugObserver().getModel();
 	}
 
 	@Override
@@ -143,6 +145,10 @@ public class DebugPlugin implements IGenerator {
 
 	@Override
 	public void setServices(final IUltimateServiceProvider services) {
+		mServices = services;
+		mLogger = mServices.getLoggingService().getLogger(Activator.PLUGIN_ID);
+		mPreviousToolFoundErrors = !ResultUtil
+				.filterResults(services.getResultService().getResults(), CounterExampleResult.class).isEmpty();
 	}
 
 	@Override

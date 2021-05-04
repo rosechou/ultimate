@@ -52,12 +52,15 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 	private BoogieIcfgContainer mRcfg;
 	private NWAContainer mNeverClaimNWAContainer;
 	private final IUltimateServiceProvider mServices;
+	
+	private ModelCheckerAssistant mModelCheckerAssistant;
 
 	public DebugPluginObserver(final ILogger logger, final IUltimateServiceProvider services) {
 		mLogger = logger;
 		mServices = services;
 		mRcfg = null;
 		mNeverClaimNWAContainer = null;
+		mModelCheckerAssistant = null;
 	}
 
 	@Override
@@ -77,7 +80,7 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 
 		mLogger.info("Do something with these two models...");
 		//new crawler here. Do something...
-		new ModelCheckerAssistant();
+		mModelCheckerAssistant = new ModelCheckerAssistant(mNeverClaimNWAContainer.getValue(), mRcfg, mLogger, mServices);
 	}
 
 	private void reportSizeBenchmark(final String message, final INestedWordAutomaton<CodeBlock, String> nwa) {

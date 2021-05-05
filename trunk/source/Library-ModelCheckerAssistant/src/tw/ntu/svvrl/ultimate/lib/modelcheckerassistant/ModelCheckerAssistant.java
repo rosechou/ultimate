@@ -1,11 +1,12 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant;
 
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.INestedWordAutomaton;
-import de.uni_freiburg.informatik.ultimate.boogie.annotation.LTLPropertyCheck;
 import de.uni_freiburg.informatik.ultimate.core.model.services.ILogger;
 import de.uni_freiburg.informatik.ultimate.core.model.services.IUltimateServiceProvider;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgContainer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.StateExplorer;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.NeverClaimAutExplorer;
 
 public class ModelCheckerAssistant {
 	

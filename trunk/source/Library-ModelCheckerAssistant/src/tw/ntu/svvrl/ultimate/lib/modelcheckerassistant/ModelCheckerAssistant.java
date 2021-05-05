@@ -42,6 +42,6 @@ public class ModelCheckerAssistant {
 		mRcfgRoot = rcfg;
 		mNWA = nwa;
 		
-		mStateExplore = new StateExplorer();
+		mStateExplore = new StateExplorer(rcfg);
 	}
 }

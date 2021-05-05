@@ -778,4 +778,13 @@ public class Boogie2SmtSymbolTable
 	private static <V, T, K1, K2> Stream<T> getAll(final Map<K1, Map<K2, V>> map, final Function<V, T> fun) {
 		return map.entrySet().stream().flatMap(a -> a.getValue().entrySet().stream()).map(a -> fun.apply(a.getValue()));
 	}
+	
+	/**
+	 * 2021.05.05 by Hong-Yang Lin
+	 * For the convenience of constructing StateSymbolTable.
+	 * @return the hash relation of local variables.
+	 */
+	public HashRelation<String, ILocalProgramVar> getLocalsRelation() {
+		return mIcfgSymbolTable.getLocalsRelation();
+	}
 }

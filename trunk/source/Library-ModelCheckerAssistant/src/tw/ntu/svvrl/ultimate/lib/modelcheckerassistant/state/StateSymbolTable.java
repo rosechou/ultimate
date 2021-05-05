@@ -1,15 +1,14 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.Boogie2SmtSymbolTable;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.DefaultIcfgSymbolTable;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.IIcfgSymbolTable;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.ILocalProgramVar;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramConst;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramNonOldVar;
-import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramVar;
 import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.HashRelation;
 
 /**
@@ -25,13 +24,13 @@ public class StateSymbolTable implements IStateSymbolTable {
 
 	/**
 	 * Constructor for state symbol table.
-	 * It copys a default Icfg symbol table and drop some 
+	 * It copys a Icfg symbol table and drop some 
 	 * unused information(term variables related).
 	 */
-	public StateSymbolTable(final DefaultIcfgSymbolTable defaultIcfgSymbolTable) {
-		mGlobals = defaultIcfgSymbolTable.getGlobals();
-		mConstants = defaultIcfgSymbolTable.getConstants();
-		mLocals = defaultIcfgSymbolTable.getLocalsRelation();
+	public StateSymbolTable(final Boogie2SmtSymbolTable boogie2SmtSymbolTable) {
+		mGlobals = boogie2SmtSymbolTable.getGlobals();
+		mConstants = boogie2SmtSymbolTable.getConstants();
+		mLocals = boogie2SmtSymbolTable.getLocalsRelation();
 	}
 
 	@Override
@@ -45,7 +44,7 @@ public class StateSymbolTable implements IStateSymbolTable {
 	}
 	
 	@Override
-	public Set<ILocalProgramVar> getLocals(String procedurename) {
+	public Set<ILocalProgramVar> getLocals(String proc) {
 		final Set<ILocalProgramVar> locals = mLocals.getImage(proc);
 		if (locals == null) {
 			return Collections.emptySet();

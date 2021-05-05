@@ -787,4 +787,13 @@ public class Boogie2SmtSymbolTable
 	public HashRelation<String, ILocalProgramVar> getLocalsRelation() {
 		return mIcfgSymbolTable.getLocalsRelation();
 	}
+	
+	/**
+	 * 2021.05.05 by Hong-Yang Lin
+	 * For the real state exploration, we need to know the actual type of a variable.
+	 * Thus, the type information in the boogie declarations is needed.
+	 */
+	public BoogieDeclarations getBoogieDeclarations() {
+		return mBoogieDeclarations;
+	}
 }

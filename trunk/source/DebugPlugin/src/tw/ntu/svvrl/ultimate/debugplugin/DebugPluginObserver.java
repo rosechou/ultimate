@@ -79,8 +79,10 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		reportSizeBenchmark("Initial RCFG", mRcfg);
 
 		mLogger.info("Do something with these two models...");
-		//new crawler here. Do something...
+		// new crawler here. 
 		mModelCheckerAssistant = new ModelCheckerAssistant(mNeverClaimNWAContainer.getValue(), mRcfg, mLogger, mServices);
+		mLogger.info("Break point...");
+		// Do something...
 	}
 
 	private void reportSizeBenchmark(final String message, final INestedWordAutomaton<CodeBlock, String> nwa) {

@@ -180,5 +180,14 @@ public class DefaultIcfgSymbolTable implements IIcfgSymbolTable {
 		mLocals.getSetOfPairs().stream().map(a -> a.getValue().getDefaultConstant()).forEachOrdered(rtr::add);
 		return rtr;
 	}
+	
+	/**
+	 * 2021.05.05 by Hong-Yang Lin
+	 * For the convenience of constructing {@link StateSymbolTable}.
+	 * @return the hash relation of local variables.
+	 */
+	public HashRelation<String, ILocalProgramVar> getLocalsRelation() {
+		return mLocals;
+	}
 
 }

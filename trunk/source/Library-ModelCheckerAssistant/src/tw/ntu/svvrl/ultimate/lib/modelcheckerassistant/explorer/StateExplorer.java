@@ -42,6 +42,7 @@ public class StateExplorer {
 	
 	private State mCurrentState;
 	private final Map<IProgramVar, Object> mVar2Value = new HashMap<>();
+	private BoogieIcfgLocation mStartLoc;
 
 	public StateExplorer(BoogieIcfgContainer rcfg) {
 		mCfgSmtTookit = rcfg.getCfgSmtToolkit();
@@ -54,7 +55,7 @@ public class StateExplorer {
 		
 		Boogie2SmtSymbolTable boogie2SmtSymbolTable = rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable();
 		initializeVar2Value(boogie2SmtSymbolTable);
-		
+		mStartLoc = null;
 	}
 	
 	
@@ -77,6 +78,7 @@ public class StateExplorer {
 		
 		/**
 		 * process all local variables
+		 * (Maybe do this when getting into a procedure)
 		 */
 		for(String procName : mCfgSmtTookit.getProcedures()) {
 			for(ILocalProgramVar localVar : boogie2SmtSymbolTable.getLocals(procName)) {
@@ -126,5 +128,21 @@ public class StateExplorer {
 		}
 	}
 	
+	/**
+	 * 		Set a {@link BoogieIcfgLocation} as the start location
+	 * 		in the process of state exploration.
+	 * @param StartLoc
+	 * 		A {@link BoogieIcfgLocation} to start exploration.
+	 * 		Note : StartLoc should be an initial node in rcfg.
+	 */
+	public void setStartLoc(BoogieIcfgLocation StartLoc) {
+		if(!mInitialNodes.contains(StartLoc))
+			throw new UnsupportedOperationException("The given Loc"
+					+ "is not an initial loc, cannot set it as start loc.");
+		mStartLoc = StartLoc;
+	}
 	
+	public void startExploration() {
+		//...
+	}
 }

@@ -23,7 +23,6 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.I
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgContainer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.State;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.StateSymbolTable;
 
 /**
  * This class explores the boogie program states with the help of
@@ -41,7 +40,6 @@ public class StateExplorer {
 	private final Map<String, Map<DebugIdentifier, BoogieIcfgLocation>> mLocNodes;
 	private final Set<BoogieIcfgLocation> mInitialNodes;
 	
-	private StateSymbolTable mCurrentStateSymbolTable;
 	private State mCurrentState;
 	private final Map<IProgramVar, Object> mVar2Value = new HashMap<>();
 
@@ -54,11 +52,8 @@ public class StateExplorer {
 		mLocNodes = rcfg.getProgramPoints();
 		mInitialNodes = rcfg.getInitialNodes();
 		
-		StateSymbolTable originalStateSymbolTable = 
-				new StateSymbolTable(rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable());
-		
 		Boogie2SmtSymbolTable boogie2SmtSymbolTable = rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable();
-		initializeVar2Value(boogie2SmtSymbolTable, originalStateSymbolTable);
+		initializeVar2Value(boogie2SmtSymbolTable);
 		
 	}
 	
@@ -70,12 +65,12 @@ public class StateExplorer {
 	 * @param stateSymbolTable
 	 * 		stateSymbolTable to look up
 	 */
-	private void initializeVar2Value(Boogie2SmtSymbolTable boogie2SmtSymbolTable, StateSymbolTable stateSymbolTable) {
+	private void initializeVar2Value(Boogie2SmtSymbolTable boogie2SmtSymbolTable) {
 		
 		/**
 		 * process all global variables
 		 */
-		for(IProgramNonOldVar globalVar : stateSymbolTable.getGlobals()) {
+		for(IProgramNonOldVar globalVar : boogie2SmtSymbolTable.getGlobals()) {
 			initializeVar2Value(boogie2SmtSymbolTable, globalVar);
 		}
 		
@@ -84,7 +79,7 @@ public class StateExplorer {
 		 * process all local variables
 		 */
 		for(String procName : mCfgSmtTookit.getProcedures()) {
-			for(ILocalProgramVar localVar : stateSymbolTable.getLocals(procName)) {
+			for(ILocalProgramVar localVar : boogie2SmtSymbolTable.getLocals(procName)) {
 				initializeVar2Value(boogie2SmtSymbolTable, localVar);
 			}
 		}

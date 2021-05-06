@@ -71,7 +71,6 @@ public abstract class BoogieVar implements IProgramVar, Serializable {
 		mTermVariable = tv;
 		mDefaultConstant = defaultConstant;
 		mPrimedConstant = primedContant;
-		mValue = null;
 	}
 
 	@Override

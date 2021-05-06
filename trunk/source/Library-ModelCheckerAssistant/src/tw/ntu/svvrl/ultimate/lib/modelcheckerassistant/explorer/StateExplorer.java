@@ -10,6 +10,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.VarList;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableDeclaration;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogiePrimitiveType;
 import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.Boogie2SmtSymbolTable;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.BoogieDeclarations;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.BoogieNonOldVar;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.BoogieVar;
@@ -29,13 +30,13 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.StateSymbolTable;
 public class StateExplorer {
 	private StateSymbolTable mCurrentStateSymbolTable;
 	private State mCurrentState;
-	private Map<BoogieVar, Object> mVar2Value = new HashMap<>();
+	private final Map<IProgramVar, Object> mVar2Value = new HashMap<>();
 	//private final Map<IProgramVar, BoogieASTNode> mBoogieVar2AstNode;
 
 	public StateExplorer(BoogieIcfgContainer rcfg) {
 		StateSymbolTable originalStateSymbolTable = 
 				new StateSymbolTable(rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable());
-		//mCurrentStateSymbolTable = initializeVarType()
+		initializeVarType(rcfg, originalStateSymbolTable);
 		
 	}
 	
@@ -48,22 +49,59 @@ public class StateExplorer {
 	 * 			An updated state symbol table
 	 */
 	private StateSymbolTable initializeVarType(BoogieIcfgContainer rcfg, StateSymbolTable stateSymbolTable) {
-		BoogieDeclarations boogieDeclarations = 
-				rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable().getBoogieDeclarations();
-		/**
-		 * process all global variable declarations
-		 */
-		for(VariableDeclaration globalVarDeclaration : boogieDeclarations.getGlobalVarDeclarations()) {
-				for(VarList globalVar : globalVarDeclaration.getVariables()) {
-					IBoogieType boogieType = globalVar.getType().getBoogieType();
-					if (boogieType instanceof BoogiePrimitiveType) {
-						// TODO : assign type and value to this var
-					}
-					else {
-						// ...
+//		BoogieDeclarations boogieDeclarations = 
+//				rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable().getBoogieDeclarations();
+//		/**
+//		 * process all global variable declarations
+//		 */
+//		for(VariableDeclaration globalVarDeclaration : boogieDeclarations.getGlobalVarDeclarations()) {
+//				for(VarList globalVar : globalVarDeclaration.getVariables()) {
+//					IBoogieType boogieType = globalVar.getType().getBoogieType();
+//					if (boogieType instanceof BoogiePrimitiveType) {
+//						switch(((BoogiePrimitiveType) boogieType).getTypeCode()) {
+//							case BoogiePrimitiveType.BOOL :
+//								boolean varValue = 0;
+//								mVar2Value.put(globalVar, varValue);
+//						}
+//						// TODO : assign type and value to this var
+//					}
+//					else {
+//						// ...
+//					}
+//				}
+//		}
+		Boogie2SmtSymbolTable boogie2SmtSymbolTable = rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable();
+		for(IProgramNonOldVar globalVar : stateSymbolTable.getGlobals()) {
+			BoogieASTNode boogieASTNode = boogie2SmtSymbolTable.getAstNode(globalVar);
+			if(boogieASTNode instanceof VarList) {
+				IBoogieType boogieType = ((VarList)boogieASTNode).getType().getBoogieType();
+				if (boogieType instanceof BoogiePrimitiveType) {
+					switch(((BoogiePrimitiveType) boogieType).getTypeCode()) {
+						case BoogiePrimitiveType.BOOL:
+							boolean boolValue = false;
+							mVar2Value.put(globalVar, boolValue);
+							break;
+						case BoogiePrimitiveType.INT:
+							int intValue = 0;
+							mVar2Value.put(globalVar, intValue);
+							break;
+						case BoogiePrimitiveType.REAL:
+							throw new UnsupportedOperationException("Boogie variable with type"
+									+ " \"real\" is not yet supported.");
+							break;
+						case BoogiePrimitiveType.ERROR:
+						default:
+							throw new UnsupportedOperationException("Boogie variable with"
+									+ " error or unknown type.");
 					}
 				}
+				else {
+					throw new UnsupportedOperationException("Unsupported"
+							+ "BoogieType:" + boogieType.toString());
+				}
+			}
 		}
+		
 		
 		return stateSymbolTable;
 	}

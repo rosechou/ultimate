@@ -31,7 +31,7 @@ public class ModelCheckerAssistant {
 	 * The first main component, which generates program states on-the-fly and 
 	 * keep exploring.
 	 */
-	private final StateExplorer mStateExplore;
+	private final StateExplorer mStateExplorer;
 	
 	public ModelCheckerAssistant(final INestedWordAutomaton<CodeBlock, String> nwa, final BoogieIcfgContainer rcfg,
 			final ILogger logger, final IUltimateServiceProvider services) {
@@ -42,6 +42,6 @@ public class ModelCheckerAssistant {
 		mRcfgRoot = rcfg;
 		mNWA = nwa;
 		
-		mStateExplore = new StateExplorer(rcfg);
+		mStateExplorer = new StateExplorer(rcfg);
 	}
 }

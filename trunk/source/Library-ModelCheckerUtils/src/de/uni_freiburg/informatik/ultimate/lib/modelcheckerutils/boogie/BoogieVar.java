@@ -64,12 +64,6 @@ public abstract class BoogieVar implements IProgramVar, Serializable {
 	 * SMT which describe a transition.
 	 */
 	private final ApplicationTerm mPrimedConstant;
-	
-	/**
-	 * 2021.05.04 by Hong-Yang Lin
-	 * Actual boogie variable value which will be assgined during the generation of Buchi automata states.
-	 */
-	private Object mValue;
 
 	public BoogieVar(final String identifier, final TermVariable tv, final ApplicationTerm defaultConstant,
 			final ApplicationTerm primedContant) {
@@ -109,14 +103,6 @@ public abstract class BoogieVar implements IProgramVar, Serializable {
 	@Override
 	public Sort getSort() {
 		return getTerm().getSort();
-	}
-	
-	public Object getValue() {
-		return mValue;
-	}
-	
-	public void setValue(Object v) {
-		mValue = v;
 	}
 
 }

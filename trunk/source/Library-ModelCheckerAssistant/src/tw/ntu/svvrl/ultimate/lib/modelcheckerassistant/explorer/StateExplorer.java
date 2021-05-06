@@ -1,5 +1,6 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ASTType;
@@ -10,6 +11,8 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableDeclaration;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogiePrimitiveType;
 import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.BoogieDeclarations;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.BoogieNonOldVar;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.BoogieVar;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramNonOldVar;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramVar;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgContainer;
@@ -26,6 +29,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.StateSymbolTable;
 public class StateExplorer {
 	private StateSymbolTable mCurrentStateSymbolTable;
 	private State mCurrentState;
+	private Map<BoogieVar, Object> mVar2Value = new HashMap<>();
 	//private final Map<IProgramVar, BoogieASTNode> mBoogieVar2AstNode;
 
 	public StateExplorer(BoogieIcfgContainer rcfg) {

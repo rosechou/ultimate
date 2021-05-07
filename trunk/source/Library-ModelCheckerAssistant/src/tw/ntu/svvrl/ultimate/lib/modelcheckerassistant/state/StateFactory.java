@@ -27,7 +27,16 @@ public class StateFactory {
 		mCfgSmtTookit = cfgSmtToolkit;
 	}
 	
-
+	/**
+	 * Extend an initial {@link BoogieIcfgLocation} with
+	 * a value table so that it becomes an automaton initial state.
+	 * Only global variables in the value table are handled.
+	 * Local variables will be handled when a call statement occurs. 
+	 * @param loc
+	 * 		a {@link BoogieIcfgLocation}  which is an initial node.
+	 * @return
+	 * 		the result initial state.
+	 */
 	public State createInitialState(BoogieIcfgLocation loc) {
 		Map<IProgramVar, Object> valueTable = new HashMap<>();
 		initializeGlobalVars2Value(valueTable);

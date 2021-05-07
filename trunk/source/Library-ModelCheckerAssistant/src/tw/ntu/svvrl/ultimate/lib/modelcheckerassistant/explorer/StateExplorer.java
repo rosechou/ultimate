@@ -1,9 +1,11 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.debugidentifiers.DebugIdentifier;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgContainer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
@@ -46,7 +48,11 @@ public class StateExplorer {
 	}
 	
 	
-	
+	/**
+	 * Based on the given rcfg, extend the initial {@link BoogieIcfgLocation}s with
+	 * value tables so that they become automaton initial states.
+	 * @return	A set containing all initial states.
+	 */
 	public Set<State> getInitialStates() {
 		Set<State> initialStates = new HashSet<>();
 		for(BoogieIcfgLocation initialLoc: mInitialNodes) {
@@ -54,21 +60,8 @@ public class StateExplorer {
 		}
 		
 		return initialStates;
-}
+	}
 	
-//	/**
-//	 * 		Set a {@link BoogieIcfgLocation} as the start location
-//	 * 		in the process of state exploration.
-//	 * @param StartLoc
-//	 * 		A {@link BoogieIcfgLocation} to start exploration.
-//	 * 		Note : StartLoc should be an initial node in rcfg.
-//	 */
-//	public void setStartLoc(BoogieIcfgLocation StartLoc) {
-//		if(!mInitialNodes.contains(StartLoc))
-//			throw new UnsupportedOperationException("The given Loc"
-//					+ "is not an initial loc, cannot set it as start loc.");
-//		mStartLoc = StartLoc;
-//	}
 	
 
 }

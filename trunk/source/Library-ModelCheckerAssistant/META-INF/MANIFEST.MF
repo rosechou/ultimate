@@ -4,7 +4,9 @@ Bundle-Name: Library-ModelCheckerUtilsAssistant
 Bundle-SymbolicName: tw.ntu.svvrl.ultimate.lib.modelcheckerassistant
 Bundle-Version: 0.2.1
 Bundle-RequiredExecutionEnvironment: JavaSE-11
-Export-Package: tw.ntu.svvrl.ultimate.lib.modelcheckerassistant
+Export-Package: tw.ntu.svvrl.ultimate.lib.modelcheckerassistant,
+ tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer,
+ tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state
 Require-Bundle: de.uni_freiburg.informatik.ultimate.core,
  de.uni_freiburg.informatik.ultimate.lib.util,
  de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils,
@@ -15,6 +17,7 @@ Require-Bundle: de.uni_freiburg.informatik.ultimate.core,
  de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder,
  com.github.jhoenicke.javacup,
  de.uni_freiburg.informatik.ultimate.lib.automata,
- net.sf.javabdd
+ net.sf.javabdd,
+ de.uni_freiburg.informatik.ultimate.plugins.generator.blockencoding
 Import-Package: org.apache.commons.lang3
 Automatic-Module-Name: de.uni.freiburg.informatik.ultimate.lib.modelcheckerassistant

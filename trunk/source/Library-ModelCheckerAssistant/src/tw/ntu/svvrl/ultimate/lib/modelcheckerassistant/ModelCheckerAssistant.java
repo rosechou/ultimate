@@ -44,4 +44,8 @@ public class ModelCheckerAssistant {
 		
 		mStateExplorer = new StateExplorer(rcfg);
 	}
+	
+	public StateExplorer getStateExplorer() {
+		return mStateExplorer;
+	}
 }

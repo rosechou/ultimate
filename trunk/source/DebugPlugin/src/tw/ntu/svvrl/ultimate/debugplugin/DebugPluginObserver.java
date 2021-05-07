@@ -28,6 +28,11 @@
 package tw.ntu.svvrl.ultimate.debugplugin;
 
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.*;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.State;
+
+import java.util.HashSet;
+import java.util.Set;
+
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.INestedWordAutomaton;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.NestedWordAutomataSizeBenchmark;
 import de.uni_freiburg.informatik.ultimate.boogie.annotation.LTLPropertyCheck;
@@ -40,6 +45,7 @@ import de.uni_freiburg.informatik.ultimate.ltl2aut.never2nwa.NWAContainer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgContainer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.util.IcfgSizeBenchmark;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.State;
 
 /**
  *
@@ -82,6 +88,11 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		// new crawler here. 
 		mModelCheckerAssistant = new ModelCheckerAssistant(mNeverClaimNWAContainer.getValue(), mRcfg, mLogger, mServices);
 		mLogger.info("Break point...");
+		Set<State> initialStates = new HashSet<>();
+		initialStates = mModelCheckerAssistant.getStateExplorer().getInitialStates();
+		for(State initialState : initialStates) {
+			initialState.getEnableTrans();
+		}
 		// Do something...
 	}
 

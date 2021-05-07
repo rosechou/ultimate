@@ -20,8 +20,6 @@ public class StateFactory {
 	private final Boogie2SmtSymbolTable mBoogie2SmtSymbolTable;
 	/*------------End of RCFG fields-----------*/
 	
-	private final Map<IProgramVar, Object> mVar2Value = new HashMap<>();
-	
 	
 	public StateFactory(Boogie2SmtSymbolTable boogie2SmtSymbolTable
 						, CfgSmtToolkit cfgSmtToolkit) {
@@ -29,27 +27,47 @@ public class StateFactory {
 		mCfgSmtTookit = cfgSmtToolkit;
 	}
 	
+
+	public State createInitialState(BoogieIcfgLocation loc) {
+		Map<IProgramVar, Object> valueTable = new HashMap<>();
+		initializeGlobalVars2Value(valueTable);
+		return new State(valueTable, loc);
+	}
+	
+//	public State createNextState(State lastState, transition) {
+//	}
+	
+	
 	/**
-	 * Initialize all boogie variables' type and value.
+	 * Initialize all global boogie variables' type and value.
+	 * @param valueTable
+	 * 		the value table should be initialized.
 	 */
-	private void initializeVar2Value() {
+	private void initializeGlobalVars2Value(Map<IProgramVar, Object> valueTable) {
 		
 		/**
 		 * process all global variables
 		 */
 		for(IProgramNonOldVar globalVar : mBoogie2SmtSymbolTable.getGlobals()) {
-			initializeVar2Value(globalVar);
+			initializeVar2Value(valueTable, globalVar);
 		}
-		
+	}
+	
+	/**
+	 * Initialize local boogie variables' type and value
+	 * in a specific procedure.
+	 * @param valueTable
+	 * 		the value table should be initialized.
+	 * @param procName
+	 * 		A specific procedure name.
+	 */
+	private void initializeLocalVars2Value(Map<IProgramVar, Object> valueTable, String procName) {
 		
 		/**
 		 * process all local variables
-		 * (Maybe do this when getting into a procedure)
 		 */
-		for(String procName : mCfgSmtTookit.getProcedures()) {
-			for(ILocalProgramVar localVar : mBoogie2SmtSymbolTable.getLocals(procName)) {
-				initializeVar2Value(localVar);
-			}
+		for(ILocalProgramVar localVar : mBoogie2SmtSymbolTable.getLocals(procName)) {
+			initializeVar2Value(valueTable, localVar);
 		}
 	}
 	
@@ -59,12 +77,12 @@ public class StateFactory {
 	 *  For Int variables, set their values to 0.
 	 *  Real variables are not yet implemented.
 	 *  
-	 * @param boogie2SmtSymbolTable
-	 * 		boogie2SmtSymbolTable retrieved from rcfg
+	 * @param valueTable
+	 * 		the value table should be initialized.
 	 * @param var
 	 * 		the target variable.
 	 */
-	private void initializeVar2Value(IProgramVar var) {
+	private void initializeVar2Value(Map<IProgramVar, Object> valueTable, IProgramVar var) {
 		BoogieASTNode boogieASTNode = mBoogie2SmtSymbolTable.getAstNode(var);
 		if(boogieASTNode instanceof VarList) {
 			IBoogieType boogieType = ((VarList)boogieASTNode).getType().getBoogieType();
@@ -72,11 +90,11 @@ public class StateFactory {
 				switch(((BoogiePrimitiveType) boogieType).getTypeCode()) {
 					case BoogiePrimitiveType.BOOL:
 						boolean boolValue = false;
-						mVar2Value.put(var, boolValue);
+						valueTable.put(var, boolValue);
 						break;
 					case BoogiePrimitiveType.INT:
 						int intValue = 0;
-						mVar2Value.put(var, intValue);
+						valueTable.put(var, intValue);
 						break;
 					case BoogiePrimitiveType.REAL:
 						throw new UnsupportedOperationException("Boogie variable with type"
@@ -94,7 +112,4 @@ public class StateFactory {
 		}
 	}
 	
-	public State creatState(Map<IProgramVar, Object> valueTable, BoogieIcfgLocation loc) {
-		return new State(valueTable, loc);
-	}
 }

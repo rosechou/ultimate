@@ -22,7 +22,6 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Roo
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.SequentialComposition;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.StatementSequence;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Summary;
-import de.uni_freiburg.informatik.ultimate.blockencoding.converter.ShortcutCodeBlock;
 
 /**
  * This class represents a boogie program state.
@@ -36,14 +35,14 @@ public class State {
 	/**
 	 * To record the valuation of boogie variables.
 	 */
-	private final Map<IProgramVar, Object> mVar2Value = new HashMap<>();
+	private final Map<IProgramVar, Object> mValuation = new HashMap<>();
 	/**
 	 * To specify which IcfgLocation this state is generated from.
 	 */
 	private final BoogieIcfgLocation mRelaedIcfgLoc;
 	
 	public State(Map<IProgramVar, Object> var2Value, BoogieIcfgLocation boogieIcfgLocation) {
-		mVar2Value.putAll(var2Value);
+		mValuation.putAll(var2Value);
 		mRelaedIcfgLoc = boogieIcfgLocation;
 	}
 	
@@ -52,7 +51,7 @@ public class State {
 	}
 	
 	public Map<IProgramVar, Object> getVar2Value() {
-		return mVar2Value;
+		return mValuation;
 	}
 	
 	public List<IcfgEdge> getEnableTrans() {
@@ -69,16 +68,16 @@ public class State {
 				} else if(edge instanceof ParallelComposition) {
 				} else if(edge instanceof Return) {
 				} else if(edge instanceof SequentialComposition) {
-				} else if(edge instanceof ShortcutCodeBlock) {
 				} else if(edge instanceof StatementSequence) {
 				} else if(edge instanceof Summary) {
+				} else {
 				}
 			} else if (edge instanceof RootEdge) {
-				throw new UnsupportedOperationException("Suppose type \"RootEdge\" should"
-						+ " not appear in the function getEnableTrans()");
+				throw new UnsupportedOperationException("Suppose the type " + edge.getClass().getSimpleName()
+						+ " should not appear in the function getEnableTrans()");
 			} else {
-				throw new UnsupportedOperationException("Error: This type of IcfgEdge is"
-						+ " not supported.");
+				throw new UnsupportedOperationException("Error: " + edge.getClass().getSimpleName()
+						+ " is not supported.");
 			}
 		}
 		
@@ -97,6 +96,6 @@ public class State {
 		if(!mRelaedIcfgLoc.equals(anotherState.getRelatedIcfgLoc())) {
 			return false;
 		}
-		return mVar2Value.equals(anotherState.getVar2Value()) ? true : false;
+		return mValuation.equals(anotherState.getVar2Value()) ? true : false;
 	}
 }

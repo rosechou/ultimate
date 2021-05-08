@@ -38,9 +38,9 @@ public class StateFactory {
 	 * 		the result initial state.
 	 */
 	public State createInitialState(BoogieIcfgLocation loc) {
-		Map<IProgramVar, Object> valueTable = new HashMap<>();
-		initializeGlobalVars2Value(valueTable);
-		return new State(valueTable, loc);
+		Map<IProgramVar, Object> valuation = new HashMap<>();
+		initializeGlobalVarsValuation(valuation);
+		return new State(valuation, loc);
 	}
 	
 //	public State createNextState(State lastState, transition) {
@@ -49,34 +49,34 @@ public class StateFactory {
 	
 	/**
 	 * Initialize all global boogie variables' type and value.
-	 * @param valueTable
+	 * @param valuation
 	 * 		the value table should be initialized.
 	 */
-	private void initializeGlobalVars2Value(Map<IProgramVar, Object> valueTable) {
+	private void initializeGlobalVarsValuation(Map<IProgramVar, Object> valuation) {
 		
 		/**
 		 * process all global variables
 		 */
 		for(IProgramNonOldVar globalVar : mBoogie2SmtSymbolTable.getGlobals()) {
-			initializeVar2Value(valueTable, globalVar);
+			initializeVarValuation(valuation, globalVar);
 		}
 	}
 	
 	/**
 	 * Initialize local boogie variables' type and value
 	 * in a specific procedure.
-	 * @param valueTable
+	 * @param valuation
 	 * 		the value table should be initialized.
 	 * @param procName
 	 * 		A specific procedure name.
 	 */
-	private void initializeLocalVars2Value(Map<IProgramVar, Object> valueTable, String procName) {
+	private void initializeLocalVarsValuation(Map<IProgramVar, Object> valuation, String procName) {
 		
 		/**
 		 * process all local variables
 		 */
 		for(ILocalProgramVar localVar : mBoogie2SmtSymbolTable.getLocals(procName)) {
-			initializeVar2Value(valueTable, localVar);
+			initializeVarValuation(valuation, localVar);
 		}
 	}
 	
@@ -91,7 +91,7 @@ public class StateFactory {
 	 * @param var
 	 * 		the target variable.
 	 */
-	private void initializeVar2Value(Map<IProgramVar, Object> valueTable, IProgramVar var) {
+	private void initializeVarValuation(Map<IProgramVar, Object> valuation, IProgramVar var) {
 		BoogieASTNode boogieASTNode = mBoogie2SmtSymbolTable.getAstNode(var);
 		if(boogieASTNode instanceof VarList) {
 			IBoogieType boogieType = ((VarList)boogieASTNode).getType().getBoogieType();
@@ -99,11 +99,11 @@ public class StateFactory {
 				switch(((BoogiePrimitiveType) boogieType).getTypeCode()) {
 					case BoogiePrimitiveType.BOOL:
 						boolean boolValue = false;
-						valueTable.put(var, boolValue);
+						valuation.put(var, boolValue);
 						break;
 					case BoogiePrimitiveType.INT:
 						int intValue = 0;
-						valueTable.put(var, intValue);
+						valuation.put(var, intValue);
 						break;
 					case BoogiePrimitiveType.REAL:
 						throw new UnsupportedOperationException("Boogie variable with type"

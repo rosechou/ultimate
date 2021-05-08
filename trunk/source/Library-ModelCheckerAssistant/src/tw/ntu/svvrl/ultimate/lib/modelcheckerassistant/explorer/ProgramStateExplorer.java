@@ -9,17 +9,17 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.I
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.debugidentifiers.DebugIdentifier;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgContainer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.State;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.StateFactory;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramStateFactory;
 
 /**
  * This class explores the boogie program states with the help of
  * the pre-build {@link BoogieIcfgContainer}.
- * The {@link State}s is generated when a Icfg transition is going to be moved. 
+ * The {@link ProgramState}s is generated when a Icfg transition is going to be moved. 
  * 
  * @author Hong-Yang Lin
  */
-public class StateExplorer {
+public class ProgramStateExplorer {
 	/*---------------RCFG fields---------------*/
 	private final Map<String, BoogieIcfgLocation> mEntryNodes;
 	private final Map<String, BoogieIcfgLocation> mExitNode;
@@ -30,9 +30,9 @@ public class StateExplorer {
 	/*------------End of RCFG fields-----------*/
 	
 	private BoogieIcfgLocation mStartLoc;
-	private final StateFactory mStateFactory;
+	private final ProgramStateFactory mProgramStateFactory;
 
-	public StateExplorer(BoogieIcfgContainer rcfg) {
+	public ProgramStateExplorer(BoogieIcfgContainer rcfg) {
 		/*---------------RCFG fields---------------*/
 		mEntryNodes = rcfg.getProcedureEntryNodes();
 		mExitNode = rcfg.getProcedureExitNodes();
@@ -43,7 +43,7 @@ public class StateExplorer {
 		/*------------End of RCFG fields-----------*/
 		
 		mStartLoc = null;
-		mStateFactory = new StateFactory(rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable()
+		mProgramStateFactory = new ProgramStateFactory(rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable()
 				, rcfg.getCfgSmtToolkit());
 	}
 	
@@ -53,13 +53,13 @@ public class StateExplorer {
 	 * value tables so that they become automaton initial states.
 	 * @return	A set containing all initial states.
 	 */
-	public Set<State> getInitialStates() {
-		Set<State> initialStates = new HashSet<>();
+	public Set<ProgramState> getInitialStates() {
+		Set<ProgramState> initialProgramStates = new HashSet<>();
 		for(BoogieIcfgLocation initialLoc: mInitialNodes) {
-			initialStates.add(mStateFactory.createInitialState(initialLoc));
+			initialProgramStates.add(mProgramStateFactory.createInitialState(initialLoc));
 		}
 		
-		return initialStates;
+		return initialProgramStates;
 	}
 	
 	

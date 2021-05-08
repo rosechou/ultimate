@@ -5,7 +5,7 @@ import de.uni_freiburg.informatik.ultimate.core.model.services.ILogger;
 import de.uni_freiburg.informatik.ultimate.core.model.services.IUltimateServiceProvider;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgContainer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.StateExplorer;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.NeverClaimAutExplorer;
 
 /**
@@ -31,7 +31,7 @@ public class ModelCheckerAssistant {
 	 * The first main component, which generates program states on-the-fly and 
 	 * keep exploring.
 	 */
-	private final StateExplorer mStateExplorer;
+	private final ProgramStateExplorer mStateExplorer;
 	
 	public ModelCheckerAssistant(final INestedWordAutomaton<CodeBlock, String> nwa, final BoogieIcfgContainer rcfg,
 			final ILogger logger, final IUltimateServiceProvider services) {
@@ -42,10 +42,10 @@ public class ModelCheckerAssistant {
 		mRcfgRoot = rcfg;
 		mNWA = nwa;
 		
-		mStateExplorer = new StateExplorer(rcfg);
+		mStateExplorer = new ProgramStateExplorer(rcfg);
 	}
 	
-	public StateExplorer getStateExplorer() {
+	public ProgramStateExplorer getStateExplorer() {
 		return mStateExplorer;
 	}
 }

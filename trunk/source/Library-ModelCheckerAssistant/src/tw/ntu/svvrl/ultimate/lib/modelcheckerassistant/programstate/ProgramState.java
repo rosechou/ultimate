@@ -1,4 +1,4 @@
-package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state;
+package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,7 +33,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Sum
  *
  */
 
-public class State {
+public class ProgramState {
 	/**
 	 * To record the valuation of boogie variables.
 	 */
@@ -43,7 +43,7 @@ public class State {
 	 */
 	private final BoogieIcfgLocation mRelaedIcfgLoc;
 	
-	public State(Map<IProgramVar, Object> var2Value, BoogieIcfgLocation boogieIcfgLocation) {
+	public ProgramState(Map<IProgramVar, Object> var2Value, BoogieIcfgLocation boogieIcfgLocation) {
 		mValuation.putAll(var2Value);
 		mRelaedIcfgLoc = boogieIcfgLocation;
 	}
@@ -91,15 +91,15 @@ public class State {
 	/**
 	 * Check whether two automaton states are equivalent.
 	 * This method is needed in the nested DFS procedure. 
-	 * @param anotherState
+	 * @param anotherProgramState
 	 * 		the state which is going to be compared to.
 	 * @return
 	 * 		true if two states are equivalent, false if not.
 	 */
-	public boolean equals(State anotherState) {
-		if(!mRelaedIcfgLoc.equals(anotherState.getRelatedIcfgLoc())) {
+	public boolean equals(ProgramState anotherProgramState) {
+		if(!mRelaedIcfgLoc.equals(anotherProgramState.getRelatedIcfgLoc())) {
 			return false;
 		}
-		return mValuation.equals(anotherState.getVar2Value()) ? true : false;
+		return mValuation.equals(anotherProgramState.getVar2Value()) ? true : false;
 	}
 }

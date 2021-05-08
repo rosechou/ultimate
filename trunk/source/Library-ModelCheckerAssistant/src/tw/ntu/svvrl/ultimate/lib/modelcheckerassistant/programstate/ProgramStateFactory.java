@@ -1,4 +1,4 @@
-package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state;
+package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,14 +14,14 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.I
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramVar;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 
-public class StateFactory {
+public class ProgramStateFactory {
 	/*---------------RCFG fields---------------*/
 	private final CfgSmtToolkit mCfgSmtTookit;
 	private final Boogie2SmtSymbolTable mBoogie2SmtSymbolTable;
 	/*------------End of RCFG fields-----------*/
 	
 	
-	public StateFactory(Boogie2SmtSymbolTable boogie2SmtSymbolTable
+	public ProgramStateFactory(Boogie2SmtSymbolTable boogie2SmtSymbolTable
 						, CfgSmtToolkit cfgSmtToolkit) {
 		mBoogie2SmtSymbolTable = boogie2SmtSymbolTable;
 		mCfgSmtTookit = cfgSmtToolkit;
@@ -37,13 +37,13 @@ public class StateFactory {
 	 * @return
 	 * 		the result initial state.
 	 */
-	public State createInitialState(BoogieIcfgLocation loc) {
+	public ProgramState createInitialState(BoogieIcfgLocation loc) {
 		Map<IProgramVar, Object> valuation = new HashMap<>();
 		initializeGlobalVarsValuation(valuation);
-		return new State(valuation, loc);
+		return new ProgramState(valuation, loc);
 	}
 	
-//	public State createNextState(State lastState, transition) {
+//	public ProgramState createNextProgramState(ProgramState lastProgramState, transition) {
 //	}
 	
 	

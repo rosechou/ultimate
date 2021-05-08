@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.NotImplementedException;
+
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.AbstractIcfgTransition;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramVar;
@@ -66,6 +68,8 @@ public class State {
 				} else if(edge instanceof JoinThreadCurrent) {
 				} else if(edge instanceof JoinThreadOther) {
 				} else if(edge instanceof ParallelComposition) {
+					throw new NotImplementedException(ParallelComposition.class.getSimpleName()
+							+ "is not yet implemented.");
 				} else if(edge instanceof Return) {
 				} else if(edge instanceof SequentialComposition) {
 				} else if(edge instanceof StatementSequence) {

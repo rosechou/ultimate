@@ -4,9 +4,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.NotImplementedException;
 
+import de.uni_freiburg.informatik.ultimate.boogie.ast.AssertStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.AssignmentStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.AssumeStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.AbstractIcfgTransition;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramVar;
@@ -52,8 +57,12 @@ public class ProgramState {
 		return mRelaedIcfgLoc;
 	}
 	
-	public Map<IProgramVar, Object> getVar2Value() {
+	public Map<IProgramVar, Object> getValuation() {
 		return mValuation;
+	}
+	
+	public Set<IProgramVar> getVariables() {
+		return mValuation.keySet();
 	}
 	
 	public List<IcfgEdge> getEnableTrans() {
@@ -61,20 +70,24 @@ public class ProgramState {
 		List<IcfgEdge> enableTrans = new ArrayList<>();
 		for(IcfgEdge edge : edges) {
 			if (edge instanceof CodeBlock) {
-				if(edge instanceof Call) {
-				} else if(edge instanceof ForkThreadCurrent) {
-				} else if(edge instanceof ForkThreadOther) {
-				} else if(edge instanceof GotoEdge) {
-				} else if(edge instanceof JoinThreadCurrent) {
-				} else if(edge instanceof JoinThreadOther) {
+				if(edge instanceof StatementSequence) {
+					checkStatementsEnable(((StatementSequence) edge).getStatements());
 				} else if(edge instanceof ParallelComposition) {
+					/**
+					 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
+					 * This case is not yet implemented because I'm lazy.
+					 * (one of the preferences in
+					 * de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder)
+					 */
 					throw new NotImplementedException(ParallelComposition.class.getSimpleName()
 							+ "is not yet implemented.");
-				} else if(edge instanceof Return) {
 				} else if(edge instanceof SequentialComposition) {
-				} else if(edge instanceof StatementSequence) {
-				} else if(edge instanceof Summary) {
+					// same as above.
+					throw new NotImplementedException(ParallelComposition.class.getSimpleName()
+							+ "is not yet implemented.");
 				} else {
+					// other edge types are OK.
+					enableTrans.add(edge);
 				}
 			} else if (edge instanceof RootEdge) {
 				throw new UnsupportedOperationException("Suppose the type " + edge.getClass().getSimpleName()
@@ -86,6 +99,38 @@ public class ProgramState {
 		}
 		
 		return enableTrans;
+	}
+	
+	private boolean checkStatementsEnable(List<Statement> stmts) {
+		for(Statement stmt : stmts) {
+			if(stmt instanceof AssumeStatement) {
+				// if the formula assumed is not hold, then not enable. 
+				if(!checkAssumeStatement((AssumeStatement)stmt)) {
+					return false;
+				}
+			} else if(stmt instanceof AssertStatement) {
+				if(!checkAssertStatement((AssertStatement)stmt)) {
+					throw new UnsupportedOperationException("Assertion is violated.");
+				}
+			} else if(stmt instanceof AssignmentStatement) {
+				processAssignmentStatement((AssignmentStatement)stmt);
+			}
+		}
+		return true;
+	}
+	
+	private boolean checkAssumeStatement(AssumeStatement assumeStmt) {
+		return true;
+	}
+	
+	private boolean checkAssertStatement(AssertStatement assertStmt) {
+		return true;
+	}
+	
+	private void processAssignmentStatement(AssignmentStatement assignmentStmt) {
+		for(int i = 0; i < assignmentStmt.getLhs().length; i++) {
+			
+		}
 	}
 	
 	/**
@@ -100,6 +145,6 @@ public class ProgramState {
 		if(!mRelaedIcfgLoc.equals(anotherProgramState.getRelatedIcfgLoc())) {
 			return false;
 		}
-		return mValuation.equals(anotherProgramState.getVar2Value()) ? true : false;
+		return mValuation.equals(anotherProgramState.getValuation()) ? true : false;
 	}
 }

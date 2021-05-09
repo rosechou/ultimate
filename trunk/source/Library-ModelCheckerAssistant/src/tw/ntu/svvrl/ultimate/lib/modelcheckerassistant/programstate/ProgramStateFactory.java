@@ -1,13 +1,21 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.lang3.NotImplementedException;
 
 import de.uni_freiburg.informatik.ultimate.boogie.ast.BoogieASTNode;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VarList;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogiePrimitiveType;
 import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.Boogie2SmtSymbolTable;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.BoogieNonOldVar;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.BoogieOldVar;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.GlobalBoogieVar;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.LocalBoogieVar;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.CfgSmtToolkit;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.ILocalProgramVar;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramNonOldVar;
@@ -38,80 +46,96 @@ public class ProgramStateFactory {
 	 * 		the result initial state.
 	 */
 	public ProgramState createInitialState(BoogieIcfgLocation loc) {
-		Map<IProgramVar, Object> valuation = new HashMap<>();
-		initializeGlobalVarsValuation(valuation);
+		Map<String, Map<String, Object>> valuation = new HashMap<>();
+		addGlobalVars2Valuation(valuation);
 		return new ProgramState(valuation, loc);
 	}
 	
 //	public ProgramState createNextProgramState(ProgramState lastProgramState, transition) {
 //	}
 	
-	
 	/**
-	 * Initialize all global boogie variables' type and value.
+	 * Add all global boogie variables' type and value to valuation.
 	 * @param valuation
-	 * 		the value table should be initialized.
+	 * 		the value map should be added.
 	 */
-	private void initializeGlobalVarsValuation(Map<IProgramVar, Object> valuation) {
+	private void addGlobalVars2Valuation(Map<String, Map<String, Object>> valuation) {
 		
 		/**
 		 * process all global variables
 		 */
 		for(IProgramNonOldVar globalVar : mBoogie2SmtSymbolTable.getGlobals()) {
-			initializeVarValuation(valuation, globalVar);
+			addVar2Valuation(valuation, globalVar);
 		}
 	}
 	
 	/**
-	 * Initialize local boogie variables' type and value
+	 * Add local boogie variables' type and value to valuation.
 	 * in a specific procedure.
 	 * @param valuation
-	 * 		the value table should be initialized.
+	 * 		the value map should be added.
 	 * @param procName
 	 * 		A specific procedure name.
 	 */
-	private void initializeLocalVarsValuation(Map<IProgramVar, Object> valuation, String procName) {
+	private void addLocalVars2Valuation(Map<String, Map<String, Object>> valuation, String procName) {
 		
 		/**
 		 * process all local variables
 		 */
 		for(ILocalProgramVar localVar : mBoogie2SmtSymbolTable.getLocals(procName)) {
-			initializeVarValuation(valuation, localVar);
+			addVar2Valuation(valuation, localVar);
 		}
 	}
 	
 	/**
-	 *  Initialize a specific boogie variable's type and value.
+	 *  Initialize a specific boogie variable's type and value and add it to valuation.
 	 *  For Boolean variables, set their values to false.
 	 *  For Int variables, set their values to 0.
 	 *  Real variables are not yet implemented.
 	 *  
-	 * @param valueTable
-	 * 		the value table should be initialized.
+	 * @param valuation
+	 * 		the value map should be added.
 	 * @param var
 	 * 		the target variable.
 	 */
-	private void initializeVarValuation(Map<IProgramVar, Object> valuation, IProgramVar var) {
+	private void addVar2Valuation(Map<String, Map<String, Object>> valuation, IProgramVar var) {
+		String procName = var.getProcedure();
+		String identifier = null;
+		if(var instanceof GlobalBoogieVar) {
+			if(var instanceof BoogieNonOldVar) {
+				identifier = ((BoogieNonOldVar)var).getIdentifier();
+			} else if(var instanceof BoogieOldVar) {
+				identifier = ((BoogieOldVar)var).getIdentifierOfNonOldVar();
+			}
+		} else if(var instanceof LocalBoogieVar) {
+			identifier = ((LocalBoogieVar)var).getIdentifier();
+		}
 		BoogieASTNode boogieASTNode = mBoogie2SmtSymbolTable.getAstNode(var);
 		if(boogieASTNode instanceof VarList) {
 			IBoogieType boogieType = ((VarList)boogieASTNode).getType().getBoogieType();
 			if (boogieType instanceof BoogiePrimitiveType) {
+				Map<String, Object> id2v = new HashMap<>();
 				switch(((BoogiePrimitiveType) boogieType).getTypeCode()) {
 					case BoogiePrimitiveType.BOOL:
 						boolean boolValue = false;
-						valuation.put(var, boolValue);
+						id2v.put(identifier, boolValue);
 						break;
 					case BoogiePrimitiveType.INT:
 						int intValue = 0;
-						valuation.put(var, intValue);
+						id2v.put(identifier, intValue);
 						break;
 					case BoogiePrimitiveType.REAL:
-						throw new UnsupportedOperationException("Boogie variable with type"
-								+ " \"real\" is not yet supported.");
+						throw new NotImplementedException("Boogie variable with type"
+								+ " \"real\" is not yet implemented.");
 					case BoogiePrimitiveType.ERROR:
 					default:
 						throw new UnsupportedOperationException("Boogie variable with"
 								+ " error or unknown type.");
+				}
+				if(valuation.containsKey(procName)) {
+					valuation.get(procName).putAll(id2v);
+				} else {
+					valuation.put(procName, id2v);
 				}
 			}
 			else {

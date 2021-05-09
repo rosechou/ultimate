@@ -2,6 +2,7 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -12,6 +13,9 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.AssertStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssignmentStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssumeStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.BoogieNonOldVar;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.BoogieOldVar;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.LocalBoogieVar;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.AbstractIcfgTransition;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramVar;
@@ -41,15 +45,17 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Sum
 public class ProgramState {
 	/**
 	 * To record the valuation of boogie variables.
+	 * procedure name × identifier × value
 	 */
-	private final Map<IProgramVar, Object> mValuation = new HashMap<>();
+	private final Map<String, Map<String, Object>> mValuation = new HashMap<>();
 	/**
 	 * To specify which IcfgLocation this state is generated from.
 	 */
 	private final BoogieIcfgLocation mRelaedIcfgLoc;
 	
-	public ProgramState(Map<IProgramVar, Object> var2Value, BoogieIcfgLocation boogieIcfgLocation) {
-		mValuation.putAll(var2Value);
+	public ProgramState(Map<String, Map<String, Object>> valuation,
+						BoogieIcfgLocation boogieIcfgLocation) {
+		mValuation.putAll(valuation);
 		mRelaedIcfgLoc = boogieIcfgLocation;
 	}
 	
@@ -57,12 +63,8 @@ public class ProgramState {
 		return mRelaedIcfgLoc;
 	}
 	
-	public Map<IProgramVar, Object> getValuation() {
+	public Map<String, Map<String, Object>> getValuationMap() {
 		return mValuation;
-	}
-	
-	public Set<IProgramVar> getVariables() {
-		return mValuation.keySet();
 	}
 	
 	public List<IcfgEdge> getEnableTrans() {
@@ -145,6 +147,6 @@ public class ProgramState {
 		if(!mRelaedIcfgLoc.equals(anotherProgramState.getRelatedIcfgLoc())) {
 			return false;
 		}
-		return mValuation.equals(anotherProgramState.getValuation()) ? true : false;
+		return mValuation.equals(anotherProgramState.getValuationMap()) ? true : false;
 	}
 }

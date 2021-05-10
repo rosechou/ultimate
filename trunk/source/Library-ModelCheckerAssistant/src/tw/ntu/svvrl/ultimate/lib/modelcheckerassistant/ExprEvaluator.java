@@ -7,6 +7,6 @@ public class ExprEvaluator {
 	}
 	
 	public Object evaluate(Expression expr) {
-
+		return 1;
 	}
 }

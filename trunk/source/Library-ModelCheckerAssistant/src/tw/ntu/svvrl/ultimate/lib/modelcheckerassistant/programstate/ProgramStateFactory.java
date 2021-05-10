@@ -24,15 +24,12 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Boo
 
 public class ProgramStateFactory {
 	/*---------------RCFG fields---------------*/
-	private final CfgSmtToolkit mCfgSmtTookit;
 	private final Boogie2SmtSymbolTable mBoogie2SmtSymbolTable;
 	/*------------End of RCFG fields-----------*/
 	
 	
-	public ProgramStateFactory(Boogie2SmtSymbolTable boogie2SmtSymbolTable
-						, CfgSmtToolkit cfgSmtToolkit) {
+	public ProgramStateFactory(Boogie2SmtSymbolTable boogie2SmtSymbolTable) {
 		mBoogie2SmtSymbolTable = boogie2SmtSymbolTable;
-		mCfgSmtTookit = cfgSmtToolkit;
 	}
 	
 	/**

@@ -43,8 +43,7 @@ public class ProgramStateExplorer {
 		/*------------End of RCFG fields-----------*/
 		
 		mStartLoc = null;
-		mProgramStateFactory = new ProgramStateFactory(rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable()
-				, rcfg.getCfgSmtToolkit());
+		mProgramStateFactory = new ProgramStateFactory(rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable());
 	}
 	
 	

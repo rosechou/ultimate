@@ -30,7 +30,7 @@ public class ProgramStateFactory {
 	/*------------End of RCFG fields-----------*/
 	
 	
-	public ProgramStateFactory(Boogie2SmtSymbolTable boogie2SmtSymbolTable) {
+	public ProgramStateFactory(final Boogie2SmtSymbolTable boogie2SmtSymbolTable) {
 		mBoogie2SmtSymbolTable = boogie2SmtSymbolTable;
 	}
 	
@@ -44,7 +44,7 @@ public class ProgramStateFactory {
 	 * @return
 	 * 		the result initial state.
 	 */
-	public ProgramState createInitialState(BoogieIcfgLocation loc) {
+	public ProgramState createInitialState(final BoogieIcfgLocation loc) {
 		Map<String, Map<String, Object>> valuation = new HashMap<>();
 		addGlobalVars2Valuation(valuation);
 		return new ProgramState(valuation, loc);
@@ -58,7 +58,7 @@ public class ProgramStateFactory {
 	 * @param valuation
 	 * 		the value map should be added.
 	 */
-	private void addGlobalVars2Valuation(Map<String, Map<String, Object>> valuation) {
+	private void addGlobalVars2Valuation(final Map<String, Map<String, Object>> valuation) {
 		
 		/**
 		 * process all global variables
@@ -76,7 +76,7 @@ public class ProgramStateFactory {
 	 * @param procName
 	 * 		A specific procedure name.
 	 */
-	private void addLocalVars2Valuation(Map<String, Map<String, Object>> valuation, String procName) {
+	private void addLocalVars2Valuation(final Map<String, Map<String, Object>> valuation, final String procName) {
 		
 		/**
 		 * process all local variables
@@ -97,7 +97,7 @@ public class ProgramStateFactory {
 	 * @param var
 	 * 		the target variable.
 	 */
-	private void addVar2Valuation(Map<String, Map<String, Object>> valuation, IProgramVar var) {
+	private void addVar2Valuation(final Map<String, Map<String, Object>> valuation, final IProgramVar var) {
 		String procName = var.getProcedure();
 		String identifier = null;
 		if(var instanceof GlobalBoogieVar) {
@@ -138,7 +138,7 @@ public class ProgramStateFactory {
 	 * 			int[]	->	[0]
 	 * 			int[][]	->	[[0]]
 	 */
-	private Object processBoogieType(IBoogieType bt) {
+	private Object processBoogieType(final IBoogieType bt) {
 		if (bt instanceof BoogiePrimitiveType) {
 			switch(((BoogiePrimitiveType) bt).getTypeCode()) {
 				case BoogiePrimitiveType.BOOL:

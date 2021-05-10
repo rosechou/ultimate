@@ -32,7 +32,7 @@ public class ProgramStateExplorer {
 	private BoogieIcfgLocation mStartLoc;
 	private final ProgramStateFactory mProgramStateFactory;
 
-	public ProgramStateExplorer(BoogieIcfgContainer rcfg) {
+	public ProgramStateExplorer(final BoogieIcfgContainer rcfg) {
 		/*---------------RCFG fields---------------*/
 		mEntryNodes = rcfg.getProcedureEntryNodes();
 		mExitNode = rcfg.getProcedureExitNodes();

@@ -60,8 +60,8 @@ public class ProgramState {
 	private final BoogieIcfgLocation mRelaedIcfgLoc;
 	private static final ExprEvaluator mExprEvaluator = new ExprEvaluator();
 	
-	public ProgramState(Map<String, Map<String, Object>> valuation,
-						BoogieIcfgLocation boogieIcfgLocation) {
+	public ProgramState(final Map<String, Map<String, Object>> valuation,
+						final BoogieIcfgLocation boogieIcfgLocation) {
 		mValuation.putAll(valuation);
 		mRelaedIcfgLoc = boogieIcfgLocation;
 	}
@@ -83,7 +83,7 @@ public class ProgramState {
 	 * @return
 	 * 		the value of given identifier
 	 */
-	private Object lookUpValue(String procName, String identifier) {
+	private Object lookUpValue(final String procName, final String identifier) {
 		Object v = mValuation.get(procName).get(identifier);
 		if(v instanceof Integer) {
 			return (Integer)v;
@@ -103,7 +103,7 @@ public class ProgramState {
 	 * @param v
 	 * 		the new value of given identifier
 	 */
-	private void updateValue(String procName, String identifier, Object v) {
+	private void updateValue(final String procName, final String identifier, final Object v) {
 		Object result = mValuation.get(procName).replace(identifier, v);
 		if(result == null) {
 			throw new UnsupportedOperationException("No variable found in valuation table. "
@@ -155,14 +155,16 @@ public class ProgramState {
 	
 	/**
 	 * Check whether the given statements(from Icfg edge) is enable.
-	 * ??? Assignment statement should be considered because this statement will
-	 * change the valuation of program state ???
+	 * Assignment statement should be considered because this statement will
+	 * make the origin state move to a new program state. Whether an assignment statement
+	 * is enable is equal to asking whether the new state is enable after executing the 
+	 * rest statements. (use recursion) 
 	 * @param stmts
 	 * 		list of statements
 	 * @return
 	 * 		true if no assume statement is violated
 	 */
-	private boolean checkStatementsEnable(List<Statement> stmts) {
+	private boolean checkStatementsEnable(final List<Statement> stmts) {
 		for(Statement stmt : stmts) {
 			if(stmt instanceof AssumeStatement) {
 				// if the formula assumed is not hold, then not enable. 
@@ -188,7 +190,7 @@ public class ProgramState {
 		return true;
 	}
 	
-	private void processAssignmentStatement(AssignmentStatement assignmentStmt) {
+	private void processAssignmentStatement(final AssignmentStatement assignmentStmt) {
 		LeftHandSide[] lhs = assignmentStmt.getLhs();
 		Expression[] rhs = assignmentStmt.getRhs();
 		assert(lhs.length == rhs.length);
@@ -215,7 +217,7 @@ public class ProgramState {
 	 * @return
 	 * 		true if two states are equivalent, false if not.
 	 */
-	public boolean equals(ProgramState anotherProgramState) {
+	public boolean equals(final ProgramState anotherProgramState) {
 		if(!mRelaedIcfgLoc.equals(anotherProgramState.getRelatedIcfgLoc())) {
 			return false;
 		}

@@ -9,7 +9,9 @@ import org.apache.commons.lang3.NotImplementedException;
 
 import de.uni_freiburg.informatik.ultimate.boogie.ast.BoogieASTNode;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VarList;
+import de.uni_freiburg.informatik.ultimate.boogie.type.BoogieArrayType;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogiePrimitiveType;
+import de.uni_freiburg.informatik.ultimate.boogie.type.BoogieType;
 import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.Boogie2SmtSymbolTable;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.BoogieNonOldVar;
@@ -110,35 +112,64 @@ public class ProgramStateFactory {
 		BoogieASTNode boogieASTNode = mBoogie2SmtSymbolTable.getAstNode(var);
 		if(boogieASTNode instanceof VarList) {
 			IBoogieType boogieType = ((VarList)boogieASTNode).getType().getBoogieType();
-			if (boogieType instanceof BoogiePrimitiveType) {
-				Map<String, Object> id2v = new HashMap<>();
-				switch(((BoogiePrimitiveType) boogieType).getTypeCode()) {
-					case BoogiePrimitiveType.BOOL:
-						boolean boolValue = false;
-						id2v.put(identifier, boolValue);
-						break;
-					case BoogiePrimitiveType.INT:
-						int intValue = 0;
-						id2v.put(identifier, intValue);
-						break;
-					case BoogiePrimitiveType.REAL:
-						throw new NotImplementedException("Boogie variable with type"
-								+ " \"real\" is not yet implemented.");
-					case BoogiePrimitiveType.ERROR:
-					default:
-						throw new UnsupportedOperationException("Boogie variable with"
-								+ " error or unknown type.");
-				}
-				if(valuation.containsKey(procName)) {
-					valuation.get(procName).putAll(id2v);
+			Map<String, Object> id2v = new HashMap<>();
+			
+			
+			Object value = processBoogieType(boogieType);
+			id2v.put(identifier, value);
+
+			if(valuation.containsKey(procName)) {
+				valuation.get(procName).putAll(id2v);
+			} else {
+				valuation.put(procName, id2v);
+			}
+		}
+	}
+	
+	private Object processBoogieType(IBoogieType bt) {
+		if (bt instanceof BoogiePrimitiveType) {
+			switch(((BoogiePrimitiveType) bt).getTypeCode()) {
+				case BoogiePrimitiveType.BOOL:
+					boolean boolValue = false;
+					return boolValue;
+				case BoogiePrimitiveType.INT:
+					int intValue = 0;
+					return intValue;
+				case BoogiePrimitiveType.REAL:
+					throw new NotImplementedException("Boogie variable with type"
+							+ ((BoogiePrimitiveType) bt).toString() + " is not yet implemented.");
+				case BoogiePrimitiveType.ERROR:
+				default:
+					throw new UnsupportedOperationException("Boogie variable with"
+							+ " error or unknown type.");
+			}
+			
+		} else if(bt instanceof BoogieArrayType) {
+			/**
+			 * Check page 5 of https://www.microsoft.com/en-us/research/wp-content/uploads/2016/12/krml178.pdf
+			 * The "maps" type is not supported.
+			 */
+			for(int i = 0; i < ((BoogieArrayType) bt).getIndexCount(); i++) {
+				if(!(((BoogieArrayType) bt).getIndexType(i) instanceof BoogiePrimitiveType)) {
+					throw new UnsupportedOperationException("Index type "
+							+ ((BoogieArrayType) bt).getIndexType(i).getClass().getSimpleName()
+							+ "is not supported.");
 				} else {
-					valuation.put(procName, id2v);
+					if(((BoogiePrimitiveType)((BoogieArrayType) bt).getIndexType(i)).getTypeCode()
+							!= BoogiePrimitiveType.INT) {
+						throw new UnsupportedOperationException("Index type "
+								+ ((BoogiePrimitiveType)((BoogieArrayType) bt).getIndexType(i)).toString()
+								+ "is not supported.");
+					}
 				}
 			}
-			else {
-				throw new UnsupportedOperationException("Unsupported"
-						+ "BoogieType:" + boogieType.toString());
-			}
+			Object v = processBoogieType(((BoogieArrayType) bt).getValueType());
+			ArrayList<Object> array = new ArrayList<>();
+			array.add(v);
+			return array;
+		} else {
+			throw new UnsupportedOperationException("Unsupported"
+					+ "BoogieType:" + bt.toString());
 		}
 	}
 	

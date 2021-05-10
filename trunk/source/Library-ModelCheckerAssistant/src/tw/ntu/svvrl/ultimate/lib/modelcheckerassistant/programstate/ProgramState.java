@@ -164,19 +164,22 @@ public class ProgramState {
 	 * @return
 	 * 		true if no assume statement is violated
 	 */
-	private boolean checkStatementsEnable(final List<Statement> stmts) {
-		for(Statement stmt : stmts) {
+	public boolean checkStatementsEnable(final List<Statement> stmts) {
+		for(int i = 0; i < stmts.size(); i++) {
+			Statement stmt = stmts.get(i);
 			if(stmt instanceof AssumeStatement) {
 				// if the formula assumed is not hold, then not enable. 
-				if(!checkAssumeStatement((AssumeStatement)stmt)) {
+				if(!checkAssumeStatement((AssumeStatement) stmt)) {
 					return false;
 				}
-			} else if(stmt instanceof AssertStatement) {
-				if(!checkAssertStatement((AssertStatement)stmt)) {
+			} else if(stmts instanceof AssertStatement) {
+				if(!checkAssertStatement((AssertStatement) stmt)) {
 					throw new UnsupportedOperationException("Assertion is violated.");
 				}
 			} else if(stmt instanceof AssignmentStatement) {
-				processAssignmentStatement((AssignmentStatement)stmt);
+				ProgramState newState = processAssignmentStatement((AssignmentStatement) stmt);
+				newState.checkStatementsEnable(stmts.subList(i+1, stmts.size()));
+				break;
 			}
 		}
 		return true;
@@ -190,7 +193,7 @@ public class ProgramState {
 		return true;
 	}
 	
-	private void processAssignmentStatement(final AssignmentStatement assignmentStmt) {
+	private ProgramState processAssignmentStatement(final AssignmentStatement assignmentStmt) {
 		LeftHandSide[] lhs = assignmentStmt.getLhs();
 		Expression[] rhs = assignmentStmt.getRhs();
 		assert(lhs.length == rhs.length);

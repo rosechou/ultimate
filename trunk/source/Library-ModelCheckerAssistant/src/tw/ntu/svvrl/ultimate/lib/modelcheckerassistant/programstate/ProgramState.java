@@ -111,6 +111,12 @@ public class ProgramState {
 		}
 	}
 	
+	/**
+	 * Get the a list of transitions which is enable from this state.
+	 * A transition is enable if the assume statement is not violated.
+	 * @return
+	 * 		a list of enable transitions.
+	 */
 	public List<IcfgEdge> getEnableTrans() {
 		List<IcfgEdge> edges = mRelaedIcfgLoc.getOutgoingEdges();
 		List<IcfgEdge> enableTrans = new ArrayList<>();
@@ -147,6 +153,15 @@ public class ProgramState {
 		return enableTrans;
 	}
 	
+	/**
+	 * Check whether the given statements(from Icfg edge) is enable.
+	 * ??? Assignment statement should be considered because this statement will
+	 * change the valuation of program state ???
+	 * @param stmts
+	 * 		list of statements
+	 * @return
+	 * 		true if no assume statement is violated
+	 */
 	private boolean checkStatementsEnable(List<Statement> stmts) {
 		for(Statement stmt : stmts) {
 			if(stmt instanceof AssumeStatement) {

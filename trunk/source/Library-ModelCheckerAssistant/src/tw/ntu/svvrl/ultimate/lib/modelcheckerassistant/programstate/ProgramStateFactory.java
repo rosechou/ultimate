@@ -126,6 +126,18 @@ public class ProgramStateFactory {
 		}
 	}
 	
+	/**
+	 * Process a boogie type and return the default value of this type.
+	 * To handle the array type, recursion is needed.
+	 * @param bt
+	 * 		An IBoogieType which can be {@link BoogiePrimitiveType} and {@link BoogieArrayType}.
+	 * @return
+	 * 		A default value for the given boogie type.
+	 * 		Ex: bool 	-> 	false
+	 * 			int 	-> 	0
+	 * 			int[]	->	[0]
+	 * 			int[][]	->	[[0]]
+	 */
 	private Object processBoogieType(IBoogieType bt) {
 		if (bt instanceof BoogiePrimitiveType) {
 			switch(((BoogiePrimitiveType) bt).getTypeCode()) {

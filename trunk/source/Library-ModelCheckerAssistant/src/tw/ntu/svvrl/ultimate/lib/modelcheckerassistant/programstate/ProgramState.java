@@ -178,8 +178,7 @@ public class ProgramState {
 				}
 			} else if(stmt instanceof AssignmentStatement) {
 				ProgramState newState = processAssignmentStatement((AssignmentStatement) stmt);
-				newState.checkStatementsEnable(stmts.subList(i+1, stmts.size()));
-				break;
+				return newState.checkStatementsEnable(stmts.subList(i+1, stmts.size()));
 			}
 		}
 		return true;

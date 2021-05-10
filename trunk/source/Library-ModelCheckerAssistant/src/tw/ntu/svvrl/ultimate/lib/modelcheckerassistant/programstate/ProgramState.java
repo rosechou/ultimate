@@ -9,10 +9,15 @@ import java.util.Set;
 
 import org.apache.commons.lang3.NotImplementedException;
 
+import de.uni_freiburg.informatik.ultimate.boogie.ast.ArrayLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssertStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssignmentStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssumeStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.Expression;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.LeftHandSide;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.StructLHS;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.BoogieNonOldVar;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.BoogieOldVar;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.LocalBoogieVar;
@@ -33,6 +38,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Roo
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.SequentialComposition;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.StatementSequence;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Summary;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.ExprEvaluator;
 
 /**
  * This class represents a boogie program state.
@@ -52,6 +58,7 @@ public class ProgramState {
 	 * To specify which IcfgLocation this state is generated from.
 	 */
 	private final BoogieIcfgLocation mRelaedIcfgLoc;
+	private static final ExprEvaluator mExprEvaluator = new ExprEvaluator();
 	
 	public ProgramState(Map<String, Map<String, Object>> valuation,
 						BoogieIcfgLocation boogieIcfgLocation) {
@@ -65,6 +72,43 @@ public class ProgramState {
 	
 	public Map<String, Map<String, Object>> getValuationMap() {
 		return mValuation;
+	}
+	
+	/**
+	 * Look up the valuation table.
+	 * @param procName
+	 * 		name of procedure
+	 * @param identifier
+	 * 		name of identifier
+	 * @return
+	 * 		the value of given identifier
+	 */
+	private Object lookUpValue(String procName, String identifier) {
+		Object v = mValuation.get(procName).get(identifier);
+		if(v instanceof Integer) {
+			return (Integer)v;
+		} else if(v instanceof Boolean) {
+			return (Boolean)v;
+		} else {
+			throw new UnsupportedOperationException("Unkown variable type");
+		}
+	}
+	
+	/**
+	 * Update the valuation table.
+	 * @param procName
+	 * 		name of procedure
+	 * @param identifier
+	 * 		name of identifier
+	 * @param v
+	 * 		the new value of given identifier
+	 */
+	private void updateValue(String procName, String identifier, Object v) {
+		Object result = mValuation.get(procName).replace(identifier, v);
+		if(result == null) {
+			throw new UnsupportedOperationException("No variable found in valuation table. "
+					+ "Variable update failed.");
+		}
 	}
 	
 	public List<IcfgEdge> getEnableTrans() {
@@ -130,8 +174,21 @@ public class ProgramState {
 	}
 	
 	private void processAssignmentStatement(AssignmentStatement assignmentStmt) {
-		for(int i = 0; i < assignmentStmt.getLhs().length; i++) {
-			
+		LeftHandSide[] lhs = assignmentStmt.getLhs();
+		Expression[] rhs = assignmentStmt.getRhs();
+		assert(lhs.length == rhs.length);
+		for(int i = 0; i < lhs.length; i++) {
+			String procName = ((VariableLHS)lhs[i]).getDeclarationInformation().getProcedure();
+			String identifier = ((VariableLHS)lhs[i]).getIdentifier();
+			if(lhs[i] instanceof VariableLHS) {
+				Object value = mExprEvaluator.evaluate(rhs[i]);
+				updateValue(procName, identifier, value);
+			} else if(lhs[i] instanceof ArrayLHS) {
+				
+			} else if(lhs[i] instanceof StructLHS) {
+				throw new UnsupportedOperationException(StructLHS.class.getSimpleName() 
+						+ "is not yet supported.");
+			}
 		}
 	}
 	

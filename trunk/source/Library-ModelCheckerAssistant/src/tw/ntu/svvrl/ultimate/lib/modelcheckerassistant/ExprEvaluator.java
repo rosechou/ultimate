@@ -1,5 +1,7 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant;
 
+import java.util.Random;
+
 import de.uni_freiburg.informatik.ultimate.automata.alternating.BooleanExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ArrayAccessExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ArrayStoreExpression;
@@ -28,67 +30,89 @@ public class ExprEvaluator {
 	public Object evaluate(Expression expr) {
 		if(expr instanceof ArrayAccessExpression) {
 			return evaluateArrayAccessExpression((ArrayAccessExpression) expr);
-		}else if(expr instanceof ArrayStoreExpression) {
+		} else if(expr instanceof ArrayStoreExpression) {
 			return evaluateArrayStoreExpression((ArrayStoreExpression) expr);
-		}else if(expr instanceof BinaryExpression) {
+		} else if(expr instanceof BinaryExpression) {
 			return evaluateBinaryExpression((BinaryExpression) expr);
-		}else if(expr instanceof BitvecLiteral) {
-			return evaluateBitvecLiteral((BitvecLiteral) expr);
-		}else if(expr instanceof BitVectorAccessExpression) {
-			return evaluateBitVectorAccessExpression((BitVectorAccessExpression) expr);
-		}else if(expr instanceof BooleanLiteral) {
+		} else if(expr instanceof BitvecLiteral) {
+			throw new UnsupportedOperationException("Unsupported Expression type: "
+					+ expr.getClass().getSimpleName());
+		} else if(expr instanceof BitVectorAccessExpression) {
+			throw new UnsupportedOperationException("Unsupported Expression type: "
+					+ expr.getClass().getSimpleName());
+		} else if(expr instanceof BooleanLiteral) {
 			return evaluateBooleanLiteral((BooleanLiteral) expr);
-		}else if(expr instanceof FunctionApplication) {
+		} else if(expr instanceof FunctionApplication) {
 			return evaluateFunctionApplication((FunctionApplication) expr);
-		}else if(expr instanceof IdentifierExpression) {
+		} else if(expr instanceof IdentifierExpression) {
 			return evaluateIdentifierExpression((IdentifierExpression) expr);
-		}else if(expr instanceof IfThenElseExpression) {
+		} else if(expr instanceof IfThenElseExpression) {
 			return evaluateIfThenElseExpression((IfThenElseExpression) expr);
-		}else if(expr instanceof IntegerLiteral) {
+		} else if(expr instanceof IntegerLiteral) {
 			return evaluateIntegerLiteral((IntegerLiteral) expr);
-		}else if(expr instanceof QuantifierExpression) {
+		} else if(expr instanceof QuantifierExpression) {
 			throw new UnsupportedOperationException("Unsupported Expression type: "
 					+ expr.getClass().getSimpleName());
-		}else if(expr instanceof RealLiteral) {
+		} else if(expr instanceof RealLiteral) {
 			throw new UnsupportedOperationException("Unsupported Expression type: "
 					+ expr.getClass().getSimpleName());
-		}else if(expr instanceof StringLiteral) {
+		} else if(expr instanceof StringLiteral) {
 			throw new UnsupportedOperationException("Unsupported Expression type: "
 					+ expr.getClass().getSimpleName());
-		}else if(expr instanceof StructAccessExpression) {
+		} else if(expr instanceof StructAccessExpression) {
 			throw new UnsupportedOperationException("Unsupported Expression type: "
 					+ expr.getClass().getSimpleName());
-		}else if(expr instanceof StructConstructor) {
+		} else if(expr instanceof StructConstructor) {
 			throw new UnsupportedOperationException("Unsupported Expression type: "
 					+ expr.getClass().getSimpleName());
-		}else if(expr instanceof UnaryExpression) {
+		} else if(expr instanceof UnaryExpression) {
 			return evaluateUnaryExpression((UnaryExpression) expr);
-		}else if(expr instanceof WildcardExpression) {
+		} else if(expr instanceof WildcardExpression) {
 			return evaluateWildcardExpression((WildcardExpression) expr);
-		}else {
+		} else {
 			throw new UnsupportedOperationException("Unknown Expression type: "
 					+ expr.getClass().getSimpleName());
 		}
 	}
 
 	private Object evaluateWildcardExpression(WildcardExpression expr) {
-		// TODO Auto-generated method stub
-		return null;
+		Random random = new Random();
+	    return random.nextBoolean();
 	}
 
 	private Object evaluateUnaryExpression(UnaryExpression expr) {
-		// TODO Auto-generated method stub
-		return null;
+		UnaryExpression.Operator operator = expr.getOperator();
+		Object rv =  evaluate(expr.getExpr());
+		switch(operator) {
+			case LOGICNEG:
+				return !(Boolean) rv;
+			case ARITHNEGATIVE:
+				return -(Integer) rv;
+			case OLD:
+				if(rv instanceof IdentifierExpression) {
+					String oldId = "old(" + ((IdentifierExpression) rv).getIdentifier() + ")";
+					return evaluate(new IdentifierExpression(((IdentifierExpression) rv).getLoc(),
+							((IdentifierExpression) rv).getType(), oldId, 
+							((IdentifierExpression) rv).getDeclarationInformation()));
+				} else {
+					return rv;
+				}
+			default:
+				throw new UnsupportedOperationException("Unknown Unary Operator: "
+						+ operator.getClass().getSimpleName());
+		}
 	}
 
 	private Object evaluateIntegerLiteral(IntegerLiteral expr) {
-		// TODO Auto-generated method stub
-		return null;
+		return Integer.valueOf(expr.getValue());
 	}
 
 	private Object evaluateIfThenElseExpression(IfThenElseExpression expr) {
-		// TODO Auto-generated method stub
-		return null;
+		if((boolean) evaluate(expr.getCondition())) {
+			return evaluate(expr.getThenPart());
+		} else {
+			return evaluate(expr.getElsePart());
+		}
 	}
 
 	private Object evaluateIdentifierExpression(IdentifierExpression expr) {
@@ -102,23 +126,66 @@ public class ExprEvaluator {
 	}
 
 	private Object evaluateBooleanLiteral(BooleanLiteral expr) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	private Object evaluateBitVectorAccessExpression(BitVectorAccessExpression expr) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	private Object evaluateBitvecLiteral(BitvecLiteral expr) {
-		// TODO Auto-generated method stub
-		return null;
+		return expr.getValue();
 	}
 
 	private Object evaluateBinaryExpression(BinaryExpression expr) {
-		// TODO Auto-generated method stub
-		return null;
+		BinaryExpression.Operator operator = expr.getOperator();
+		Object lv =  evaluate(expr.getLeft());
+		Object rv =  evaluate(expr.getRight());
+		switch(operator) {
+			case LOGICIFF:
+				return (!(Boolean) lv || (Boolean) rv) && (!(Boolean) rv || (Boolean) lv);
+			case LOGICIMPLIES:
+				return !(Boolean) lv || (Boolean) rv;
+			case LOGICAND:
+				return (Boolean) lv && (Boolean) rv;
+			case LOGICOR:
+				return (Boolean) lv || (Boolean) rv;
+			case COMPLT:
+				return (Integer) lv < (Integer) rv;
+			case COMPGT:
+				return (Integer) lv > (Integer) rv;
+			case COMPLEQ:
+				return (Integer) lv <= (Integer) rv;
+			case COMPGEQ:
+				return (Integer) lv >= (Integer) rv;
+			case COMPEQ:
+				if(lv instanceof Boolean && rv instanceof Boolean) {
+					return (Boolean) lv == (Boolean) rv;
+				} else if(lv instanceof Integer && rv instanceof Integer) {
+					return (Integer) lv == (Integer) rv;
+				} else {
+					throw new UnsupportedOperationException("Binary operation type error.");
+				}
+			case COMPNEQ:
+				if(lv instanceof Boolean && rv instanceof Boolean) {
+					return (Boolean) lv != (Boolean) rv;
+				} else if(lv instanceof Integer && rv instanceof Integer) {
+					return (Integer) lv != (Integer) rv;
+				} else {
+					throw new UnsupportedOperationException("Binary operation type error.");
+				}
+			case COMPPO:
+				throw new UnsupportedOperationException("Binary operation \"COMPPO\""
+						+ "is not yet supported.");
+			case BITVECCONCAT:
+				throw new UnsupportedOperationException("Binary operation \"BITVECCONCAT\""
+						+ "is not yet supported.");
+			case ARITHPLUS:
+				return (Integer) lv + (Integer) rv;
+			case ARITHMINUS:
+				return (Integer) lv - (Integer) rv;
+			case ARITHMUL:
+				return (Integer) lv * (Integer) rv;
+			case ARITHDIV:
+				return (Integer) lv / (Integer) rv;
+			case ARITHMOD:
+				return (Integer) lv % (Integer) rv;
+			default:
+				throw new UnsupportedOperationException("Unknown Binary Operator: "
+						+ operator.getClass().getSimpleName());
+		}
 	}
 
 	private Object evaluateArrayStoreExpression(ArrayStoreExpression expr) {

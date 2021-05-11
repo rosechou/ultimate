@@ -75,25 +75,6 @@ public class ProgramState {
 		return mValuation;
 	}
 	
-	/**
-	 * Look up the valuation table.
-	 * @param procName
-	 * 		name of procedure
-	 * @param identifier
-	 * 		name of identifier
-	 * @return
-	 * 		the value of given identifier
-	 */
-	private Object lookUpValue(final String procName, final String identifier) {
-		Object v = mValuation.get(procName).get(identifier);
-		if(v instanceof Integer) {
-			return (Integer)v;
-		} else if(v instanceof Boolean) {
-			return (Boolean)v;
-		} else {
-			throw new UnsupportedOperationException("Unkown variable type");
-		}
-	}
 	
 	/**
 	 * Generate new valuation table due to the modification or declaration of variable.
@@ -208,7 +189,9 @@ public class ProgramState {
 		assert(lhs.length == rhs.length);
 		
 		/**
-		 * Handle multi-assign
+		 * Handle multi-assignment
+		 * For example
+		 * int a, b, c := 1, 2, 3;
 		 */
 		Map<String, Map<String, Object>> tempValuation = new HashMap<>();
 		tempValuation.putAll(mValuation);

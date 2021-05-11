@@ -1,5 +1,7 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import de.uni_freiburg.informatik.ultimate.automata.alternating.BooleanExpression;
@@ -24,7 +26,10 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.UnaryExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WildcardExpression;
 
 public class ExprEvaluator {
-	public ExprEvaluator() {
+	private final Map<String, Map<String, Object>> mValuation = new HashMap<>();
+	
+	public ExprEvaluator(final Map<String, Map<String, Object>> valuation) {
+		mValuation.putAll(valuation);
 	}
 	
 	public Object evaluate(Expression expr) {
@@ -116,7 +121,7 @@ public class ExprEvaluator {
 	}
 
 	private Object evaluateIdentifierExpression(IdentifierExpression expr) {
-		// TODO Auto-generated method stub
+		
 		return null;
 	}
 

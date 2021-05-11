@@ -58,12 +58,13 @@ public class ProgramState {
 	 * To specify which IcfgLocation this state is generated from.
 	 */
 	private final BoogieIcfgLocation mRelaedIcfgLoc;
-	private static final ExprEvaluator mExprEvaluator = new ExprEvaluator();
+	private final ExprEvaluator mExprEvaluator;
 	
 	public ProgramState(final Map<String, Map<String, Object>> valuation,
 						final BoogieIcfgLocation boogieIcfgLocation) {
 		mValuation.putAll(valuation);
 		mRelaedIcfgLoc = boogieIcfgLocation;
+		mExprEvaluator = new ExprEvaluator(mValuation);
 	}
 	
 	public BoogieIcfgLocation getRelatedIcfgLoc() {
@@ -95,21 +96,30 @@ public class ProgramState {
 	}
 	
 	/**
-	 * Update the valuation table.
+	 * Generate new valuation table due to the modification or declaration of variable.
+	 * @param originValuation
+	 * 		origin valuation
 	 * @param procName
 	 * 		name of procedure
 	 * @param identifier
 	 * 		name of identifier
 	 * @param v
 	 * 		the new value of given identifier
+	 * @return
+	 * 		the new valuation
 	 */
-	private void updateValue(final String procName, final String identifier, final Object v) {
-		Object result = mValuation.get(procName).replace(identifier, v);
+	private Map<String, Map<String, Object>> generateNewValuation(final Map<String, Map<String, Object>> originValuation,
+		final String procName, final String identifier, final Object v) {
+		Map<String, Map<String, Object>> newValuation = new HashMap<>();
+		newValuation.putAll(originValuation);
+		Object result = newValuation.get(procName).replace(identifier, v);
 		if(result == null) {
 			throw new UnsupportedOperationException("No variable found in valuation table. "
 					+ "Variable update failed.");
 		}
+		return newValuation;
 	}
+	
 	
 	/**
 	 * Get the a list of transitions which is enable from this state.
@@ -120,7 +130,7 @@ public class ProgramState {
 	public List<IcfgEdge> getEnableTrans() {
 		List<IcfgEdge> edges = mRelaedIcfgLoc.getOutgoingEdges();
 		List<IcfgEdge> enableTrans = new ArrayList<>();
-		for(IcfgEdge edge : edges) {
+		for(final IcfgEdge edge : edges) {
 			if (edge instanceof CodeBlock) {
 				if(edge instanceof StatementSequence) {
 					checkStatementsEnable(((StatementSequence) edge).getStatements());
@@ -196,12 +206,18 @@ public class ProgramState {
 		LeftHandSide[] lhs = assignmentStmt.getLhs();
 		Expression[] rhs = assignmentStmt.getRhs();
 		assert(lhs.length == rhs.length);
+		
+		/**
+		 * Handle multi-assign
+		 */
+		Map<String, Map<String, Object>> tempValuation = new HashMap<>();
+		tempValuation.putAll(mValuation);
 		for(int i = 0; i < lhs.length; i++) {
 			String procName = ((VariableLHS)lhs[i]).getDeclarationInformation().getProcedure();
 			String identifier = ((VariableLHS)lhs[i]).getIdentifier();
 			if(lhs[i] instanceof VariableLHS) {
 				Object value = mExprEvaluator.evaluate(rhs[i]);
-				updateValue(procName, identifier, value);
+				tempValuation.putAll(generateNewValuation(tempValuation, procName, identifier, value));
 			} else if(lhs[i] instanceof ArrayLHS) {
 				
 			} else if(lhs[i] instanceof StructLHS) {
@@ -209,6 +225,7 @@ public class ProgramState {
 						+ "is not yet supported.");
 			}
 		}
+		//...
 	}
 	
 	/**

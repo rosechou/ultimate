@@ -1,6 +1,10 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -23,6 +27,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.StructAccessExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.StructConstructor;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.StructLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.UnaryExpression;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WildcardExpression;
 
 public class ExprEvaluator {
@@ -141,8 +146,9 @@ public class ExprEvaluator {
 	}
 
 	private Object evaluateIdentifierExpression(IdentifierExpression expr) {
-		
-		return null;
+		String procName = expr.getDeclarationInformation().getProcedure();
+		String identifier = expr.getIdentifier();
+		return lookUpValue(procName, identifier);
 	}
 
 	private Object evaluateFunctionApplication(FunctionApplication expr) {
@@ -214,8 +220,34 @@ public class ExprEvaluator {
 	}
 
 	private Object evaluateArrayStoreExpression(ArrayStoreExpression expr) {
-		// TODO Auto-generated method stub
-		return null;
+		ArrayList<Object> newArray = new ArrayList<>();
+		newArray = (ArrayList<Object>) evaluate(expr.getArray());
+		List<Expression> indexExprs = Arrays.asList(expr.getIndices());
+		Iterator<Expression> it = indexExprs.iterator();
+		while(it.hasNext()) {
+			/**
+			 * If array size is too small, grow it.
+			 * We do not need to consider whether this array will be out of bound here.
+			 * Because the rcfg has constructed the error state for us.
+			 * (Toggle on "Check array bounds for arrays that are off heap"
+			 * in the preference of cacsl2boogietranslator.)
+			 */
+			Expression indexExpr = it.next();
+			int index = (int) evaluate(indexExpr);
+			if(newArray.size() < index + 1) {
+				ArrayList<Object> tempArray = new ArrayList<>(index+1);
+				tempArray.addAll(newArray);
+				newArray = tempArray;
+			}
+			if(newArray.get(index) instanceof ArrayList<?>) {
+				newArray = (ArrayList<Object>) newArray.get(index);
+			}
+			if(!it.hasNext()) {
+				newArray.set(index, expr.getValue());
+			}
+		}
+		
+		return newArray;
 	}
 
 	private Object evaluateArrayAccessExpression(ArrayAccessExpression expr) {

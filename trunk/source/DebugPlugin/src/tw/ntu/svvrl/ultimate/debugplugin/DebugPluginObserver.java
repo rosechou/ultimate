@@ -89,7 +89,8 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		mLogger.info("Break point...");
 		Set<ProgramState> initialStates = new HashSet<>();
 		initialStates = mModelCheckerAssistant.getStateExplorer().getInitialStates();
-		;
+		ProgramState aState = mModelCheckerAssistant.getStateExplorer().getLocState();
+		aState.getEnableTrans();
 //		for(ProgramState initialState : initialStates) {
 //			initialState.getEnableTrans();
 //		}

@@ -48,13 +48,7 @@ public class ExprEvaluator {
 	 */
 	private Object lookUpValue(final String procName, final String identifier) {
 		Object v = mValuation.get(procName).get(identifier);
-		if(v instanceof Integer) {
-			return (Integer)v;
-		} else if(v instanceof Boolean) {
-			return (Boolean)v;
-		} else {
-			throw new UnsupportedOperationException("Unkown variable type");
-		}
+		return v;
 	}
 	
 	public Object evaluate(Expression expr) {
@@ -234,16 +228,20 @@ public class ExprEvaluator {
 			 */
 			Expression indexExpr = it.next();
 			int index = (int) evaluate(indexExpr);
-			if(newArray.size() < index + 1) {
-				ArrayList<Object> tempArray = new ArrayList<>(index+1);
+			int capacity = index + 1;
+			if(newArray.size() < capacity) {
+				ArrayList<Object> tempArray = new ArrayList<>(capacity);
 				tempArray.addAll(newArray);
+				for(int i = tempArray.size(); i < capacity; i++) {
+					tempArray.add(null);
+				}
 				newArray = tempArray;
 			}
 			if(newArray.get(index) instanceof ArrayList<?>) {
 				newArray = (ArrayList<Object>) newArray.get(index);
 			}
 			if(!it.hasNext()) {
-				newArray.set(index, expr.getValue());
+				newArray.set(index, evaluate(expr.getValue()));
 			}
 		}
 		

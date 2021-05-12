@@ -142,11 +142,8 @@ public class ProgramStateFactory {
 		if (bt instanceof BoogiePrimitiveType) {
 			switch(((BoogiePrimitiveType) bt).getTypeCode()) {
 				case BoogiePrimitiveType.BOOL:
-					boolean boolValue = false;
-					return boolValue;
 				case BoogiePrimitiveType.INT:
-					int intValue = 0;
-					return intValue;
+					return null;
 				case BoogiePrimitiveType.REAL:
 					throw new NotImplementedException("Boogie variable with type"
 							+ ((BoogiePrimitiveType) bt).toString() + " is not yet implemented.");

@@ -58,7 +58,7 @@ public class ProgramState {
 	 * To specify which IcfgLocation this state is generated from.
 	 */
 	private final BoogieIcfgLocation mCorrespondingIcfgLoc;
-	private final ExprEvaluator mExprEvaluator;
+	public final ExprEvaluator mExprEvaluator;
 	
 	public ProgramState(final Map<String, Map<String, Object>> valuation,
 						final BoogieIcfgLocation boogieIcfgLocation) {
@@ -155,7 +155,7 @@ public class ProgramState {
 	 * @return
 	 * 		true if no assume statement is violated
 	 */
-	public boolean checkStatementsEnable(final List<Statement> stmts) {
+	private boolean checkStatementsEnable(final List<Statement> stmts) {
 		for(int i = 0; i < stmts.size(); i++) {
 			Statement stmt = stmts.get(i);
 			if(stmt instanceof AssumeStatement) {

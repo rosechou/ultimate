@@ -265,9 +265,11 @@ public class ExprEvaluator {
 	
 	/**
 	 * Ex:
-	 * 		([[1]], 2) -> [[1], [null]]
-	 * 		([3, 4], 5) -> [3, 4, null, null, null]
-	 * 		([[[1, 2], [3,4]], [[5]]], 4) -> [[[1, 2], [3,4]], [[5]]], [[null]], [[null]]]
+	 * 		in param 						-> out param
+	 * 		([], 2)							-> [null, null]
+	 * 		([3, 4], 5) 					-> [3, 4, null, null, null]
+	 * 		([[1]], 2) 						-> [[1], [null]]
+	 * 		([[[1, 2], [3,4]], [[5]]], 4) 	-> [[[1, 2], [3,4]], [[5]]], [[null]], [[null]]]
 	 * @param array
 	 * 		the target array
 	 * @param size
@@ -275,18 +277,44 @@ public class ExprEvaluator {
 	 * 		a new array with the specific size.
 	 */
 	private ArrayList<Object> growArraySize(final ArrayList<Object> array, final int size) {
-		Object nullEle = generateNullElem(((ArrayList<Object>) array).get(0));
+		if(array.size() <= 0) {
+  			ArrayList<Object> newArray = new ArrayList<>();
+  			while(newArray.size() < size) {
+				newArray.add(null);
+			}
+			return newArray;
+  		}
+		Object nullElem = generateNullElem(((ArrayList<Object>) array).get(0));
 		ArrayList<Object> tempArray = new ArrayList<>(size);
 		tempArray.addAll(array);
 		while(tempArray.size() < size) {
-			tempArray.add(nullEle);
+			tempArray.add(nullElem);
 		}
 		return tempArray;
 	}
 	
+	
+	/**
+	 * A recursive function used in {@link #growArraySize(ArrayList, int)}.
+	 * Ex:
+	 * 		in param 		-> out param
+	 * 		3 				-> null
+	 * 		[]				-> [null]
+	 * 		[1] 			-> [null]
+	 * 		[1, 2] 			-> [null]
+	 * 		[[5,7], [3]] 	-> [[null]]
+	 * @param array
+	 * @return
+	 * 		n dimension array(same as input).
+	 * 		the innermost element is null. 
+	 */
 	private Object generateNullElem(final Object array) {
 		if(!(array instanceof ArrayList<?>)) {
 			return null;
+		} else if(((ArrayList<Object>) array).size() <= 0) {
+			ArrayList<Object> newArray = new ArrayList<>();
+			newArray.add(null);
+			return newArray;
 		}
 		ArrayList<Object> newArray = new ArrayList<>();
 		newArray.add(generateNullElem(((ArrayList<Object>) array).get(0)));

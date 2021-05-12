@@ -57,18 +57,18 @@ public class ProgramState {
 	/**
 	 * To specify which IcfgLocation this state is generated from.
 	 */
-	private final BoogieIcfgLocation mRelaedIcfgLoc;
+	private final BoogieIcfgLocation mCorrespondingIcfgLoc;
 	private final ExprEvaluator mExprEvaluator;
 	
 	public ProgramState(final Map<String, Map<String, Object>> valuation,
 						final BoogieIcfgLocation boogieIcfgLocation) {
 		mValuation.putAll(valuation);
-		mRelaedIcfgLoc = boogieIcfgLocation;
+		mCorrespondingIcfgLoc = boogieIcfgLocation;
 		mExprEvaluator = new ExprEvaluator(mValuation);
 	}
 	
-	public BoogieIcfgLocation getRelatedIcfgLoc() {
-		return mRelaedIcfgLoc;
+	public BoogieIcfgLocation getCorrespondingIcfgLoc() {
+		return mCorrespondingIcfgLoc;
 	}
 	
 	public Map<String, Map<String, Object>> getValuationMap() {
@@ -109,7 +109,7 @@ public class ProgramState {
 	 * 		a list of enable transitions.
 	 */
 	public List<IcfgEdge> getEnableTrans() {
-		List<IcfgEdge> edges = mRelaedIcfgLoc.getOutgoingEdges();
+		List<IcfgEdge> edges = mCorrespondingIcfgLoc.getOutgoingEdges();
 		List<IcfgEdge> enableTrans = new ArrayList<>();
 		for(final IcfgEdge edge : edges) {
 			if (edge instanceof CodeBlock) {
@@ -221,7 +221,7 @@ public class ProgramState {
 	 * 		true if two states are equivalent, false if not.
 	 */
 	public boolean equals(final ProgramState anotherProgramState) {
-		if(!mRelaedIcfgLoc.equals(anotherProgramState.getRelatedIcfgLoc())) {
+		if(!mCorrespondingIcfgLoc.equals(anotherProgramState.getCorrespondingIcfgLoc())) {
 			return false;
 		}
 		return mValuation.equals(anotherProgramState.getValuationMap()) ? true : false;

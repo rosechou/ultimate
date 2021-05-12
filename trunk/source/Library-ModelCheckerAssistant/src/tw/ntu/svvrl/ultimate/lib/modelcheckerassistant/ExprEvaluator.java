@@ -99,12 +99,12 @@ public class ExprEvaluator {
 		}
 	}
 
-	private Object evaluateWildcardExpression(WildcardExpression expr) {
+	private Object evaluateWildcardExpression(final WildcardExpression expr) {
 		Random random = new Random();
 	    return random.nextBoolean();
 	}
 
-	private Object evaluateUnaryExpression(UnaryExpression expr) {
+	private Object evaluateUnaryExpression(final UnaryExpression expr) {
 		UnaryExpression.Operator operator = expr.getOperator();
 		Object rv =  evaluate(expr.getExpr());
 		switch(operator) {
@@ -127,11 +127,11 @@ public class ExprEvaluator {
 		}
 	}
 
-	private Object evaluateIntegerLiteral(IntegerLiteral expr) {
+	private Object evaluateIntegerLiteral(final IntegerLiteral expr) {
 		return Integer.valueOf(expr.getValue());
 	}
 
-	private Object evaluateIfThenElseExpression(IfThenElseExpression expr) {
+	private Object evaluateIfThenElseExpression(final IfThenElseExpression expr) {
 		if((boolean) evaluate(expr.getCondition())) {
 			return evaluate(expr.getThenPart());
 		} else {
@@ -139,22 +139,22 @@ public class ExprEvaluator {
 		}
 	}
 
-	private Object evaluateIdentifierExpression(IdentifierExpression expr) {
+	private Object evaluateIdentifierExpression(final IdentifierExpression expr) {
 		String procName = expr.getDeclarationInformation().getProcedure();
 		String identifier = expr.getIdentifier();
 		return lookUpValue(procName, identifier);
 	}
 
-	private Object evaluateFunctionApplication(FunctionApplication expr) {
+	private Object evaluateFunctionApplication(final FunctionApplication expr) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	private Object evaluateBooleanLiteral(BooleanLiteral expr) {
+	private Object evaluateBooleanLiteral(final BooleanLiteral expr) {
 		return expr.getValue();
 	}
 
-	private Object evaluateBinaryExpression(BinaryExpression expr) {
+	private Object evaluateBinaryExpression(final BinaryExpression expr) {
 		BinaryExpression.Operator operator = expr.getOperator();
 		Object lv =  evaluate(expr.getLeft());
 		Object rv =  evaluate(expr.getRight());
@@ -213,9 +213,10 @@ public class ExprEvaluator {
 		}
 	}
 
-	private Object evaluateArrayStoreExpression(ArrayStoreExpression expr) {
+	private Object evaluateArrayStoreExpression(final ArrayStoreExpression expr) {
 		ArrayList<Object> newArray = new ArrayList<>();
 		newArray = (ArrayList<Object>) evaluate(expr.getArray());
+		
 		List<Expression> indexExprs = Arrays.asList(expr.getIndices());
 		Iterator<Expression> it = indexExprs.iterator();
 		while(it.hasNext()) {
@@ -228,18 +229,10 @@ public class ExprEvaluator {
 			 */
 			Expression indexExpr = it.next();
 			int index = (int) evaluate(indexExpr);
-			int capacity = index + 1;
-			if(newArray.size() < capacity) {
-				ArrayList<Object> tempArray = new ArrayList<>(capacity);
-				tempArray.addAll(newArray);
-				for(int i = tempArray.size(); i < capacity; i++) {
-					tempArray.add(null);
-				}
-				newArray = tempArray;
-			}
-			if(newArray.get(index) instanceof ArrayList<?>) {
-				newArray = (ArrayList<Object>) newArray.get(index);
-			}
+			
+			assert(newArray.size() > 0);
+			newArray = growArraySize(newArray, index + 1);
+			
 			if(!it.hasNext()) {
 				newArray.set(index, evaluate(expr.getValue()));
 			}
@@ -248,9 +241,55 @@ public class ExprEvaluator {
 		return newArray;
 	}
 
-	private Object evaluateArrayAccessExpression(ArrayAccessExpression expr) {
-		// TODO Auto-generated method stub
-		return null;
+	private Object evaluateArrayAccessExpression(final ArrayAccessExpression expr) {
+		ArrayList<Object> arrayToAccess = new ArrayList<>();
+		arrayToAccess = (ArrayList<Object>) evaluate(expr.getArray());
+		
+		List<Expression> indexExprs = Arrays.asList(expr.getIndices());
+		Iterator<Expression> it = indexExprs.iterator();
+		while(it.hasNext()) {
+			Expression indexExpr = it.next();
+			int index = (int) evaluate(indexExpr);
+			
+			assert(arrayToAccess.size() > 0);
+			arrayToAccess = growArraySize(arrayToAccess, index + 1);
+			
+			if(arrayToAccess.get(index) instanceof ArrayList<?>) {
+				arrayToAccess = (ArrayList<Object>) arrayToAccess.get(index);
+			}
+		}
+		
+		return arrayToAccess;
 	}
 	
+	
+	/**
+	 * Ex:
+	 * 		([[1]], 2) -> [[1], [null]]
+	 * 		([3, 4], 5) -> [3, 4, null, null, null]
+	 * 		([[[1, 2], [3,4]], [[5]]], 4) -> [[[1, 2], [3,4]], [[5]]], [[null]], [[null]]]
+	 * @param array
+	 * 		the target array
+	 * @param size
+	 * @return
+	 * 		a new array with the specific size.
+	 */
+	private ArrayList<Object> growArraySize(final ArrayList<Object> array, final int size) {
+		Object nullEle = generateNullElem(((ArrayList<Object>) array).get(0));
+		ArrayList<Object> tempArray = new ArrayList<>(size);
+		tempArray.addAll(array);
+		while(tempArray.size() < size) {
+			tempArray.add(nullEle);
+		}
+		return tempArray;
+	}
+	
+	private Object generateNullElem(final Object array) {
+		if(!(array instanceof ArrayList<?>)) {
+			return null;
+		}
+		ArrayList<Object> newArray = new ArrayList<>();
+		newArray.add(generateNullElem(((ArrayList<Object>) array).get(0)));
+		return newArray;
+	}
 }

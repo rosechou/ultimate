@@ -58,7 +58,7 @@ public class ProgramState {
 	 * To specify which IcfgLocation this state is generated from.
 	 */
 	private final BoogieIcfgLocation mCorrespondingIcfgLoc;
-	public final ExprEvaluator mExprEvaluator;
+	private final ExprEvaluator mExprEvaluator;
 	
 	public ProgramState(final Map<String, Map<String, Object>> valuation,
 						final BoogieIcfgLocation boogieIcfgLocation) {

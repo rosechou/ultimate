@@ -27,6 +27,7 @@
  */
 package tw.ntu.svvrl.ultimate.debugplugin;
 
+import java.util.ArrayList;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.*;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
 
@@ -89,8 +90,11 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		mLogger.info("Break point...");
 		Set<ProgramState> initialStates = new HashSet<>();
 		initialStates = mModelCheckerAssistant.getStateExplorer().getInitialStates();
+		/*-----------debugging-----------*/
 		ProgramState aState = mModelCheckerAssistant.getStateExplorer().getLocState();
 		aState.getEnableTrans();
+		/*-------------------------------*/
+		
 //		for(ProgramState initialState : initialStates) {
 //			initialState.getEnableTrans();
 //		}

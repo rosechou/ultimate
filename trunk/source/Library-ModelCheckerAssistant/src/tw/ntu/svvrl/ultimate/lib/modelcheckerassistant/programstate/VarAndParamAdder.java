@@ -7,6 +7,7 @@ import java.util.Map;
 import org.apache.commons.lang3.NotImplementedException;
 
 import de.uni_freiburg.informatik.ultimate.boogie.ast.BoogieASTNode;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.FunctionDeclaration;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VarList;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogieArrayType;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogiePrimitiveType;
@@ -33,12 +34,15 @@ public class VarAndParamAdder {
 		mBoogie2SmtSymbolTable = boogie2SmtSymbolTable;
 	}
 	
-	public void addInParams2Valuation(final Map<String, Map<String, Object>> valuation) {
-		
+	public void addInParams2Valuation(final Map<String, Map<String, Object>> valuation
+			, final FunctionDeclaration funcDecl) {
 		/**
 		 * process all in params
 		 */
-		//...
+		String funcName = funcDecl.getIdentifier();
+		for(VarList inParam : funcDecl.getInParams()) {
+			addVarList2Valuation(valuation, funcName, inParam);
+		}
 	}
 	
 	/**
@@ -87,35 +91,27 @@ public class VarAndParamAdder {
 	 */
 	private void addVar2Valuation(final Map<String, Map<String, Object>> valuation, final IProgramVar var) {
 		String procName = var.getProcedure();
-		String identifier = null;
-		if(var instanceof GlobalBoogieVar) {
-			if(var instanceof BoogieNonOldVar) {
-				identifier = ((BoogieNonOldVar)var).getIdentifier();
-			} else if(var instanceof BoogieOldVar) {
-				identifier = ((BoogieOldVar)var).getIdentifierOfNonOldVar();
-			}
-		} else if(var instanceof LocalBoogieVar) {
-			identifier = ((LocalBoogieVar)var).getIdentifier();
-		}
 		BoogieASTNode boogieASTNode = mBoogie2SmtSymbolTable.getAstNode(var);
 		if(boogieASTNode instanceof VarList) {
-			addVarList2Valuation(valuation, ((VarList) boogieASTNode), procName, identifier);
-			
+			addVarList2Valuation(valuation, procName, ((VarList) boogieASTNode));
 		}
 	}
 	
-	private void addVarList2Valuation(final Map<String, Map<String, Object>> valuation, final VarList varList
-			, String procOrFuncName, String identifier) {
+	private void addVarList2Valuation(final Map<String, Map<String, Object>> valuation
+			, String procOrFuncName, final VarList varList) {
 		IBoogieType boogieType = varList.getType().getBoogieType();
 		Map<String, Object> id2v = new HashMap<>();
 		
 		Object value = processBoogieType(boogieType);
-		id2v.put(identifier, value);
+		
+		for(String varName : varList.getIdentifiers()) {
+			id2v.put(varName, value);
 
-		if(valuation.containsKey(procOrFuncName)) {
-			valuation.get(procOrFuncName).putAll(id2v);
-		} else {
-			valuation.put(procOrFuncName, id2v);
+			if(valuation.containsKey(procOrFuncName)) {
+				valuation.get(procOrFuncName).putAll(id2v);
+			} else {
+				valuation.put(procOrFuncName, id2v);
+			}
 		}
 	}
 	

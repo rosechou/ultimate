@@ -6,28 +6,41 @@ import java.util.Map;
 
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Expression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.FunctionDeclaration;
+import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.ExprEvaluator;
 
 public class FuncInitValuationInfo {
 	/**
-	 * the initial valuation table of in params in a function.
+	 * the initial valuation table of in params for each function.
 	 * This is used in functionApplication evaluation in {@link ExprEvaluator#evaluate(Expression)}
 	 * Type: function name × identifier × value
 	 */
 	private final Map<String, Map<String, Object>> mFuncInitValuation = new HashMap<>();
-	private final Object outParamType;
+	
+	/**
+	 * table that keeps out param's type for each function.
+	 * This is used in functionApplication evaluation in {@link ExprEvaluator#evaluate(Expression)}
+	 * Type: function name × identifier × value
+	 */
+	private final Map<String, IBoogieType> mFunc2outParamType = new HashMap<>();
 	
 	public FuncInitValuationInfo(final List<FunctionDeclaration> functionDeclarations) {
-		mFuncInitValuation.putAll(createFuncInitValuation(functionDeclarations));
-		this.outParamType = new Object();
+		createFuncInitValuation(functionDeclarations);
 	}
 	
-	private Map<String, Map<String, Object>> createFuncInitValuation(final List<FunctionDeclaration> functionDeclarations) {
+	private void createFuncInitValuation(final List<FunctionDeclaration> functionDeclarations) {
 		final VarAndParamAdder mVarAdder = new VarAndParamAdder();
 		for(FunctionDeclaration funcDecl : functionDeclarations) {
-			String funcName = funcDecl.getIdentifier();
-			//...
+			mVarAdder.addInParams2Valuation(mFuncInitValuation, funcDecl);
+			processFunc2outParamType(mFunc2outParamType, funcDecl);
 		}
-		return null;
 	}
+
+	private void processFunc2outParamType(Map<String, IBoogieType> table, FunctionDeclaration funcDecl) {
+		String funcName = funcDecl.getIdentifier();
+		IBoogieType boogieType = funcDecl.getOutParam().getType().getBoogieType();
+		table.put(funcName, boogieType);
+	}
+	
+
 }

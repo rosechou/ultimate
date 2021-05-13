@@ -29,7 +29,9 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Boo
 
 public class ProgramStateFactory {
 	
-	
+	/**
+	 * Every state has the same funcInitValuationInfo.
+	 */
 	private final FuncInitValuationInfo mFuncInitValuationInfo;
 	private final VarAndParamAdder mVarAdder;
 	

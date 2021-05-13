@@ -11,14 +11,14 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.ExprEvaluator;
 
 public class FuncInitValuationInfo {
 	/**
-	 * the initial valuation table of in params for each function.
+	 * the initial valuation table of in params for each boogie function.
 	 * This is used in functionApplication evaluation in {@link ExprEvaluator#evaluate(Expression)}
 	 * Type: function name × identifier × value
 	 */
 	private final Map<String, Map<String, Object>> mFuncInitValuation = new HashMap<>();
 	
 	/**
-	 * table that keeps out param's type for each function.
+	 * table that keeps out param's type for each boogie function.
 	 * This is used in functionApplication evaluation in {@link ExprEvaluator#evaluate(Expression)}
 	 * Type: function name × identifier × value
 	 */
@@ -35,7 +35,12 @@ public class FuncInitValuationInfo {
 			processFunc2outParamType(mFunc2outParamType, funcDecl);
 		}
 	}
-
+	
+	/**
+	 * Retrieve function name and its return type from funcDecl, insert them to table.
+	 * @param table
+	 * @param funcDecl
+	 */
 	private void processFunc2outParamType(Map<String, IBoogieType> table, FunctionDeclaration funcDecl) {
 		final String funcName = funcDecl.getIdentifier();
 		final IBoogieType boogieType = funcDecl.getOutParam().getType().getBoogieType();

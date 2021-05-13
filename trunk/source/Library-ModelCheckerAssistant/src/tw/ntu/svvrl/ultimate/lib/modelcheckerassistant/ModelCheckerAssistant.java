@@ -33,6 +33,19 @@ public class ModelCheckerAssistant {
 	 */
 	private final ProgramStateExplorer mStateExplorer;
 	
+	public ModelCheckerAssistant(final BoogieIcfgContainer rcfg,
+			final ILogger logger, final IUltimateServiceProvider services) {
+		
+		// services and logger
+		mServices = services;
+		mLogger = logger;
+		mRcfgRoot = rcfg;
+		mNWA = null;
+		
+		mStateExplorer = new ProgramStateExplorer(rcfg);
+	}
+	
+	
 	public ModelCheckerAssistant(final INestedWordAutomaton<CodeBlock, String> nwa, final BoogieIcfgContainer rcfg,
 			final ILogger logger, final IUltimateServiceProvider services) {
 		

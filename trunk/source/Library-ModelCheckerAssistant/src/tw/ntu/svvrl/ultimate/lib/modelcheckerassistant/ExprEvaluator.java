@@ -47,7 +47,7 @@ public class ExprEvaluator {
 	 * 		the value of given identifier
 	 */
 	private Object lookUpValue(final String procName, final String identifier) {
-		Object v = mValuation.get(procName).get(identifier);
+		final Object v = mValuation.get(procName).get(identifier);
 		return v;
 	}
 	
@@ -105,8 +105,8 @@ public class ExprEvaluator {
 	}
 
 	private Object evaluateUnaryExpression(final UnaryExpression expr) {
-		UnaryExpression.Operator operator = expr.getOperator();
-		Object rv =  evaluate(expr.getExpr());
+		final UnaryExpression.Operator operator = expr.getOperator();
+		final Object rv =  evaluate(expr.getExpr());
 		switch(operator) {
 			case LOGICNEG:
 				return !(Boolean) rv;
@@ -140,8 +140,8 @@ public class ExprEvaluator {
 	}
 
 	private Object evaluateIdentifierExpression(final IdentifierExpression expr) {
-		String procName = expr.getDeclarationInformation().getProcedure();
-		String identifier = expr.getIdentifier();
+		final String procName = expr.getDeclarationInformation().getProcedure();
+		final String identifier = expr.getIdentifier();
 		return lookUpValue(procName, identifier);
 	}
 
@@ -156,8 +156,8 @@ public class ExprEvaluator {
 
 	private Object evaluateBinaryExpression(final BinaryExpression expr) {
 		BinaryExpression.Operator operator = expr.getOperator();
-		Object lv =  evaluate(expr.getLeft());
-		Object rv =  evaluate(expr.getRight());
+		final Object lv =  evaluate(expr.getLeft());
+		final Object rv =  evaluate(expr.getRight());
 		switch(operator) {
 			case LOGICIFF:
 				return (!(Boolean) lv || (Boolean) rv) && (!(Boolean) rv || (Boolean) lv);
@@ -217,8 +217,8 @@ public class ExprEvaluator {
 		ArrayList<Object> newArray = new ArrayList<>();
 		newArray = (ArrayList<Object>) evaluate(expr.getArray());
 		
-		List<Expression> indexExprs = Arrays.asList(expr.getIndices());
-		Iterator<Expression> it = indexExprs.iterator();
+		final List<Expression> indexExprs = Arrays.asList(expr.getIndices());
+		final Iterator<Expression> it = indexExprs.iterator();
 		while(it.hasNext()) {
 			/**
 			 * If array size is too small, grow it.
@@ -227,8 +227,8 @@ public class ExprEvaluator {
 			 * (Toggle on "Check array bounds for arrays that are off heap"
 			 * in the preference of cacsl2boogietranslator.)
 			 */
-			Expression indexExpr = it.next();
-			int index = (int) evaluate(indexExpr);
+			final Expression indexExpr = it.next();
+			final int index = (int) evaluate(indexExpr);
 			
 			assert(newArray.size() > 0);
 			newArray = growArraySize(newArray, index + 1);
@@ -245,11 +245,11 @@ public class ExprEvaluator {
 		ArrayList<Object> arrayToAccess = new ArrayList<>();
 		arrayToAccess = (ArrayList<Object>) evaluate(expr.getArray());
 		
-		List<Expression> indexExprs = Arrays.asList(expr.getIndices());
-		Iterator<Expression> it = indexExprs.iterator();
+		final List<Expression> indexExprs = Arrays.asList(expr.getIndices());
+		final Iterator<Expression> it = indexExprs.iterator();
 		while(it.hasNext()) {
 			Expression indexExpr = it.next();
-			int index = (int) evaluate(indexExpr);
+			final int index = (int) evaluate(indexExpr);
 			
 			assert(arrayToAccess.size() > 0);
 			arrayToAccess = growArraySize(arrayToAccess, index + 1);
@@ -284,8 +284,8 @@ public class ExprEvaluator {
 			}
 			return newArray;
   		}
-		Object nullElem = generateNullElem(((ArrayList<Object>) array).get(0));
-		ArrayList<Object> tempArray = new ArrayList<>(size);
+		final Object nullElem = generateNullElem(((ArrayList<Object>) array).get(0));
+		final ArrayList<Object> tempArray = new ArrayList<>(size);
 		tempArray.addAll(array);
 		while(tempArray.size() < size) {
 			tempArray.add(nullElem);

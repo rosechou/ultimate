@@ -93,7 +93,7 @@ public class ProgramState {
 		final String procName, final String identifier, final Object v) {
 		Map<String, Map<String, Object>> newValuation = new HashMap<>();
 		newValuation.putAll(originValuation);
-		Object result = newValuation.get(procName).replace(identifier, v);
+		final Object result = newValuation.get(procName).replace(identifier, v);
 		if(result == null) {
 			throw new UnsupportedOperationException("No variable found in valuation table. "
 					+ "Variable update failed.");
@@ -157,7 +157,7 @@ public class ProgramState {
 	 */
 	private boolean checkStatementsEnable(final List<Statement> stmts) {
 		for(int i = 0; i < stmts.size(); i++) {
-			Statement stmt = stmts.get(i);
+			final Statement stmt = stmts.get(i);
 			if(stmt instanceof AssumeStatement) {
 				// if the formula assumed is not hold, then not enable. 
 				if(!checkAssumeStatement((AssumeStatement) stmt)) {
@@ -168,7 +168,7 @@ public class ProgramState {
 					throw new UnsupportedOperationException("Assertion is violated.");
 				}
 			} else if(stmt instanceof AssignmentStatement) {
-				ProgramState newState = processAssignmentStatement((AssignmentStatement) stmt);
+				final ProgramState newState = processAssignmentStatement((AssignmentStatement) stmt);
 				return newState.checkStatementsEnable(stmts.subList(i+1, stmts.size()));
 			}
 		}
@@ -196,10 +196,10 @@ public class ProgramState {
 		Map<String, Map<String, Object>> tempValuation = new HashMap<>();
 		tempValuation.putAll(mValuation);
 		for(int i = 0; i < lhs.length; i++) {
-			String procName = ((VariableLHS)lhs[i]).getDeclarationInformation().getProcedure();
-			String identifier = ((VariableLHS)lhs[i]).getIdentifier();
+			final String procName = ((VariableLHS)lhs[i]).getDeclarationInformation().getProcedure();
+			final String identifier = ((VariableLHS)lhs[i]).getIdentifier();
 			if(lhs[i] instanceof VariableLHS) {
-				Object value = mExprEvaluator.evaluate(rhs[i]);
+				final Object value = mExprEvaluator.evaluate(rhs[i]);
 				tempValuation.putAll(generateNewValuation(tempValuation, procName, identifier, value));
 			} else if(lhs[i] instanceof ArrayLHS) {
 				

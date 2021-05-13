@@ -37,8 +37,8 @@ public class FuncInitValuationInfo {
 	}
 
 	private void processFunc2outParamType(Map<String, IBoogieType> table, FunctionDeclaration funcDecl) {
-		String funcName = funcDecl.getIdentifier();
-		IBoogieType boogieType = funcDecl.getOutParam().getType().getBoogieType();
+		final String funcName = funcDecl.getIdentifier();
+		final IBoogieType boogieType = funcDecl.getOutParam().getType().getBoogieType();
 		table.put(funcName, boogieType);
 	}
 	

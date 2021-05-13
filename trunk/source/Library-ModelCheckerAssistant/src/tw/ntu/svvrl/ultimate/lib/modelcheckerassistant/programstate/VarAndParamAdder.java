@@ -39,7 +39,7 @@ public class VarAndParamAdder {
 		/**
 		 * process all in params
 		 */
-		String funcName = funcDecl.getIdentifier();
+		final String funcName = funcDecl.getIdentifier();
 		for(VarList inParam : funcDecl.getInParams()) {
 			addVarList2Valuation(valuation, funcName, inParam);
 		}

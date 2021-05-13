@@ -789,9 +789,9 @@ public class Boogie2SmtSymbolTable
 	}
 	
 	/**
-	 * 2021.05.05 by Hong-Yang Lin
-	 * For the real state exploration, we need to know the actual type of a variable.
-	 * Thus, the type information in the boogie declarations is needed.
+	 * 2021.05.13 by Hong-Yang Lin
+	 * To evaluate functionApplication expression,
+	 * function declaration information in the boogie declarations is needed.
 	 */
 	public BoogieDeclarations getBoogieDeclarations() {
 		return mBoogieDeclarations;

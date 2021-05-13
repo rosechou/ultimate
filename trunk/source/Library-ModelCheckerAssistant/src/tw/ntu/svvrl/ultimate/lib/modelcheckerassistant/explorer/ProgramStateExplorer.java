@@ -29,7 +29,6 @@ public class ProgramStateExplorer {
 	private final Set<BoogieIcfgLocation> mInitialNodes;
 	/*------------End of RCFG fields-----------*/
 	
-	private BoogieIcfgLocation mStartLoc;
 	private final ProgramStateFactory mProgramStateFactory;
 
 	public ProgramStateExplorer(final BoogieIcfgContainer rcfg) {
@@ -42,7 +41,6 @@ public class ProgramStateExplorer {
 		mInitialNodes = rcfg.getInitialNodes();
 		/*------------End of RCFG fields-----------*/
 		
-		mStartLoc = null;
 		mProgramStateFactory = new ProgramStateFactory(rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable());
 	}
 	

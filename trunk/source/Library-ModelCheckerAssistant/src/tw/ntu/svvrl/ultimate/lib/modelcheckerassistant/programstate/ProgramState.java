@@ -51,7 +51,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.ExprEvaluator;
 public class ProgramState {
 	/**
 	 * To record the valuation of boogie variables.
-	 * procedure name × identifier × value
+	 * Type: procedure name × identifier × value
 	 */
 	private final Map<String, Map<String, Object>> mValuation = new HashMap<>();
 	/**

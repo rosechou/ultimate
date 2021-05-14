@@ -65,7 +65,7 @@ public class ProgramStateExplorer {
 	public ProgramState getLocState() {
 		return mProgramStateFactory.createInitialState(
 				mLocNodes.get("ULTIMATE.start")
-				.get(mLocNodes.get("ULTIMATE.start").keySet().toArray()[3]));
+				.get(mLocNodes.get("ULTIMATE.start").keySet().toArray()[0]));
 
 	}
 

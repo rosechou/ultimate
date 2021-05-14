@@ -92,8 +92,9 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		Set<ProgramState> initialStates = new HashSet<>();
 		initialStates = mModelCheckerAssistant.getStateExplorer().getInitialStates();
 		/*-----------debugging-----------*/
-		ProgramState aState = mModelCheckerAssistant.getStateExplorer().getLocState();
-		aState.getEnableTrans();
+		((ProgramState) initialStates.toArray()[0]).getEnableTrans();
+		//ProgramState aState = mModelCheckerAssistant.getStateExplorer().getLocState();
+		//aState.getEnableTrans();
 		/*-------------------------------*/
 		
 //		for(ProgramState initialState : initialStates) {

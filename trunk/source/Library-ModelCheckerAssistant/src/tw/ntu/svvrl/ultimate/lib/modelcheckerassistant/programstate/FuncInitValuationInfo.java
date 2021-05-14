@@ -1,5 +1,6 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,14 +20,29 @@ public class FuncInitValuationInfo {
 	 */
 	private final Map<String, Map<String, Object>> mFuncInitValuation = new HashMap<>();
 	
-	
+	/**
+	 * Function name to list of in params.
+	 */
+	private final Map<String, ArrayList<String>> mFunc2InParams =  new HashMap<>();
 	private final Map<String, Expression> mFunc2Body = new HashMap<>();
 	
 	public FuncInitValuationInfo(final List<FunctionDeclaration> functionDeclarations) {
 		createFuncInitValuation(functionDeclarations);
 		createFunc2Body(functionDeclarations);
+		createFunc2InParams();
 	}
 	
+	private void createFunc2InParams() {
+		for(String funcName : mFuncInitValuation.keySet()) {
+			Map<String, Object> inParam2Value = mFuncInitValuation.get(funcName);
+			ArrayList<String> inParams = new ArrayList<>();
+			for(String inParamName : inParam2Value.keySet()) {
+				inParams.add(inParamName);
+			}
+			mFunc2InParams.put(funcName, inParams);
+		}
+	}
+
 	private void createFuncInitValuation(final List<FunctionDeclaration> functionDeclarations) {
 		final VarAndParamAdder mVarAdder = new VarAndParamAdder();
 		for(FunctionDeclaration funcDecl : functionDeclarations) {
@@ -50,4 +66,7 @@ public class FuncInitValuationInfo {
 		return mFunc2Body.get(funcName);
 	}
 
+	public final ArrayList<String> getInParams(String funcName) {
+		return mFunc2InParams.get(funcName);
+	}
 }

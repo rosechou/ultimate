@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Stack;
 
 import de.uni_freiburg.informatik.ultimate.automata.alternating.BooleanExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ArrayAccessExpression;
@@ -34,24 +35,54 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.FuncInitValu
 public class ExprEvaluator {
 	private final Map<String, Map<String, Object>> mValuation = new HashMap<>();
 	/**
-	 * Initial function value table and out param type.
+	 * Initial function value table and function bodies.
 	 */
 	private final FuncInitValuationInfo mFuncInitValuationInfo;
 	
+
 	/**
 	 * Actual value table in the execution of a function.
 	 * After functionApplicationExpr finished, this table should be
-	 * reset to <code>mFuncInitValuationInfo.getFuncInitValuation()<code>.
+	 * reset to <code>mFuncInitValuation<code>.
 	 */
-	private final Map<String, Map<String, Object>> mFuncValuation;	
+	private Map<String, Map<String, Object>> mFuncValuation;
+	
+	/**
+	 * To indicate recursive function application.
+	 * If not empty stack, lookup <code>mFuncValuation<code>.
+	 * If empty stack, not in a function, lookup <code>mValuation<code>.
+	 */
+	private Stack<String> mFuncNameStack = new Stack<>();
+	
 	
 	public ExprEvaluator(final Map<String, Map<String, Object>> valuation, 
 			final FuncInitValuationInfo funcInitValuationInfo) {
 		mValuation.putAll(valuation);
 		mFuncInitValuationInfo = funcInitValuationInfo;
-		mFuncValuation = funcInitValuationInfo.getFuncInitValuation();
+		mFuncValuation = createFuncInitValuation(funcInitValuationInfo);
 	}
 	
+	private Map<String, Map<String, Object>> createFuncInitValuation(FuncInitValuationInfo funcInitValuationInfo) {
+		final Map<String, Map<String, Object>> valuation = new HashMap<>();
+		valuation.putAll(funcInitValuationInfo.getFuncInitValuation());
+		
+		/**
+		 * Put all global variables to each function for {@link #evaluateFunctionApplication}
+		 * to looking up.
+		 * We can do this because boogie function has no side effects.
+		 * i.e. No variable assignment.
+		 */
+		for(String funcName : valuation.keySet()) {
+			Map<String, Object> globalVarMap = mValuation.get(null);
+			Map<String, Object> tempVarValuation = new HashMap<>();
+			tempVarValuation.putAll(globalVarMap);
+			tempVarValuation.putAll(valuation.get(funcName));
+			
+			valuation.put(funcName, tempVarValuation);
+		}
+		return valuation;
+	}
+
 	/**
 	 * Look up the program state valuation table.
 	 * @param procName
@@ -67,6 +98,13 @@ public class ExprEvaluator {
 	
 	private Object lookUpFuncValue(final String funcName, final String varName) {
 		return mFuncValuation.get(funcName).get(varName); 
+	}
+	
+	private void setFuncValue(final String funcName, final String varName, final Object value) {
+		Map<String, Object> tempVarValuation = new HashMap<>();
+		tempVarValuation = mFuncValuation.get(funcName);
+		tempVarValuation.put(varName, value);
+		mFuncValuation.put(funcName, tempVarValuation);
 	}
 	
 	public Object evaluate(Expression expr) {
@@ -158,10 +196,15 @@ public class ExprEvaluator {
 	}
 
 	private Object evaluateIdentifierExpression(final IdentifierExpression expr) {
-		final String procName = expr.getDeclarationInformation().getProcedure();
-		final String identifier = expr.getIdentifier();
-		//...lookUpfunc... return lookUpProcValue(procName, identifier);
-		return null;
+		if(mFuncNameStack.isEmpty()) {
+			final String procName = expr.getDeclarationInformation().getProcedure();
+			final String varName = expr.getIdentifier();
+			return lookUpProcValue(procName, varName);
+		} else {
+			final String funcName = mFuncNameStack.peek();
+			final String varName = expr.getIdentifier();
+			return lookUpFuncValue(funcName, varName);
+		}
 	}
 
 	/**
@@ -172,8 +215,22 @@ public class ExprEvaluator {
 	 * formulae in axioms.
 	 */
 	private Object evaluateFunctionApplication(final FunctionApplication expr) {
-		// TODO Auto-generated method stub
-		return null;
+		String funcName = expr.getIdentifier();
+		mFuncNameStack.push(funcName);
+		/**
+		 * Set parameters' values.
+		 */
+		Expression[] args = expr.getArguments();
+		ArrayList<String> argsName = mFuncInitValuationInfo.getInParams(funcName);
+		assert(args.length == argsName.size());
+		for(int i = 0; i < args.length; i++) {
+			setFuncValue(funcName, argsName.get(i), evaluate(args[i]));
+		}
+		
+		Object v = evaluate(mFuncInitValuationInfo.getFuncBody(mFuncNameStack.peek()));
+		
+		mFuncNameStack.pop();
+		return v;
 	}
 
 	private Object evaluateBooleanLiteral(final BooleanLiteral expr) {

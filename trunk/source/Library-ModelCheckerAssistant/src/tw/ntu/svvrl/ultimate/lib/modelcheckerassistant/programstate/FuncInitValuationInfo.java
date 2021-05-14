@@ -13,26 +13,41 @@ public class FuncInitValuationInfo {
 	/**
 	 * the initial valuation table of in params for each boogie function.
 	 * This is used in functionApplication evaluation in {@link ExprEvaluator#evaluate(Expression)}
-	 * Type: function name × identifier × value
+	 * Type: 
+	 * String			× String		× Object	
+	 * function name	× identifier	× value
 	 */
 	private final Map<String, Map<String, Object>> mFuncInitValuation = new HashMap<>();
+	
 	
 	private final Map<String, Expression> mFunc2Body = new HashMap<>();
 	
 	public FuncInitValuationInfo(final List<FunctionDeclaration> functionDeclarations) {
 		createFuncInitValuation(functionDeclarations);
+		createFunc2Body(functionDeclarations);
 	}
 	
 	private void createFuncInitValuation(final List<FunctionDeclaration> functionDeclarations) {
 		final VarAndParamAdder mVarAdder = new VarAndParamAdder();
 		for(FunctionDeclaration funcDecl : functionDeclarations) {
 			mVarAdder.addInParams2Valuation(mFuncInitValuation, funcDecl);
-			//process function body
+		}
+	}
+	
+	private void createFunc2Body(final List<FunctionDeclaration> functionDeclarations) {
+		for(FunctionDeclaration funcDecl : functionDeclarations) {
+			final String funcName = funcDecl.getIdentifier();
+			final Expression funcBody = funcDecl.getBody();
+			mFunc2Body.put(funcName, funcBody);
 		}
 	}
 	
 	public final Map<String, Map<String, Object>> getFuncInitValuation() {
 		return mFuncInitValuation;
+	}
+	
+	public final Expression getFuncBody(String funcName) {
+		return mFunc2Body.get(funcName);
 	}
 
 }

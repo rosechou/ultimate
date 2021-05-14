@@ -164,6 +164,13 @@ public class ExprEvaluator {
 		return null;
 	}
 
+	/**
+	 * This function will not work correctly with Boogie preprocessor.
+	 * Boogie preprocessor will unstruct and inline the function to procedure,
+	 * so the function body in the {@link FunctionDeclaration} will be <code>null<code>.
+	 * And all information about the function body is stored in the form of
+	 * formulae in axioms.
+	 */
 	private Object evaluateFunctionApplication(final FunctionApplication expr) {
 		// TODO Auto-generated method stub
 		return null;

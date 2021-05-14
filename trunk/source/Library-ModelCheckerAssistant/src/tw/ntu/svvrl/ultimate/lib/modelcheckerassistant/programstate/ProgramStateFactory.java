@@ -56,7 +56,7 @@ public class ProgramStateFactory {
 	public ProgramState createInitialState(final BoogieIcfgLocation loc) {
 		Map<String, Map<String, Object>> valuation = new HashMap<>();
 		mVarAdder.addGlobalVars2Valuation(valuation);
-		return new ProgramState(valuation, loc);
+		return new ProgramState(valuation, loc, mFuncInitValuationInfo);
 	}
 	
 //	public ProgramState createNextProgramState(ProgramState lastProgramState, transition) {

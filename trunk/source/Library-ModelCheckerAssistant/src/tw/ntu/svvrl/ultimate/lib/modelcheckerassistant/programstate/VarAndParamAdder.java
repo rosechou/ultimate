@@ -98,22 +98,37 @@ public class VarAndParamAdder {
 	}
 	
 	private void addVarList2Valuation(final Map<String, Map<String, Object>> valuation
-			, String procOrFuncName, final VarList varList) {
+			, final String procOrFuncName, final VarList varList) {
 		IBoogieType boogieType = varList.getType().getBoogieType();
-		Map<String, Object> id2v = new HashMap<>();
 		
 		Object value = processBoogieType(boogieType);
 		
 		for(String varName : varList.getIdentifiers()) {
-			id2v.put(varName, value);
-
-			if(valuation.containsKey(procOrFuncName)) {
-				valuation.get(procOrFuncName).putAll(id2v);
-			} else {
-				valuation.put(procOrFuncName, id2v);
-			}
+			setValue(valuation, procOrFuncName, varName, value);
 		}
 	}
+	
+	/**
+	 * Update the variable value in the valuation table.
+	 * @param valuation
+	 * 			the table needs to be updated.
+	 * @param procOrFuncName
+	 * @param varName
+	 * @param value
+	 */
+	private void setValue(final Map<String, Map<String, Object>> valuation
+			, final String procOrFuncName, final String varName
+			, final Object value) {
+		Map<String, Object> id2v = new HashMap<>();
+		id2v.put(varName, value);
+
+		if(valuation.containsKey(procOrFuncName)) {
+			valuation.get(procOrFuncName).putAll(id2v);
+		} else {
+			valuation.put(procOrFuncName, id2v);
+		}
+	}
+	
 	
 	/**
 	 * Process a boogie type and return the default value of this type.
@@ -122,10 +137,10 @@ public class VarAndParamAdder {
 	 * 		An IBoogieType which can be {@link BoogiePrimitiveType} and {@link BoogieArrayType}.
 	 * @return
 	 * 		A default value for the given boogie type.
-	 * 		Ex: bool 	-> 	false
-	 * 			int 	-> 	0
-	 * 			int[]	->	[0]
-	 * 			int[][]	->	[[0]]
+	 * 		Ex: bool 	-> 	null
+	 * 			int 	-> 	null
+	 * 			int[]	->	[null]
+	 * 			int[][]	->	[[null]]
 	 */
 	private Object processBoogieType(final IBoogieType bt) {
 		if (bt instanceof BoogiePrimitiveType) {

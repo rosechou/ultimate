@@ -54,6 +54,7 @@ public class ProgramState {
 	 * Type: procedure name × identifier × value
 	 */
 	private final Map<String, Map<String, Object>> mValuation = new HashMap<>();
+
 	/**
 	 * To specify which IcfgLocation this state is generated from.
 	 */
@@ -61,10 +62,11 @@ public class ProgramState {
 	private final ExprEvaluator mExprEvaluator;
 	
 	public ProgramState(final Map<String, Map<String, Object>> valuation,
-						final BoogieIcfgLocation boogieIcfgLocation) {
+						final BoogieIcfgLocation boogieIcfgLocation,
+						final FuncInitValuationInfo funcInitValuationInfo) {
 		mValuation.putAll(valuation);
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
-		mExprEvaluator = new ExprEvaluator(mValuation);
+		mExprEvaluator = new ExprEvaluator(mValuation, funcInitValuationInfo);
 	}
 	
 	public BoogieIcfgLocation getCorrespondingIcfgLoc() {

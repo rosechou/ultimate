@@ -17,12 +17,7 @@ public class FuncInitValuationInfo {
 	 */
 	private final Map<String, Map<String, Object>> mFuncInitValuation = new HashMap<>();
 	
-	/**
-	 * table that keeps out param's type for each boogie function.
-	 * This is used in functionApplication evaluation in {@link ExprEvaluator#evaluate(Expression)}
-	 * Type: function name × identifier × value
-	 */
-	private final Map<String, IBoogieType> mFunc2outParamType = new HashMap<>();
+	private final Map<String, Expression> mFunc2Body = new HashMap<>();
 	
 	public FuncInitValuationInfo(final List<FunctionDeclaration> functionDeclarations) {
 		createFuncInitValuation(functionDeclarations);
@@ -32,20 +27,12 @@ public class FuncInitValuationInfo {
 		final VarAndParamAdder mVarAdder = new VarAndParamAdder();
 		for(FunctionDeclaration funcDecl : functionDeclarations) {
 			mVarAdder.addInParams2Valuation(mFuncInitValuation, funcDecl);
-			processFunc2outParamType(mFunc2outParamType, funcDecl);
+			//process function body
 		}
 	}
 	
-	/**
-	 * Retrieve function name and its return type from funcDecl, insert them to table.
-	 * @param table
-	 * @param funcDecl
-	 */
-	private void processFunc2outParamType(Map<String, IBoogieType> table, FunctionDeclaration funcDecl) {
-		final String funcName = funcDecl.getIdentifier();
-		final IBoogieType boogieType = funcDecl.getOutParam().getType().getBoogieType();
-		table.put(funcName, boogieType);
+	public final Map<String, Map<String, Object>> getFuncInitValuation() {
+		return mFuncInitValuation;
 	}
-	
 
 }

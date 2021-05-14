@@ -29,16 +29,31 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.StructLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.UnaryExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WildcardExpression;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.FuncInitValuationInfo;
 
 public class ExprEvaluator {
 	private final Map<String, Map<String, Object>> mValuation = new HashMap<>();
+	/**
+	 * Initial function value table and out param type.
+	 */
+	private final FuncInitValuationInfo mFuncInitValuationInfo;
 	
-	public ExprEvaluator(final Map<String, Map<String, Object>> valuation) {
+	/**
+	 * Actual value table in the execution of a function.
+	 * After functionApplicationExpr finished, this table should be
+	 * reset to <code>mFuncInitValuationInfo.getFuncInitValuation()<code>.
+	 */
+	private final Map<String, Map<String, Object>> mFuncValuation;	
+	
+	public ExprEvaluator(final Map<String, Map<String, Object>> valuation, 
+			final FuncInitValuationInfo funcInitValuationInfo) {
 		mValuation.putAll(valuation);
+		mFuncInitValuationInfo = funcInitValuationInfo;
+		mFuncValuation = funcInitValuationInfo.getFuncInitValuation();
 	}
 	
 	/**
-	 * Look up the valuation table.
+	 * Look up the program state valuation table.
 	 * @param procName
 	 * 		name of procedure
 	 * @param identifier
@@ -46,9 +61,12 @@ public class ExprEvaluator {
 	 * @return
 	 * 		the value of given identifier
 	 */
-	private Object lookUpValue(final String procName, final String identifier) {
-		final Object v = mValuation.get(procName).get(identifier);
-		return v;
+	private Object lookUpProcValue(final String procName, final String varName) {
+		return mValuation.get(procName).get(varName);
+	}
+	
+	private Object lookUpFuncValue(final String funcName, final String varName) {
+		return mFuncValuation.get(funcName).get(varName); 
 	}
 	
 	public Object evaluate(Expression expr) {
@@ -142,7 +160,8 @@ public class ExprEvaluator {
 	private Object evaluateIdentifierExpression(final IdentifierExpression expr) {
 		final String procName = expr.getDeclarationInformation().getProcedure();
 		final String identifier = expr.getIdentifier();
-		return lookUpValue(procName, identifier);
+		//...lookUpfunc... return lookUpProcValue(procName, identifier);
+		return null;
 	}
 
 	private Object evaluateFunctionApplication(final FunctionApplication expr) {

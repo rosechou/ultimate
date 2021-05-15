@@ -30,6 +30,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.StructLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.UnaryExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WildcardExpression;
+import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.FuncInitValuationInfo;
 
 public class ExprEvaluator {
@@ -101,10 +102,7 @@ public class ExprEvaluator {
 	}
 	
 	private void setFuncValue(final String funcName, final String varName, final Object value) {
-		Map<String, Object> tempVarValuation = new HashMap<>();
-		tempVarValuation = mFuncValuation.get(funcName);
-		tempVarValuation.put(varName, value);
-		mFuncValuation.put(funcName, tempVarValuation);
+		mFuncValuation.get(funcName).replace(varName, value);
 	}
 	
 	public Object evaluate(Expression expr) {
@@ -208,11 +206,14 @@ public class ExprEvaluator {
 	}
 
 	/**
-	 * This function will not work correctly with Boogie preprocessor.
-	 * Boogie preprocessor will unstruct and inline the function to procedure,
-	 * so the function body in the {@link FunctionDeclaration} will be <code>null<code>.
+	 * This function will not work correctly with funciton inliner in Boogie preprocessor.
+	 * With funciton inliner,
+	 * the function body in the {@link FunctionDeclaration} will be <code>null<code>.
 	 * And all information about the function body is stored in the form of
 	 * formulae in axioms.
+	 * 
+	 * To avoid this situation, set "Use function inliner" to false
+	 * in the preference of boogie preprocessor.
 	 */
 	private Object evaluateFunctionApplication(final FunctionApplication expr) {
 		String funcName = expr.getIdentifier();
@@ -226,7 +227,11 @@ public class ExprEvaluator {
 		for(int i = 0; i < args.length; i++) {
 			setFuncValue(funcName, argsName.get(i), evaluate(args[i]));
 		}
-		
+		/**
+		 * Type casting is not yet implemented.
+		 * Or it is no need to do this because of the existence
+		 * of boogie type checker ?
+		 */
 		Object v = evaluate(mFuncInitValuationInfo.getFuncBody(mFuncNameStack.peek()));
 		
 		mFuncNameStack.pop();

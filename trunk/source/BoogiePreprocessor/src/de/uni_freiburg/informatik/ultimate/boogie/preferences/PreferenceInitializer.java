@@ -45,7 +45,13 @@ public class PreferenceInitializer extends UltimatePreferenceInitializer {
 	public static final String LABEL_SHOWALLANNOTATIONS = "Show all Annotations";
 	public static final String LABEL_EMIT_BACKTRANSLATION_WARNINGS = "Show backtranslation warnings";
 	public static final String LABEL_USE_SIMPLIFIER = "Simplify expressions";
-
+	/**
+	 * 2021-05-15 by Hong-Yang Lin
+	 * Deactivating Function Inlining helps me for easier implementation of
+	 * function application expression evaluation. 
+	 */
+	public static final String LABEL_USE_FUNCTION_INLINER = "Use function inliner";
+	
 	public PreferenceInitializer() {
 		super(Activator.PLUGIN_ID, Activator.PLUGIN_NAME);
 	}
@@ -56,8 +62,8 @@ public class PreferenceInitializer extends UltimatePreferenceInitializer {
 		return new UltimatePreferenceItem<?>[] {
 				new UltimatePreferenceItem<>(LABEL_SHOWALLANNOTATIONS, false, PreferenceType.Boolean),
 				new UltimatePreferenceItem<>(LABEL_EMIT_BACKTRANSLATION_WARNINGS, true, PreferenceType.Boolean),
-				new UltimatePreferenceItem<>(LABEL_USE_SIMPLIFIER, false, PreferenceType.Boolean)
-
+				new UltimatePreferenceItem<>(LABEL_USE_SIMPLIFIER, false, PreferenceType.Boolean),
+				new UltimatePreferenceItem<>(LABEL_USE_FUNCTION_INLINER, true, PreferenceType.Boolean)
 		};
 	}
 }

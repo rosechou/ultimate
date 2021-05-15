@@ -100,6 +100,8 @@ public class BoogiePreprocessor implements IAnalysis {
 		mServices.getBacktranslationService().addTranslator(backTranslator);
 		final boolean useSimplifier =
 				mServices.getPreferenceProvider(getPluginID()).getBoolean(PreferenceInitializer.LABEL_USE_SIMPLIFIER);
+		final boolean useFunctionInliner =
+				mServices.getPreferenceProvider(getPluginID()).getBoolean(PreferenceInitializer.LABEL_USE_FUNCTION_INLINER);
 		final ILogger logger = mServices.getLoggingService().getLogger(Activator.PLUGIN_ID);
 
 		final BoogieSymbolTableConstructor symb = new BoogieSymbolTableConstructor(logger);
@@ -112,7 +114,9 @@ public class BoogiePreprocessor implements IAnalysis {
 		observers.add(new ConstExpander(backTranslator));
 		observers.add(new StructExpander(backTranslator, logger));
 		observers.add(new UnstructureCode(backTranslator));
-		observers.add(new FunctionInliner());
+		if (useFunctionInliner) {
+			observers.add(new FunctionInliner());
+		}
 		if (useSimplifier) {
 			observers.add(new Simplifier(backTranslator));
 		}

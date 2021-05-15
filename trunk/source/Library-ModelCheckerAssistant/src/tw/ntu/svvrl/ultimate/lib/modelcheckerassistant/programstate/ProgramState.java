@@ -80,6 +80,7 @@ public class ProgramState {
 	
 	/**
 	 * Generate new valuation table due to the modification or declaration of variable.
+	 * We could not just set valuation becuase this modification leads to a new program state.
 	 * @param originValuation
 	 * 		origin valuation
 	 * @param procName
@@ -190,19 +191,20 @@ public class ProgramState {
 		Expression[] rhs = assignmentStmt.getRhs();
 		assert(lhs.length == rhs.length);
 		
+		
+		Map<String, Map<String, Object>> newValuation = new HashMap<>();
+		newValuation.putAll(mValuation);
 		/**
 		 * Handle multi-assignment
 		 * For example
 		 * int a, b, c := 1, 2, 3;
 		 */
-		Map<String, Map<String, Object>> tempValuation = new HashMap<>();
-		tempValuation.putAll(mValuation);
 		for(int i = 0; i < lhs.length; i++) {
-			final String procName = ((VariableLHS)lhs[i]).getDeclarationInformation().getProcedure();
-			final String identifier = ((VariableLHS)lhs[i]).getIdentifier();
 			if(lhs[i] instanceof VariableLHS) {
+				final String procName = ((VariableLHS)lhs[i]).getDeclarationInformation().getProcedure();
+				final String identifier = ((VariableLHS)lhs[i]).getIdentifier();
 				final Object value = mExprEvaluator.evaluate(rhs[i]);
-				tempValuation.putAll(generateNewValuation(tempValuation, procName, identifier, value));
+				newValuation.putAll(generateNewValuation(newValuation, procName, identifier, value));
 			} else if(lhs[i] instanceof ArrayLHS) {
 				
 			} else if(lhs[i] instanceof StructLHS) {

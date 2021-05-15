@@ -408,4 +408,8 @@ public class ExprEvaluator {
 		newArray.add(generateNullElem(((ArrayList<Object>) array).get(0)));
 		return newArray;
 	}
+	
+	public FuncInitValuationInfo getFuncInitValuationInfo() {
+		return mFuncInitValuationInfo;
+	}
 }

@@ -61,6 +61,17 @@ public class ProgramState {
 	private final BoogieIcfgLocation mCorrespondingIcfgLoc;
 	private final ExprEvaluator mExprEvaluator;
 	
+	/**
+	 * A program state constructor that only cares the valuation.
+	 * Used in {@link #processAssignmentStatement(AssignmentStatement)}.
+	 * @param valuation
+	 */
+	public ProgramState(final Map<String, Map<String, Object>> valuation, final FuncInitValuationInfo funcInitValuationInfo) {
+		mValuation.putAll(valuation);
+		mCorrespondingIcfgLoc = null;
+		mExprEvaluator = new ExprEvaluator(mValuation, funcInitValuationInfo);
+	}
+	
 	public ProgramState(final Map<String, Map<String, Object>> valuation,
 						final BoogieIcfgLocation boogieIcfgLocation,
 						final FuncInitValuationInfo funcInitValuationInfo) {
@@ -167,9 +178,11 @@ public class ProgramState {
 					return false;
 				}
 			} else if(stmts instanceof AssertStatement) {
-				if(!checkAssertStatement((AssertStatement) stmt)) {
-					throw new UnsupportedOperationException("Assertion is violated.");
-				}
+				/**
+				 * We don't check whether the assertion is satisfied or not here.
+				 * Instead, we leave this check in the doTransition function.
+				 * So assert statement will be skipped here.
+				 */
 			} else if(stmt instanceof AssignmentStatement) {
 				final ProgramState newState = processAssignmentStatement((AssignmentStatement) stmt);
 				return newState.checkStatementsEnable(stmts.subList(i+1, stmts.size()));
@@ -179,13 +192,15 @@ public class ProgramState {
 	}
 	
 	private boolean checkAssumeStatement(AssumeStatement assumeStmt) {
-		return true;
+		return (boolean) mExprEvaluator.evaluate(assumeStmt.getFormula());
 	}
 	
-	private boolean checkAssertStatement(AssertStatement assertStmt) {
-		return true;
-	}
-	
+	/**
+	 * AssignmentStatement will change the valuation and move to a new state.
+	 * @param assignmentStmt
+	 * @return
+	 * 		new program state.
+	 */
 	private ProgramState processAssignmentStatement(final AssignmentStatement assignmentStmt) {
 		LeftHandSide[] lhs = assignmentStmt.getLhs();
 		Expression[] rhs = assignmentStmt.getRhs();
@@ -206,13 +221,22 @@ public class ProgramState {
 				final Object value = mExprEvaluator.evaluate(rhs[i]);
 				newValuation.putAll(generateNewValuation(newValuation, procName, identifier, value));
 			} else if(lhs[i] instanceof ArrayLHS) {
-				
+				/**
+				 * I don't know how to produce these case.
+				 * It seems no chance to occur. (?)
+				 */
+				throw new UnsupportedOperationException(StructLHS.class.getSimpleName() 
+						+ "is not yet supported.");
 			} else if(lhs[i] instanceof StructLHS) {
 				throw new UnsupportedOperationException(StructLHS.class.getSimpleName() 
 						+ "is not yet supported.");
 			}
 		}
-		//...
+		
+		return new ProgramState(newValuation, mExprEvaluator.getFuncInitValuationInfo());
+	}
+	
+	private ProgramState doTransition(final IcfgEdge transition) {
 		return null;
 	}
 	

@@ -8,6 +8,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.AssignmentStatement;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementExecutor;
 
 /**
  * This class represents a boogie program state.
@@ -27,12 +28,12 @@ public class ProgramState {
 	/**
 	 * To specify which IcfgLocation this state is generated from.
 	 */
-	private final BoogieIcfgLocation mCorrespondingIcfgLoc;
+	private BoogieIcfgLocation mCorrespondingIcfgLoc;
 	private final FuncInitValuationInfo mFuncInitValuationInfo;
 	
 	/**
 	 * A program state constructor that only cares the valuation.
-	 * Used in {@link #processAssignmentStatement(AssignmentStatement)}.
+	 * Used in {@link StatementExecutor#executeAssignmentStatement}.
 	 * @param valuation
 	 */
 	public ProgramState(final Map<String, Map<String, Object>> valuation, final FuncInitValuationInfo funcInitValuationInfo) {
@@ -57,6 +58,20 @@ public class ProgramState {
 		return mValuation;
 	}
 	
+	/**
+	 * This method is used for make up the unknown <code>mCorrespondingIcfgLoc</code>.
+	 * see {@link #ProgramState(Map, FuncInitValuationInfo)}.
+	 * @param loc
+	 */
+	public void setCorrespondingIcfgLoc(BoogieIcfgLocation loc) {
+		if(mCorrespondingIcfgLoc == null) {
+			mCorrespondingIcfgLoc = loc;
+		}
+		else {
+			throw new UnsupportedOperationException("Cannot change a state\'s"
+					+ "mCorrespondingIcfgLoc.");
+		}
+	}
 	
 	/**
 	 * Get the a list of transitions which is enable from this state.

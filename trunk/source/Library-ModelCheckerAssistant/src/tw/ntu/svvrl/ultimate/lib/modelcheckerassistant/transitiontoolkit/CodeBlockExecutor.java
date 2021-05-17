@@ -57,20 +57,28 @@ public class CodeBlockExecutor {
 		ProgramState newState;
 		if(mEdge instanceof StatementSequence) {
 			newState = executeStatementSequence((StatementSequence) mEdge);
+			//newState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof Call) {
 			newState = executeCall((Call) mEdge);
+			//newState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof Summary) {
 			newState = executeSummary((Summary) mEdge);
+			//newState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof Return) {
 			newState = executeReturn((Return) mEdge);
+			//newState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof ForkThreadCurrent) {
 			newState = executeForkThreadCurrent((ForkThreadCurrent) mEdge);
+			//newState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof ForkThreadOther) {
 			newState = executeForkThreadOther((ForkThreadOther) mEdge);
+			//newState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof JoinThreadCurrent) {
 			newState = executeJoinThreadCurrent((JoinThreadCurrent) mEdge);
+			//newState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof JoinThreadOther) {
 			newState = executeJoinThreadOther((JoinThreadOther) mEdge);
+			//newState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof ParallelComposition) {
 			/**
 			 * This type of edge will only occur when Size of code block is not set to "SingleStatement"

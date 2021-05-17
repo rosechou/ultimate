@@ -21,7 +21,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState
 public class StatementChecker {
 	private final ExprEvaluator mExprEvaluator;
 	
-	public StatementChecker(ExprEvaluator exprEvaluator) {
+	public StatementChecker(final ExprEvaluator exprEvaluator) {
 		mExprEvaluator = exprEvaluator;
 	}
 	

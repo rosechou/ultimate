@@ -87,7 +87,7 @@ public class ProgramState {
 	 * @return
 	 * 		The next program state.
 	 */
-	private ProgramState doTransition(final IcfgEdge edge) {
+	public ProgramState doTransition(final IcfgEdge edge) {
 		TransitionToolkit transitionToolkit = new TransitionToolkit(edge, mValuation, mFuncInitValuationInfo);
 		return transitionToolkit.doTransition();
 	}

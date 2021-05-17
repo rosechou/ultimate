@@ -20,12 +20,12 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState
 public class CodeBlockExecutor {
 	private final ExprEvaluator mExprEvaluator;
 	
-	public CodeBlockExecutor(ExprEvaluator exprEvaluator) {
+	public CodeBlockExecutor(final ExprEvaluator exprEvaluator) {
 		mExprEvaluator = exprEvaluator;
 	}
 	
 
-	public boolean checkEnable(IcfgEdge edge) {
+	public boolean checkEnable(final IcfgEdge edge) {
 		StatementChecker statementChecker = new StatementChecker(mExprEvaluator);
 		if(edge instanceof StatementSequence) {
 			return statementChecker.checkStatementsEnable(((StatementSequence) edge).getStatements());

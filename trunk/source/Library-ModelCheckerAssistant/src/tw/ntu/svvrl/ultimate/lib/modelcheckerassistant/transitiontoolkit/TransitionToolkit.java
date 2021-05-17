@@ -12,6 +12,10 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Seq
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.StatementSequence;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.FuncInitValuationInfo;
 
+/**
+ * This class handle all issues about a transition(edge) and the statements on it.
+ *
+ */
 public class TransitionToolkit {
 	private final IcfgEdge mEdge;
 	private final StatementChecker mStatementChecker;

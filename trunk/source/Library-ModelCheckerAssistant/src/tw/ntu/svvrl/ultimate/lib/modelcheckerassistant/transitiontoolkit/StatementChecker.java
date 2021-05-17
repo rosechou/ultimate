@@ -15,6 +15,9 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.StructLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
 
+/**
+ * This class check whether the statements is able to execute (enable).
+ */
 public class StatementChecker {
 	private final ExprEvaluator mExprEvaluator;
 	

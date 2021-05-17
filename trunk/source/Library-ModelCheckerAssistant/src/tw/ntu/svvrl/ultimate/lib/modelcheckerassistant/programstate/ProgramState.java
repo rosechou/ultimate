@@ -79,7 +79,6 @@ public class ProgramState {
 	
 	
 	
-	
 	/**
 	 * 		Execute the statements on the IcfgEge and move from a this state
 	 * 		to the next state.
@@ -89,7 +88,8 @@ public class ProgramState {
 	 * 		The next program state.
 	 */
 	private ProgramState doTransition(final IcfgEdge edge) {
-		return null;
+		TransitionToolkit transitionToolkit = new TransitionToolkit(edge, mValuation, mFuncInitValuationInfo);
+		return transitionToolkit.doTransition();
 	}
 	
 	/**

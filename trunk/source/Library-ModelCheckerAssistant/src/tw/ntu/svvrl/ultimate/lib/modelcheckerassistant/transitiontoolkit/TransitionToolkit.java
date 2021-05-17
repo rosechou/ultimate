@@ -3,14 +3,23 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit;
 import java.util.Map;
 
 import org.apache.commons.lang3.NotImplementedException;
-
+import de.uni_freiburg.informatik.ultimate.blockencoding.converter.ShortcutCodeBlock;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Call;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadCurrent;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadOther;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.GotoEdge;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.JoinThreadCurrent;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.JoinThreadOther;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ParallelComposition;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Return;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.RootEdge;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.SequentialComposition;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.StatementSequence;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Summary;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.FuncInitValuationInfo;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
 
 /**
  * This class handle all issues about a transition(edge) and the statements on it.
@@ -43,7 +52,12 @@ public class TransitionToolkit {
 				throw new NotImplementedException(ParallelComposition.class.getSimpleName()
 						+ "is not yet implemented.");
 			} else if(mEdge instanceof SequentialComposition) {
-				// same as above.
+				/**
+				 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
+				 * This case is not yet implemented because I'm lazy.
+				 * (one of the preferences in
+				 * de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder)
+				 */
 				throw new NotImplementedException(ParallelComposition.class.getSimpleName()
 						+ "is not yet implemented.");
 			} else {
@@ -57,5 +71,49 @@ public class TransitionToolkit {
 			throw new UnsupportedOperationException("Error: " + mEdge.getClass().getSimpleName()
 					+ " is not supported.");
 		}
+	}
+	
+	public ProgramState doTransition() {
+		if (mEdge instanceof CodeBlock) {
+			if(mEdge instanceof StatementSequence) {
+			} else if(mEdge instanceof Call) {
+			} else if(mEdge instanceof Summary) {
+			} else if(mEdge instanceof Return) {
+			} else if(mEdge instanceof ForkThreadCurrent) {
+			} else if(mEdge instanceof ForkThreadOther) {
+			} else if(mEdge instanceof JoinThreadCurrent) {
+			} else if(mEdge instanceof JoinThreadOther) {
+			} else if(mEdge instanceof ParallelComposition) {
+				/**
+				 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
+				 * This case is not yet implemented because I'm lazy.
+				 * (one of the preferences in
+				 * de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder)
+				 */
+				throw new NotImplementedException(ParallelComposition.class.getSimpleName()
+						+ "is not yet implemented.");
+			} else if(mEdge instanceof SequentialComposition) {
+				/**
+				 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
+				 * This case is not yet implemented because I'm lazy.
+				 * (one of the preferences in
+				 * de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder)
+				 */
+				throw new NotImplementedException(ParallelComposition.class.getSimpleName()
+						+ "is not yet implemented.");
+			} else if(mEdge instanceof GotoEdge) {
+			} else if(mEdge instanceof ShortcutCodeBlock) {
+			} else {
+				throw new UnsupportedOperationException("Error: " + mEdge.getClass().getSimpleName()
+						+ " is not supported.");
+			}
+		} else if (mEdge instanceof RootEdge) {
+			throw new UnsupportedOperationException("Suppose the type " + mEdge.getClass().getSimpleName()
+					+ " should not appear in the function getEnableTrans()");
+		} else {
+			throw new UnsupportedOperationException("Error: " + mEdge.getClass().getSimpleName()
+					+ " is not supported.");
+		}
+		return null;
 	}
 }

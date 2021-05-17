@@ -177,7 +177,7 @@ public class ProgramState {
 				if(!checkAssumeStatement((AssumeStatement) stmt)) {
 					return false;
 				}
-			} else if(stmts instanceof AssertStatement) {
+			} else if(stmt instanceof AssertStatement) {
 				/**
 				 * We don't check whether the assertion is satisfied or not here.
 				 * Instead, we leave this check in the doTransition function.
@@ -236,6 +236,14 @@ public class ProgramState {
 		return new ProgramState(newValuation, mExprEvaluator.getFuncInitValuationInfo());
 	}
 	
+	/**
+	 * 		Execute the statements on the IcfgEge and move from a this state
+	 * 		to next state.
+	 * @param transition
+	 * 		An IcfgEge
+	 * @return
+	 * 		
+	 */
 	private ProgramState doTransition(final IcfgEdge transition) {
 		return null;
 	}

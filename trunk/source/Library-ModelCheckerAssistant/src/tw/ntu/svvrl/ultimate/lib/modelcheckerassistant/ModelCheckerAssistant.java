@@ -32,7 +32,11 @@ public class ModelCheckerAssistant {
 	 * keep exploring.
 	 */
 	private final ProgramStateExplorer mStateExplorer;
+	private final NeverClaimAutExplorer mNeverClaimAutExplorer;
 	
+	/**
+	 * This constructor is for debugging.
+	 */
 	public ModelCheckerAssistant(final BoogieIcfgContainer rcfg,
 			final ILogger logger, final IUltimateServiceProvider services) {
 		
@@ -43,6 +47,7 @@ public class ModelCheckerAssistant {
 		mNWA = null;
 		
 		mStateExplorer = new ProgramStateExplorer(rcfg);
+		mNeverClaimAutExplorer = null;
 	}
 	
 	
@@ -56,9 +61,14 @@ public class ModelCheckerAssistant {
 		mNWA = nwa;
 		
 		mStateExplorer = new ProgramStateExplorer(rcfg);
+		mNeverClaimAutExplorer = new NeverClaimAutExplorer();
 	}
 	
 	public ProgramStateExplorer getStateExplorer() {
 		return mStateExplorer;
+	}
+	
+	public NeverClaimAutExplorer getNeverClaimAutExplorer() {
+		return mNeverClaimAutExplorer;
 	}
 }

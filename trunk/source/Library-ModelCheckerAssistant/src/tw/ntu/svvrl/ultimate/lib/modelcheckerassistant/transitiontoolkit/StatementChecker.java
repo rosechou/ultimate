@@ -61,7 +61,7 @@ public class StatementChecker {
 		return true;
 	}
 	
-	private boolean checkAssumeStatement(AssumeStatement assumeStmt) {
+	private boolean checkAssumeStatement(final AssumeStatement assumeStmt) {
 		return (boolean) mExprEvaluator.evaluate(assumeStmt.getFormula());
 	}
 	

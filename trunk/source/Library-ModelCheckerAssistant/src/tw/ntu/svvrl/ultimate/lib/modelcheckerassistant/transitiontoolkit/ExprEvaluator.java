@@ -1,4 +1,4 @@
-package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant;
+package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
 
-import de.uni_freiburg.informatik.ultimate.automata.alternating.BooleanExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ArrayAccessExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ArrayStoreExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.BinaryExpression;
@@ -26,11 +25,8 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.RealLiteral;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.StringLiteral;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.StructAccessExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.StructConstructor;
-import de.uni_freiburg.informatik.ultimate.boogie.ast.StructLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.UnaryExpression;
-import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WildcardExpression;
-import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.FuncInitValuationInfo;
 
 public class ExprEvaluator {
@@ -411,5 +407,9 @@ public class ExprEvaluator {
 	
 	public FuncInitValuationInfo getFuncInitValuationInfo() {
 		return mFuncInitValuationInfo;
+	}
+	
+	public Map<String, Map<String, Object>> getValuationMap() {
+		return mValuation;
 	}
 }

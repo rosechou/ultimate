@@ -2,43 +2,12 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import org.apache.commons.lang3.NotImplementedException;
-
-import de.uni_freiburg.informatik.ultimate.boogie.ast.ArrayLHS;
-import de.uni_freiburg.informatik.ultimate.boogie.ast.AssertStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssignmentStatement;
-import de.uni_freiburg.informatik.ultimate.boogie.ast.AssumeStatement;
-import de.uni_freiburg.informatik.ultimate.boogie.ast.Expression;
-import de.uni_freiburg.informatik.ultimate.boogie.ast.LeftHandSide;
-import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
-import de.uni_freiburg.informatik.ultimate.boogie.ast.StructLHS;
-import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
-import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.BoogieNonOldVar;
-import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.BoogieOldVar;
-import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.LocalBoogieVar;
-import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.AbstractIcfgTransition;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
-import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramVar;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
-import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Call;
-import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
-import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadCurrent;
-import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadOther;
-import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.GotoEdge;
-import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.JoinThreadCurrent;
-import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.JoinThreadOther;
-import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ParallelComposition;
-import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Return;
-import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.RootEdge;
-import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.SequentialComposition;
-import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.StatementSequence;
-import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Summary;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.ExprEvaluator;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
 
 /**
  * This class represents a boogie program state.
@@ -59,7 +28,7 @@ public class ProgramState {
 	 * To specify which IcfgLocation this state is generated from.
 	 */
 	private final BoogieIcfgLocation mCorrespondingIcfgLoc;
-	private final ExprEvaluator mExprEvaluator;
+	private final FuncInitValuationInfo mFuncInitValuationInfo;
 	
 	/**
 	 * A program state constructor that only cares the valuation.
@@ -69,7 +38,7 @@ public class ProgramState {
 	public ProgramState(final Map<String, Map<String, Object>> valuation, final FuncInitValuationInfo funcInitValuationInfo) {
 		mValuation.putAll(valuation);
 		mCorrespondingIcfgLoc = null;
-		mExprEvaluator = new ExprEvaluator(mValuation, funcInitValuationInfo);
+		mFuncInitValuationInfo = funcInitValuationInfo;
 	}
 	
 	public ProgramState(final Map<String, Map<String, Object>> valuation,
@@ -77,7 +46,7 @@ public class ProgramState {
 						final FuncInitValuationInfo funcInitValuationInfo) {
 		mValuation.putAll(valuation);
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
-		mExprEvaluator = new ExprEvaluator(mValuation, funcInitValuationInfo);
+		mFuncInitValuationInfo = funcInitValuationInfo;
 	}
 	
 	public BoogieIcfgLocation getCorrespondingIcfgLoc() {
@@ -86,33 +55,6 @@ public class ProgramState {
 	
 	public Map<String, Map<String, Object>> getValuationMap() {
 		return mValuation;
-	}
-	
-	
-	/**
-	 * Generate new valuation table due to the modification or declaration of variable.
-	 * We could not just set valuation becuase this modification leads to a new program state.
-	 * @param originValuation
-	 * 		origin valuation
-	 * @param procName
-	 * 		name of procedure
-	 * @param identifier
-	 * 		name of identifier
-	 * @param v
-	 * 		the new value of given identifier
-	 * @return
-	 * 		the new valuation
-	 */
-	private Map<String, Map<String, Object>> generateNewValuation(final Map<String, Map<String, Object>> originValuation,
-		final String procName, final String identifier, final Object v) {
-		Map<String, Map<String, Object>> newValuation = new HashMap<>();
-		newValuation.putAll(originValuation);
-		final Object result = newValuation.get(procName).replace(identifier, v);
-		if(result == null) {
-			throw new UnsupportedOperationException("No variable found in valuation table. "
-					+ "Variable update failed.");
-		}
-		return newValuation;
 	}
 	
 	
@@ -126,125 +68,27 @@ public class ProgramState {
 		List<IcfgEdge> edges = mCorrespondingIcfgLoc.getOutgoingEdges();
 		List<IcfgEdge> enableTrans = new ArrayList<>();
 		for(final IcfgEdge edge : edges) {
-			if (edge instanceof CodeBlock) {
-				if(edge instanceof StatementSequence) {
-					checkStatementsEnable(((StatementSequence) edge).getStatements());
-				} else if(edge instanceof ParallelComposition) {
-					/**
-					 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
-					 * This case is not yet implemented because I'm lazy.
-					 * (one of the preferences in
-					 * de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder)
-					 */
-					throw new NotImplementedException(ParallelComposition.class.getSimpleName()
-							+ "is not yet implemented.");
-				} else if(edge instanceof SequentialComposition) {
-					// same as above.
-					throw new NotImplementedException(ParallelComposition.class.getSimpleName()
-							+ "is not yet implemented.");
-				} else {
-					// other edge types are OK.
-					enableTrans.add(edge);
-				}
-			} else if (edge instanceof RootEdge) {
-				throw new UnsupportedOperationException("Suppose the type " + edge.getClass().getSimpleName()
-						+ " should not appear in the function getEnableTrans()");
-			} else {
-				throw new UnsupportedOperationException("Error: " + edge.getClass().getSimpleName()
-						+ " is not supported.");
+			TransitionToolkit transitionToolkit = new TransitionToolkit(edge, mValuation, mFuncInitValuationInfo);
+			if (transitionToolkit.checkTransEnable()) {
+				enableTrans.add(edge);
 			}
 		}
 		
 		return enableTrans;
 	}
 	
-	/**
-	 * Check whether the given statements(from Icfg edge) is enable.
-	 * Assignment statement should be considered because this statement will
-	 * make the origin state move to a new program state. Whether an assignment statement
-	 * is enable is equal to asking whether the new state is enable after executing the 
-	 * rest statements. (use recursion) 
-	 * @param stmts
-	 * 		list of statements
-	 * @return
-	 * 		true if no assume statement is violated
-	 */
-	private boolean checkStatementsEnable(final List<Statement> stmts) {
-		for(int i = 0; i < stmts.size(); i++) {
-			final Statement stmt = stmts.get(i);
-			if(stmt instanceof AssumeStatement) {
-				// if the formula assumed is not hold, then not enable. 
-				if(!checkAssumeStatement((AssumeStatement) stmt)) {
-					return false;
-				}
-			} else if(stmt instanceof AssertStatement) {
-				/**
-				 * We don't check whether the assertion is satisfied or not here.
-				 * Instead, we leave this check in the doTransition function.
-				 * So assert statement will be skipped here.
-				 */
-			} else if(stmt instanceof AssignmentStatement) {
-				final ProgramState newState = processAssignmentStatement((AssignmentStatement) stmt);
-				return newState.checkStatementsEnable(stmts.subList(i+1, stmts.size()));
-			}
-		}
-		return true;
-	}
 	
-	private boolean checkAssumeStatement(AssumeStatement assumeStmt) {
-		return (boolean) mExprEvaluator.evaluate(assumeStmt.getFormula());
-	}
 	
-	/**
-	 * AssignmentStatement will change the valuation and move to a new state.
-	 * @param assignmentStmt
-	 * @return
-	 * 		new program state.
-	 */
-	private ProgramState processAssignmentStatement(final AssignmentStatement assignmentStmt) {
-		LeftHandSide[] lhs = assignmentStmt.getLhs();
-		Expression[] rhs = assignmentStmt.getRhs();
-		assert(lhs.length == rhs.length);
-		
-		
-		Map<String, Map<String, Object>> newValuation = new HashMap<>();
-		newValuation.putAll(mValuation);
-		/**
-		 * Handle multi-assignment
-		 * For example
-		 * int a, b, c := 1, 2, 3;
-		 */
-		for(int i = 0; i < lhs.length; i++) {
-			if(lhs[i] instanceof VariableLHS) {
-				final String procName = ((VariableLHS)lhs[i]).getDeclarationInformation().getProcedure();
-				final String identifier = ((VariableLHS)lhs[i]).getIdentifier();
-				final Object value = mExprEvaluator.evaluate(rhs[i]);
-				newValuation.putAll(generateNewValuation(newValuation, procName, identifier, value));
-			} else if(lhs[i] instanceof ArrayLHS) {
-				/**
-				 * I don't know how to produce these case.
-				 * It seems no chance to occur. (?)
-				 */
-				throw new UnsupportedOperationException(StructLHS.class.getSimpleName() 
-						+ "is not yet supported.");
-			} else if(lhs[i] instanceof StructLHS) {
-				throw new UnsupportedOperationException(StructLHS.class.getSimpleName() 
-						+ "is not yet supported.");
-			}
-		}
-		
-		return new ProgramState(newValuation, mExprEvaluator.getFuncInitValuationInfo());
-	}
 	
 	/**
 	 * 		Execute the statements on the IcfgEge and move from a this state
-	 * 		to next state.
-	 * @param transition
+	 * 		to the next state.
+	 * @param edge
 	 * 		An IcfgEge
 	 * @return
-	 * 		
+	 * 		The next program state.
 	 */
-	private ProgramState doTransition(final IcfgEdge transition) {
+	private ProgramState doTransition(final IcfgEdge edge) {
 		return null;
 	}
 	

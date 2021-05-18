@@ -4,7 +4,6 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.StructLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WhileStatement;
-import de.uni_freiburg.informatik.ultimate.boogie.type.BoogieArrayType;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogiePrimitiveType;
 import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
@@ -16,6 +15,7 @@ import java.util.Random;
 import org.apache.commons.lang3.NotImplementedException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ArrayLHS;
@@ -39,7 +39,7 @@ public class StatementsExecutor {
 	private ProgramState mCurrentProgramState;
 
 	public StatementsExecutor(final ProgramState programState) {
-		mCurrentProgramState = programState;
+		mCurrentProgramState = new ProgramState(programState);
 	}
 	
 	public void execute(final List<Statement> stmts) {
@@ -154,23 +154,42 @@ public class StatementsExecutor {
 	}
 
 	private void executeAtomicStatement(AtomicStatement stmt) {
-		// TODO Auto-generated method stub
+		/**
+		 * Suppose this statement would not occur here because
+		 * this statement is handled during the
+		 * preprocessing of Boogie and the building of RCFG.
+		 * The body of atomic statement will form a {@link StatementSequence}
+		 * and thus this issue is solved.
+		 * So we just follow the transition of the resulting RCFG.
+		 */
+		throw new UnsupportedOperationException(stmt.getClass().getSimpleName()
+				+ "should not appear.");
 	}
 
 	private void executeBreakStatement(BreakStatement stmt) {
-		// TODO Auto-generated method stub
+		/**
+		 * Suppose this statement would not occur here because
+		 * this statement is translated to {@link GotoEdge} during the
+		 * preprocessing of Boogie and the building of RCFG.
+		 */
+		throw new UnsupportedOperationException(stmt.getClass().getSimpleName()
+				+ "should not appear.");
 	}
 
 	private void executeCallStatement(CallStatement stmt) {
-		// TODO Auto-generated method stub
 	}
 
 	private void executeForkStatement(ForkStatement stmt) {
-		// TODO Auto-generated method stub
 	}
 
 	private void executeGotoStatement(GotoStatement stmt) {
-		// TODO Auto-generated method stub
+		/**
+		 * Suppose this statement would not occur here because
+		 * this statement is translated to {@link GotoEdge} during the
+		 * preprocessing of Boogie and the building of RCFG.
+		 */
+		throw new UnsupportedOperationException(stmt.getClass().getSimpleName()
+				+ "should not appear.");
 	}
 
 	private void executeHavocStatement(HavocStatement stmt) {
@@ -206,22 +225,30 @@ public class StatementsExecutor {
 	}
 
 	private void executeIfStatement(IfStatement stmt) {
-		// TODO Auto-generated method stub
+		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentProgramState);
+		if((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
+			execute(Arrays.asList(stmt.getThenPart()));
+		} else {
+			execute(Arrays.asList(stmt.getElsePart()));
+		}
 	}
 
 	private void executeJoinStatement(JoinStatement stmt) {
-		// TODO Auto-generated method stub
 	}
 
 	private void executeLabel(Label stmt) {
-		// TODO Auto-generated method stub
+		/**
+		 * Do nothing.
+		 */
 	}
 
 	private void executeReturnStatement(ReturnStatement stmt) {
-		// TODO Auto-generated method stub
 	}
 
 	private void executeWhileStatement(WhileStatement stmt) {
-		// TODO Auto-generated method stub
+		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentProgramState);
+		while((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
+			execute(Arrays.asList(stmt.getBody()));
+		}
 	}
 }

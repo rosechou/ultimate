@@ -27,11 +27,12 @@ public class StatementsChecker {
 	private ProgramState mProgramState;
 	
 	public StatementsChecker(final ProgramState programState) {
-		mProgramState = programState;
+		mProgramState = new ProgramState(programState);
 	}
 	
 	private void moveToNewState(final ProgramState newState) {
-		mProgramState = newState;
+		mProgramState = new ProgramState(newState);
+		mProgramState.setCorrespondingIcfgLoc(null);
 	}
 	
 	/**

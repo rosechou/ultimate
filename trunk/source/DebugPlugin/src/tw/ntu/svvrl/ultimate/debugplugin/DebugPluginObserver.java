@@ -32,6 +32,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.*;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.INestedWordAutomaton;
@@ -42,6 +43,7 @@ import de.uni_freiburg.informatik.ultimate.core.model.models.ModelType;
 import de.uni_freiburg.informatik.ultimate.core.model.observers.IUnmanagedObserver;
 import de.uni_freiburg.informatik.ultimate.core.model.services.ILogger;
 import de.uni_freiburg.informatik.ultimate.core.model.services.IUltimateServiceProvider;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.ltl2aut.never2nwa.NWAContainer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgContainer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
@@ -92,7 +94,8 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		Set<ProgramState> initialStates = new HashSet<>();
 		initialStates = mModelCheckerAssistant.getStateExplorer().getInitialStates();
 		/*-----------debugging-----------*/
-		((ProgramState) initialStates.toArray()[0]).getEnableTrans();
+		List<IcfgEdge> edges = ((ProgramState) initialStates.toArray()[0]).getEnableTrans();
+		((ProgramState) initialStates.toArray()[0]).doTransition(edges.get(0));
 		//ProgramState aState = mModelCheckerAssistant.getStateExplorer().getLocState();
 		//aState.getEnableTrans();
 		/*-------------------------------*/

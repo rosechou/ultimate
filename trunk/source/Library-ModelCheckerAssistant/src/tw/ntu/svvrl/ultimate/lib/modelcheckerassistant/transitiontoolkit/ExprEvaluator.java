@@ -31,7 +31,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.FuncInitValu
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
 
 public class ExprEvaluator {
-	private final Map<String, Map<String, Object>> mValuation;
+	private final Map<String, Map<String, Object>> mValuation = new HashMap<>();
 	/**
 	 * Initial function value table and function bodies.
 	 */
@@ -54,7 +54,7 @@ public class ExprEvaluator {
 	
 	
 	public ExprEvaluator(final ProgramState programState) {
-		mValuation = programState.getValuationMap();
+		mValuation.putAll(programState.getValuationMap());
 		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
 		mFuncValuation = createFuncInitValuation(mFuncInitValuationInfo);
 	}
@@ -70,8 +70,8 @@ public class ExprEvaluator {
 		 * i.e. No variable assignment.
 		 */
 		for(String funcName : valuation.keySet()) {
-			Map<String, Object> globalVarMap = mValuation.get(null);
-			Map<String, Object> tempVarValuation = new HashMap<>();
+			final Map<String, Object> globalVarMap = mValuation.get(null);
+			final Map<String, Object> tempVarValuation = new HashMap<>();
 			tempVarValuation.putAll(globalVarMap);
 			tempVarValuation.putAll(valuation.get(funcName));
 			

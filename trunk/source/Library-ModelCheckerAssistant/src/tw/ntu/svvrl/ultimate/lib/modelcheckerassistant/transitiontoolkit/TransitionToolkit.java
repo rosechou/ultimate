@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.apache.commons.lang3.NotImplementedException;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Call;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadCurrent;
@@ -45,9 +46,16 @@ public class TransitionToolkit {
 		}
 	}
 	
+	/**
+	 * Execute the {@link CodeBlock} on the edge.
+	 * @return
+	 * 		A new state reached after doing this transition(edge).
+	 */
 	public ProgramState doTransition() {
 		if (mEdge instanceof CodeBlock) {
-			return mCodeBlockExecutor.execute(mEdge);
+			ProgramState newState = mCodeBlockExecutor.execute(mEdge);
+			newState.setCorrespondingIcfgLoc((BoogieIcfgLocation) mEdge.getTarget());
+			return newState;
 		} else if (mEdge instanceof RootEdge) {
 			throw new UnsupportedOperationException("Suppose the type " + mEdge.getClass().getSimpleName()
 					+ " should not appear in the function getEnableTrans()");

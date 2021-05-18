@@ -21,7 +21,7 @@ public class CodeBlockExecutor {
 	private ProgramState mCurrentProgramState;
 	
 	public CodeBlockExecutor(final ProgramState programState) {
-		mCurrentProgramState = programState;
+		mCurrentProgramState = new ProgramState(programState);
 	}
 	
 
@@ -54,31 +54,22 @@ public class CodeBlockExecutor {
 	}
 	
 	public ProgramState execute(final IcfgEdge mEdge) {
-		ProgramState newState;
 		if(mEdge instanceof StatementSequence) {
 			executeStatementSequence((StatementSequence) mEdge);
-			//mCurrentProgramState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof Call) {
 			executeCall((Call) mEdge);
-			//mCurrentProgramState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof Summary) {
 			executeSummary((Summary) mEdge);
-			//mCurrentProgramState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof Return) {
 			executeReturn((Return) mEdge);
-			//mCurrentProgramState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof ForkThreadCurrent) {
 			executeForkThreadCurrent((ForkThreadCurrent) mEdge);
-			//mCurrentProgramState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof ForkThreadOther) {
 			executeForkThreadOther((ForkThreadOther) mEdge);
-			//mCurrentProgramState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof JoinThreadCurrent) {
 			executeJoinThreadCurrent((JoinThreadCurrent) mEdge);
-			//mCurrentProgramState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof JoinThreadOther) {
 			executeJoinThreadOther((JoinThreadOther) mEdge);
-			//mCurrentProgramState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof ParallelComposition) {
 			/**
 			 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
@@ -104,12 +95,11 @@ public class CodeBlockExecutor {
 			throw new UnsupportedOperationException("Error: " + mEdge.getClass().getSimpleName()
 					+ " is not supported.");
 		}
-		return null;
+		return mCurrentProgramState;
 	}
 	
 	private void moveToNewState(final ProgramState newState) {
 		mCurrentProgramState = newState;
-		//Loc set ?
 	}
 	
 	public ProgramState getCurrentState() {
@@ -118,7 +108,8 @@ public class CodeBlockExecutor {
 
 	private void executeStatementSequence(final StatementSequence stmtSeq) {
 		final StatementsExecutor statementExecutor = new StatementsExecutor(mCurrentProgramState);
-
+		statementExecutor.execute(stmtSeq.getStatements());
+		moveToNewState(statementExecutor.getCurrentState());
 	}
 
 	private void executeCall(final Call call) {

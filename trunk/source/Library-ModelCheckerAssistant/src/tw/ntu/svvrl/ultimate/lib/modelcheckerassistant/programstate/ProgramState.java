@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssignmentStatement;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
 
@@ -49,6 +50,25 @@ public class ProgramState {
 		mFuncInitValuationInfo = funcInitValuationInfo;
 	}
 	
+	/**
+	 * copy constructor
+	 * valuation is shallow copied.
+	 */
+	public ProgramState(final ProgramState programState) {
+		mValuation = shallowCopyValuation(programState.getValuationMap());
+		mCorrespondingIcfgLoc = programState.getCorrespondingIcfgLoc();
+		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
+	}
+	
+	private Map<String, Map<String, Object>> shallowCopyValuation(final Map<String, Map<String, Object>> valuationMap) {
+		Map<String, Map<String, Object>> val = new HashMap<>();
+		for(String procName : val.keySet()) {
+			Map<String, Object> id2v = new HashMap<>(val.get(procName));
+			val.put(procName, id2v);
+		}
+		return val;
+	}
+
 	public BoogieIcfgLocation getCorrespondingIcfgLoc() {
 		return mCorrespondingIcfgLoc;
 	}
@@ -64,11 +84,11 @@ public class ProgramState {
 	/**
 	 * This method is used for make up the unknown <code>mCorrespondingIcfgLoc</code>.
 	 * see {@link #ProgramState(Map, FuncInitValuationInfo)}.
-	 * @param loc
+	 * @param icfgLocation
 	 */
-	public void setCorrespondingIcfgLoc(BoogieIcfgLocation loc) {
+	public void setCorrespondingIcfgLoc(BoogieIcfgLocation icfgLocation) {
 		if(mCorrespondingIcfgLoc == null) {
-			mCorrespondingIcfgLoc = loc;
+			mCorrespondingIcfgLoc = icfgLocation;
 		}
 		else {
 			throw new UnsupportedOperationException("Cannot change a state\'s"

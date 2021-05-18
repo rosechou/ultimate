@@ -28,9 +28,10 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.StructConstructor;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.UnaryExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WildcardExpression;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.FuncInitValuationInfo;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
 
 public class ExprEvaluator {
-	private final Map<String, Map<String, Object>> mValuation = new HashMap<>();
+	private final Map<String, Map<String, Object>> mValuation;
 	/**
 	 * Initial function value table and function bodies.
 	 */
@@ -52,11 +53,10 @@ public class ExprEvaluator {
 	private Stack<String> mFuncNameStack = new Stack<>();
 	
 	
-	public ExprEvaluator(final Map<String, Map<String, Object>> valuation, 
-			final FuncInitValuationInfo funcInitValuationInfo) {
-		mValuation.putAll(valuation);
-		mFuncInitValuationInfo = funcInitValuationInfo;
-		mFuncValuation = createFuncInitValuation(funcInitValuationInfo);
+	public ExprEvaluator(final ProgramState programState) {
+		mValuation = programState.getValuationMap();
+		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
+		mFuncValuation = createFuncInitValuation(mFuncInitValuationInfo);
 	}
 	
 	private Map<String, Map<String, Object>> createFuncInitValuation(FuncInitValuationInfo funcInitValuationInfo) {
@@ -404,12 +404,5 @@ public class ExprEvaluator {
 		newArray.add(generateNullElem(((ArrayList<Object>) array).get(0)));
 		return newArray;
 	}
-	
-	public FuncInitValuationInfo getFuncInitValuationInfo() {
-		return mFuncInitValuationInfo;
-	}
-	
-	public Map<String, Map<String, Object>> getValuationMap() {
-		return mValuation;
-	}
+
 }

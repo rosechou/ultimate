@@ -8,6 +8,8 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ArrayLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssertStatement;
@@ -26,51 +28,67 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.Label;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.LeftHandSide;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ReturnStatement;
 
-public class StatementExecutor {
-	private final ExprEvaluator mExprEvaluator;
+public class StatementsExecutor {
+	private ProgramState mCurrentProgramState;
 
-	public StatementExecutor(final ExprEvaluator exprEvaluator) {
-		mExprEvaluator = exprEvaluator;
+	public StatementsExecutor(final ProgramState programState) {
+		mCurrentProgramState = programState;
 	}
 	
-	public ProgramState execute(final Statement stmt) {
+	public void execute(final List<Statement> stmts) {
+		for(Statement stmt : stmts) {
+			execute(stmt);
+		}
+	}
+	
+	public void execute(final Statement stmt) {
 		if(stmt instanceof AssertStatement) {
-			return executeAssertStatement((AssertStatement) stmt);
+			executeAssertStatement((AssertStatement) stmt);
 		} else if(stmt instanceof AssignmentStatement) {
-			return executeAssignmentStatement((AssignmentStatement) stmt);
+			executeAssignmentStatement((AssignmentStatement) stmt);
 		} else if(stmt instanceof AssumeStatement) {
-			return executeAssumeStatement((AssumeStatement) stmt);
+			executeAssumeStatement((AssumeStatement) stmt);
 		} else if(stmt instanceof AtomicStatement) {
-			return executeAtomicStatement((AtomicStatement) stmt);
+			executeAtomicStatement((AtomicStatement) stmt);
 		} else if(stmt instanceof BreakStatement) {
-			return executeBreakStatement((BreakStatement) stmt);
+			executeBreakStatement((BreakStatement) stmt);
 		} else if(stmt instanceof CallStatement) {
-			return executeCallStatement((CallStatement) stmt);
+			executeCallStatement((CallStatement) stmt);
 		} else if(stmt instanceof ForkStatement) {
-			return executeForkStatement((ForkStatement) stmt);
+			executeForkStatement((ForkStatement) stmt);
 		} else if(stmt instanceof GotoStatement) {
-			return executeGotoStatement((GotoStatement) stmt);
+			executeGotoStatement((GotoStatement) stmt);
 		} else if(stmt instanceof HavocStatement) {
-			return executeHavocStatement((HavocStatement) stmt);
+			executeHavocStatement((HavocStatement) stmt);
 		} else if(stmt instanceof IfStatement) {
-			return executeIfStatement((IfStatement) stmt);
+			executeIfStatement((IfStatement) stmt);
 		} else if(stmt instanceof JoinStatement) {
-			return executeJoinStatement((JoinStatement) stmt);
+			executeJoinStatement((JoinStatement) stmt);
 		} else if(stmt instanceof Label) {
-			return executeLabel((Label) stmt);
+			executeLabel((Label) stmt);
 		} else if(stmt instanceof ReturnStatement) {
-			return executeReturnStatement((ReturnStatement) stmt);
+			executeReturnStatement((ReturnStatement) stmt);
 		} else if(stmt instanceof WhileStatement) {
-			return executeWhileStatement((WhileStatement) stmt);
+			executeWhileStatement((WhileStatement) stmt);
 		} else {
 			throw new UnsupportedOperationException("Error: " + stmt.getClass().getSimpleName()
 					+ " is not supported.");
 		}
 	}
+	
+	
+	private void valuationUpdate(Map<String, Map<String, Object>> newValuation) {
+		ProgramState newState = new ProgramState(newValuation, mCurrentProgramState.getFuncInitValuationInfo());
+		mCurrentProgramState = newState;
+	}
+	
+	
+	public ProgramState getCurrentState() {
+		return mCurrentProgramState;
+	}
 
-	private ProgramState executeAssertStatement(AssertStatement stmt) {
+	private void executeAssertStatement(AssertStatement stmt) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
 	/**
@@ -80,14 +98,15 @@ public class StatementExecutor {
 	 * @return
 	 * 		new program state.
 	 */
-	private ProgramState executeAssignmentStatement(final AssignmentStatement stmt) {
+	private void executeAssignmentStatement(final AssignmentStatement stmt) {
+		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentProgramState);
+		
 		LeftHandSide[] lhs = stmt.getLhs();
 		Expression[] rhs = stmt.getRhs();
 		assert(lhs.length == rhs.length);
 		
-		
 		Map<String, Map<String, Object>> newValuation = new HashMap<>();
-		newValuation.putAll(mExprEvaluator.getValuationMap());
+		newValuation.putAll(mCurrentProgramState.getValuationMap());
 		/**
 		 * Handle multi-assignment
 		 * For example
@@ -97,7 +116,7 @@ public class StatementExecutor {
 			if(lhs[i] instanceof VariableLHS) {
 				final String procName = ((VariableLHS)lhs[i]).getDeclarationInformation().getProcedure();
 				final String identifier = ((VariableLHS)lhs[i]).getIdentifier();
-				final Object value = mExprEvaluator.evaluate(rhs[i]);
+				final Object value = exprEvaluator.evaluate(rhs[i]);
 				newValuation.putAll(generateNewValuation(newValuation, procName, identifier, value));
 			} else if(lhs[i] instanceof ArrayLHS) {
 				/**
@@ -112,67 +131,56 @@ public class StatementExecutor {
 			}
 		}
 		
-		return new ProgramState(newValuation, mExprEvaluator.getFuncInitValuationInfo());
+		valuationUpdate(newValuation);
 	}
 
-	private ProgramState executeAssumeStatement(AssumeStatement stmt) {
-		assert((boolean) mExprEvaluator.evaluate(stmt.getFormula()) == true);
-		return new ProgramState(mExprEvaluator.getValuationMap(), mExprEvaluator.getFuncInitValuationInfo());
+	private void executeAssumeStatement(AssumeStatement stmt) {
+		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentProgramState);
+		assert((boolean) exprEvaluator.evaluate(stmt.getFormula()) == true);
 	}
 
-	private ProgramState executeAtomicStatement(AtomicStatement stmt) {
+	private void executeAtomicStatement(AtomicStatement stmt) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
-	private ProgramState executeBreakStatement(BreakStatement stmt) {
+	private void executeBreakStatement(BreakStatement stmt) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
-	private ProgramState executeCallStatement(CallStatement stmt) {
+	private void executeCallStatement(CallStatement stmt) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
-	private ProgramState executeForkStatement(ForkStatement stmt) {
+	private void executeForkStatement(ForkStatement stmt) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
-	private ProgramState executeGotoStatement(GotoStatement stmt) {
+	private void executeGotoStatement(GotoStatement stmt) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
-	private ProgramState executeHavocStatement(HavocStatement stmt) {
+	private void executeHavocStatement(HavocStatement stmt) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
-	private ProgramState executeIfStatement(IfStatement stmt) {
+	private void executeIfStatement(IfStatement stmt) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
-	private ProgramState executeJoinStatement(JoinStatement stmt) {
+	private void executeJoinStatement(JoinStatement stmt) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
-	private ProgramState executeLabel(Label stmt) {
+	private void executeLabel(Label stmt) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
-	private ProgramState executeReturnStatement(ReturnStatement stmt) {
+	private void executeReturnStatement(ReturnStatement stmt) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
-	private ProgramState executeWhileStatement(WhileStatement stmt) {
+	private void executeWhileStatement(WhileStatement stmt) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
 	/**

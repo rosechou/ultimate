@@ -29,11 +29,9 @@ public class TransitionToolkit {
 	private final IcfgEdge mEdge;
 	private final CodeBlockExecutor mCodeBlockExecutor;
 	
-	public TransitionToolkit(final IcfgEdge edge, final Map<String, Map<String, Object>> valuation, 
-			final FuncInitValuationInfo funcInitValuationInfo) {
+	public TransitionToolkit(final IcfgEdge edge, final ProgramState programState) {
 		mEdge = edge;
-		ExprEvaluator exprEvaluator = new ExprEvaluator(valuation, funcInitValuationInfo);
-		mCodeBlockExecutor = new CodeBlockExecutor(exprEvaluator);
+		mCodeBlockExecutor = new CodeBlockExecutor(programState);
 	}
 	
 	public boolean checkTransEnable() {

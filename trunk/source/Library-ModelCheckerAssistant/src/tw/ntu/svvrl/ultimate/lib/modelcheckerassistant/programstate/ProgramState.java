@@ -8,7 +8,6 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.AssignmentStatement;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementExecutor;
 
 /**
  * This class represents a boogie program state.
@@ -23,7 +22,7 @@ public class ProgramState {
 	 * To record the valuation of boogie variables.
 	 * Type: procedure name × identifier × value
 	 */
-	private final Map<String, Map<String, Object>> mValuation = new HashMap<>();
+	private final Map<String, Map<String, Object>> mValuation;
 
 	/**
 	 * To specify which IcfgLocation this state is generated from.
@@ -37,7 +36,7 @@ public class ProgramState {
 	 * @param valuation
 	 */
 	public ProgramState(final Map<String, Map<String, Object>> valuation, final FuncInitValuationInfo funcInitValuationInfo) {
-		mValuation.putAll(valuation);
+		mValuation = valuation;
 		mCorrespondingIcfgLoc = null;
 		mFuncInitValuationInfo = funcInitValuationInfo;
 	}
@@ -45,13 +44,17 @@ public class ProgramState {
 	public ProgramState(final Map<String, Map<String, Object>> valuation,
 						final BoogieIcfgLocation boogieIcfgLocation,
 						final FuncInitValuationInfo funcInitValuationInfo) {
-		mValuation.putAll(valuation);
+		mValuation = valuation;
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
 		mFuncInitValuationInfo = funcInitValuationInfo;
 	}
 	
 	public BoogieIcfgLocation getCorrespondingIcfgLoc() {
 		return mCorrespondingIcfgLoc;
+	}
+	
+	public FuncInitValuationInfo getFuncInitValuationInfo() {
+		return mFuncInitValuationInfo;
 	}
 	
 	public Map<String, Map<String, Object>> getValuationMap() {
@@ -83,7 +86,7 @@ public class ProgramState {
 		List<IcfgEdge> edges = mCorrespondingIcfgLoc.getOutgoingEdges();
 		List<IcfgEdge> enableTrans = new ArrayList<>();
 		for(final IcfgEdge edge : edges) {
-			TransitionToolkit transitionToolkit = new TransitionToolkit(edge, mValuation, mFuncInitValuationInfo);
+			TransitionToolkit transitionToolkit = new TransitionToolkit(edge, this);
 			if (transitionToolkit.checkTransEnable()) {
 				enableTrans.add(edge);
 			}
@@ -103,7 +106,7 @@ public class ProgramState {
 	 * 		The next program state.
 	 */
 	public ProgramState doTransition(final IcfgEdge edge) {
-		TransitionToolkit transitionToolkit = new TransitionToolkit(edge, mValuation, mFuncInitValuationInfo);
+		TransitionToolkit transitionToolkit = new TransitionToolkit(edge, this);
 		return transitionToolkit.doTransition();
 	}
 	

@@ -3,6 +3,7 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit;
 import org.apache.commons.lang3.NotImplementedException;
 
 import de.uni_freiburg.informatik.ultimate.blockencoding.converter.ShortcutCodeBlock;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Call;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadCurrent;
@@ -18,15 +19,15 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Sum
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
 
 public class CodeBlockExecutor {
-	private final ExprEvaluator mExprEvaluator;
+	private ProgramState mCurrentProgramState;
 	
-	public CodeBlockExecutor(final ExprEvaluator exprEvaluator) {
-		mExprEvaluator = exprEvaluator;
+	public CodeBlockExecutor(final ProgramState programState) {
+		mCurrentProgramState = programState;
 	}
 	
 
 	public boolean checkEnable(final IcfgEdge edge) {
-		StatementChecker statementChecker = new StatementChecker(mExprEvaluator);
+		StatementsChecker statementChecker = new StatementsChecker(mProgramState);
 		if(edge instanceof StatementSequence) {
 			return statementChecker.checkStatementsEnable(((StatementSequence) edge).getStatements());
 		} else if(edge instanceof ParallelComposition) {
@@ -56,29 +57,29 @@ public class CodeBlockExecutor {
 	public ProgramState execute(final IcfgEdge mEdge) {
 		ProgramState newState;
 		if(mEdge instanceof StatementSequence) {
-			newState = executeStatementSequence((StatementSequence) mEdge);
-			//newState.setCorrespondingIcfgLoc(??);
+			executeStatementSequence((StatementSequence) mEdge);
+			//mCurrentProgramState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof Call) {
-			newState = executeCall((Call) mEdge);
-			//newState.setCorrespondingIcfgLoc(??);
+			executeCall((Call) mEdge);
+			//mCurrentProgramState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof Summary) {
-			newState = executeSummary((Summary) mEdge);
-			//newState.setCorrespondingIcfgLoc(??);
+			executeSummary((Summary) mEdge);
+			//mCurrentProgramState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof Return) {
-			newState = executeReturn((Return) mEdge);
-			//newState.setCorrespondingIcfgLoc(??);
+			executeReturn((Return) mEdge);
+			//mCurrentProgramState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof ForkThreadCurrent) {
-			newState = executeForkThreadCurrent((ForkThreadCurrent) mEdge);
-			//newState.setCorrespondingIcfgLoc(??);
+			executeForkThreadCurrent((ForkThreadCurrent) mEdge);
+			//mCurrentProgramState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof ForkThreadOther) {
-			newState = executeForkThreadOther((ForkThreadOther) mEdge);
-			//newState.setCorrespondingIcfgLoc(??);
+			executeForkThreadOther((ForkThreadOther) mEdge);
+			//mCurrentProgramState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof JoinThreadCurrent) {
-			newState = executeJoinThreadCurrent((JoinThreadCurrent) mEdge);
-			//newState.setCorrespondingIcfgLoc(??);
+			executeJoinThreadCurrent((JoinThreadCurrent) mEdge);
+			//mCurrentProgramState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof JoinThreadOther) {
-			newState = executeJoinThreadOther((JoinThreadOther) mEdge);
-			//newState.setCorrespondingIcfgLoc(??);
+			executeJoinThreadOther((JoinThreadOther) mEdge);
+			//mCurrentProgramState.setCorrespondingIcfgLoc(??);
 		} else if(mEdge instanceof ParallelComposition) {
 			/**
 			 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
@@ -109,45 +110,47 @@ public class CodeBlockExecutor {
 		}
 		return null;
 	}
-
-	private ProgramState executeStatementSequence(final StatementSequence stmtSeq) {
-		StatementExecutor statementExecutor = new StatementExecutor(mExprEvaluator);
-		return null;
+	
+	private void moveToNewState(final ProgramState newState) {
+		mCurrentProgramState = newState;
+		//Loc set ?
+	}
+	
+	public ProgramState getCurrentState() {
+		return mCurrentProgramState;
 	}
 
-	private ProgramState executeCall(final Call call) {
-		// TODO Auto-generated method stub
-		return null;
+	private void executeStatementSequence(final StatementSequence stmtSeq) {
+		StatementsExecutor statementExecutor = new StatementsExecutor(mCurrentProgramState);
+
 	}
 
-	private ProgramState executeSummary(final Summary summary) {
+	private void executeCall(final Call call) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
-	private ProgramState executeReturn(final Return returnn) {
+	private void executeSummary(final Summary summary) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
-	private ProgramState executeForkThreadCurrent(final ForkThreadCurrent forkThreadCurrent) {
+	private void executeReturn(final Return returnn) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
-	private ProgramState executeForkThreadOther(final ForkThreadOther forkThreadOther) {
+	private void executeForkThreadCurrent(final ForkThreadCurrent forkThreadCurrent) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
-	private ProgramState executeJoinThreadCurrent(final JoinThreadCurrent joinThreadCurrent) {
+	private void executeForkThreadOther(final ForkThreadOther forkThreadOther) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
-	private ProgramState executeJoinThreadOther(final JoinThreadOther joinThreadOther) {
+	private void executeJoinThreadCurrent(final JoinThreadCurrent joinThreadCurrent) {
 		// TODO Auto-generated method stub
-		return null;
+	}
+
+	private void executeJoinThreadOther(final JoinThreadOther joinThreadOther) {
+		// TODO Auto-generated method stub
 	}
 
 

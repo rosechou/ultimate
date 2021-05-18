@@ -15,15 +15,23 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.StructLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
 
 /**
  * This class check whether the statements is able to execute (enable).
  */
-public class StatementChecker {
-	private final ExprEvaluator mExprEvaluator;
+public class StatementsChecker {
+	/**
+	 * the program state may change due to assignment and havoc statement.
+	 */
+	private ProgramState mProgramState;
 	
-	public StatementChecker(final ExprEvaluator exprEvaluator) {
-		mExprEvaluator = exprEvaluator;
+	public StatementsChecker(final ProgramState programState) {
+		mProgramState = programState;
+	}
+	
+	private void moveToNewState(final ProgramState newState) {
+		mProgramState = newState;
 	}
 	
 	/**
@@ -51,21 +59,20 @@ public class StatementChecker {
 				 * Instead, we leave this check in the doTransition function.
 				 * So assert statement will be skipped here.
 				 */
-			} else if(stmt instanceof AssignmentStatement) {
-				final StatementExecutor stmtExecutor = new StatementExecutor(mExprEvaluator);
-				final ProgramState newState = stmtExecutor.execute(stmt);
-				final ExprEvaluator newExprEvaluator = new ExprEvaluator(newState.getValuationMap()
-						, mExprEvaluator.getFuncInitValuationInfo());
-				final StatementChecker newStatementChecker = new StatementChecker(newExprEvaluator);
-				return newStatementChecker.checkStatementsEnable(stmts.subList(i+1, stmts.size()));
-			} else if(stmt instanceof HavocStatement) {
+			} else if(stmt instanceof AssignmentStatement
+					|| stmt instanceof HavocStatement) {
+				final StatementsExecutor stmtsExecutor = new StatementsExecutor(mProgramState);
+				stmtsExecutor.execute(stmt);
+				moveToNewState(stmtsExecutor.getCurrentState());
+				return checkStatementsEnable(stmts.subList(i+1, stmts.size()));
 			}
 		}
 		return true;
 	}
 	
 	private boolean checkAssumeStatement(final AssumeStatement assumeStmt) {
-		return (boolean) mExprEvaluator.evaluate(assumeStmt.getFormula());
+		ExprEvaluator exprEvaluator = new ExprEvaluator(mProgramState);
+		return (boolean) exprEvaluator.evaluate(assumeStmt.getFormula());
 	}
 	
 }

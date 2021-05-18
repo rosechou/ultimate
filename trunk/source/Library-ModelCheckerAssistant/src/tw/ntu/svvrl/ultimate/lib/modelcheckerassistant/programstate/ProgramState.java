@@ -62,8 +62,8 @@ public class ProgramState {
 	
 	private Map<String, Map<String, Object>> shallowCopyValuation(final Map<String, Map<String, Object>> valuationMap) {
 		Map<String, Map<String, Object>> val = new HashMap<>();
-		for(String procName : val.keySet()) {
-			Map<String, Object> id2v = new HashMap<>(val.get(procName));
+		for(String procName : valuationMap.keySet()) {
+			Map<String, Object> id2v = new HashMap<>(valuationMap.get(procName));
 			val.put(procName, id2v);
 		}
 		return val;

@@ -71,7 +71,7 @@ public class StatementsChecker {
 	}
 	
 	private boolean checkAssumeStatement(final AssumeStatement assumeStmt) {
-		ExprEvaluator exprEvaluator = new ExprEvaluator(mProgramState);
+		final ExprEvaluator exprEvaluator = new ExprEvaluator(mProgramState);
 		return (boolean) exprEvaluator.evaluate(assumeStmt.getFormula());
 	}
 	

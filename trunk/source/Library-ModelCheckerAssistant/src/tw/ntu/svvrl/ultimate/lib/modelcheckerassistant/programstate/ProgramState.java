@@ -86,7 +86,7 @@ public class ProgramState {
 		List<IcfgEdge> edges = mCorrespondingIcfgLoc.getOutgoingEdges();
 		List<IcfgEdge> enableTrans = new ArrayList<>();
 		for(final IcfgEdge edge : edges) {
-			TransitionToolkit transitionToolkit = new TransitionToolkit(edge, this);
+			final TransitionToolkit transitionToolkit = new TransitionToolkit(edge, this);
 			if (transitionToolkit.checkTransEnable()) {
 				enableTrans.add(edge);
 			}
@@ -106,7 +106,7 @@ public class ProgramState {
 	 * 		The next program state.
 	 */
 	public ProgramState doTransition(final IcfgEdge edge) {
-		TransitionToolkit transitionToolkit = new TransitionToolkit(edge, this);
+		final TransitionToolkit transitionToolkit = new TransitionToolkit(edge, this);
 		return transitionToolkit.doTransition();
 	}
 	

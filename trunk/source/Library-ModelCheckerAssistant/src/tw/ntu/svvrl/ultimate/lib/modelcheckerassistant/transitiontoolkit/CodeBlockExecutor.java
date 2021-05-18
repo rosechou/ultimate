@@ -26,7 +26,7 @@ public class CodeBlockExecutor {
 	
 
 	public boolean checkEnable(final IcfgEdge edge) {
-		StatementsChecker statementChecker = new StatementsChecker(mCurrentProgramState);
+		final StatementsChecker statementChecker = new StatementsChecker(mCurrentProgramState);
 		if(edge instanceof StatementSequence) {
 			return statementChecker.checkStatementsEnable(((StatementSequence) edge).getStatements());
 		} else if(edge instanceof ParallelComposition) {
@@ -117,7 +117,7 @@ public class CodeBlockExecutor {
 	}
 
 	private void executeStatementSequence(final StatementSequence stmtSeq) {
-		StatementsExecutor statementExecutor = new StatementsExecutor(mCurrentProgramState);
+		final StatementsExecutor statementExecutor = new StatementsExecutor(mCurrentProgramState);
 
 	}
 

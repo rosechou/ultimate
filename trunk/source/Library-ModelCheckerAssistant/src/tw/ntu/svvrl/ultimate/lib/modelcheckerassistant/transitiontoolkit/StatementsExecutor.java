@@ -36,7 +36,7 @@ public class StatementsExecutor {
 	}
 	
 	public void execute(final List<Statement> stmts) {
-		for(Statement stmt : stmts) {
+		for(final Statement stmt : stmts) {
 			execute(stmt);
 		}
 	}
@@ -78,11 +78,11 @@ public class StatementsExecutor {
 	
 
 	private void updateValuation(final String procName, final String varName, final Object value) {
-		Map<String, Map<String, Object>> newValuation = new HashMap<>();
+		final Map<String, Map<String, Object>> newValuation = new HashMap<>();
 		newValuation.putAll(mCurrentProgramState.getValuationMap());
 		assert(newValuation.containsKey(procName));
 		
-		Map<String, Object> id2v = newValuation.get(procName);
+		final Map<String, Object> id2v = newValuation.get(procName);
 		if(id2v.containsKey(varName)) {
 			id2v.replace(varName, value);
 		} else {
@@ -108,10 +108,10 @@ public class StatementsExecutor {
 	 * 		new program state.
 	 */
 	private void executeAssignmentStatement(final AssignmentStatement stmt) {
-		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentProgramState);
+		final ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentProgramState);
 		
-		LeftHandSide[] lhs = stmt.getLhs();
-		Expression[] rhs = stmt.getRhs();
+		final LeftHandSide[] lhs = stmt.getLhs();
+		final Expression[] rhs = stmt.getRhs();
 		assert(lhs.length == rhs.length);
 		
 		/**
@@ -122,10 +122,10 @@ public class StatementsExecutor {
 		for(int i = 0; i < lhs.length; i++) {
 			if(lhs[i] instanceof VariableLHS) {
 				final String procName = ((VariableLHS)lhs[i]).getDeclarationInformation().getProcedure();
-				final String identifier = ((VariableLHS)lhs[i]).getIdentifier();
+				final String varName = ((VariableLHS)lhs[i]).getIdentifier();
 				final Object value = exprEvaluator.evaluate(rhs[i]);
 				
-				updateValuation(procName, identifier, value);
+				updateValuation(procName, varName, value);
 			} else if(lhs[i] instanceof ArrayLHS) {
 				/**
 				 * I don't know how to produce these case.
@@ -168,7 +168,10 @@ public class StatementsExecutor {
 
 	private void executeHavocStatement(HavocStatement stmt) {
 		VariableLHS[] lhs = stmt.getIdentifiers();
-		
+		for(int i = 0; i < lhs.length; i++) {
+			final String procName = lhs[i].getDeclarationInformation().getProcedure();
+			final String varName = lhs[i].getIdentifier();
+		}
 	}
 
 	private void executeIfStatement(IfStatement stmt) {

@@ -3,7 +3,6 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit;
 import java.util.Map;
 
 import org.apache.commons.lang3.NotImplementedException;
-import de.uni_freiburg.informatik.ultimate.blockencoding.converter.ShortcutCodeBlock;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Call;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;

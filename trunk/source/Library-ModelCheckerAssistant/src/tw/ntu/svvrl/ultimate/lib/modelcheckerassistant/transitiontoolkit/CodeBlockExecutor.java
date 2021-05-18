@@ -2,7 +2,6 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit;
 
 import org.apache.commons.lang3.NotImplementedException;
 
-import de.uni_freiburg.informatik.ultimate.blockencoding.converter.ShortcutCodeBlock;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Call;
@@ -101,9 +100,6 @@ public class CodeBlockExecutor {
 		} else if(mEdge instanceof GotoEdge) {
 			throw new UnsupportedOperationException("Suppose the type " + mEdge.getClass().getSimpleName()
 					+ " should not appear in the resulting CFG");
-		} else if(mEdge instanceof ShortcutCodeBlock) {
-			throw new UnsupportedOperationException("Error: " + mEdge.getClass().getSimpleName()
-					+ " is not supported.");
 		} else {
 			throw new UnsupportedOperationException("Error: " + mEdge.getClass().getSimpleName()
 					+ " is not supported.");

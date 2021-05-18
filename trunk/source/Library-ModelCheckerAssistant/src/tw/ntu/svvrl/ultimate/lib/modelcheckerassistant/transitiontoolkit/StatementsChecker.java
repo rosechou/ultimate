@@ -26,15 +26,6 @@ public class StatementsChecker {
 	 */
 	private ProgramState mProgramState;
 	
-	public StatementsChecker(final ProgramState programState) {
-		mProgramState = new ProgramState(programState);
-	}
-	
-	private void moveToNewState(final ProgramState newState) {
-		mProgramState = new ProgramState(newState);
-		mProgramState.setCorrespondingIcfgLoc(null);
-	}
-	
 	/**
 	 * Check whether the given statements(from Icfg edge) is enable.
 	 * Assignment and Havoc statements should be considered because these statement will
@@ -76,4 +67,11 @@ public class StatementsChecker {
 		return (boolean) exprEvaluator.evaluate(assumeStmt.getFormula());
 	}
 	
+	public StatementsChecker(final ProgramState programState) {
+		mProgramState = new ProgramState(programState);
+	}
+	
+	private void moveToNewState(final ProgramState newState) {
+		mProgramState = new ProgramState(newState);
+	}
 }

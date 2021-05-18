@@ -82,26 +82,7 @@ public class StatementsExecutor {
 					+ " is not supported.");
 		}
 	}
-	
 
-	private void updateValuation(final String procName, final String varName, final Object value) {
-		final Map<String, Map<String, Object>> newValuation = new HashMap<>();
-		newValuation.putAll(mCurrentProgramState.getValuationMap());
-		assert(newValuation.containsKey(procName));
-		
-		final Map<String, Object> id2v = newValuation.get(procName);
-		if(id2v.containsKey(varName)) {
-			id2v.replace(varName, value);
-		} else {
-			id2v.put(varName, value);
-		}
-		mCurrentProgramState = new ProgramState(newValuation, mCurrentProgramState.getFuncInitValuationInfo());
-	}
-	
-	
-	public ProgramState getCurrentState() {
-		return mCurrentProgramState;
-	}
 
 	private void executeAssertStatement(AssertStatement stmt) {
 		// TODO Auto-generated method stub
@@ -250,5 +231,24 @@ public class StatementsExecutor {
 		while((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
 			execute(Arrays.asList(stmt.getBody()));
 		}
+	}
+	
+	private void updateValuation(final String procName, final String varName, final Object value) {
+		final Map<String, Map<String, Object>> newValuation = new HashMap<>();
+		newValuation.putAll(mCurrentProgramState.getValuationMap());
+		assert(newValuation.containsKey(procName));
+		
+		final Map<String, Object> id2v = newValuation.get(procName);
+		if(id2v.containsKey(varName)) {
+			id2v.replace(varName, value);
+		} else {
+			id2v.put(varName, value);
+		}
+		mCurrentProgramState = new ProgramState(newValuation, mCurrentProgramState.getFuncInitValuationInfo());
+	}
+	
+	
+	public ProgramState getCurrentState() {
+		return mCurrentProgramState;
 	}
 }

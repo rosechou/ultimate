@@ -4,10 +4,17 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.StructLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WhileStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.type.BoogieArrayType;
+import de.uni_freiburg.informatik.ultimate.boogie.type.BoogiePrimitiveType;
+import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
+
+import org.apache.commons.lang3.NotImplementedException;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -171,6 +178,30 @@ public class StatementsExecutor {
 		for(int i = 0; i < lhs.length; i++) {
 			final String procName = lhs[i].getDeclarationInformation().getProcedure();
 			final String varName = lhs[i].getIdentifier();
+			IBoogieType bt = lhs[i].getType();
+			if (bt instanceof BoogiePrimitiveType) {
+				final Random r = new Random();
+				Object value;
+				switch(((BoogiePrimitiveType) bt).getTypeCode()) {
+					case BoogiePrimitiveType.BOOL:
+						value = r.nextBoolean();
+						updateValuation(procName, varName, value);
+					case BoogiePrimitiveType.INT:
+						value = r.nextInt();
+						updateValuation(procName, varName, value);
+					case BoogiePrimitiveType.REAL:
+						throw new NotImplementedException("Boogie variable with type"
+								+ ((BoogiePrimitiveType) bt).toString() + " is not yet implemented.");
+					case BoogiePrimitiveType.ERROR:
+					default:
+						throw new UnsupportedOperationException("Boogie variable with"
+								+ " error or unknown type.");
+				}
+				
+			} else {
+				throw new UnsupportedOperationException("Unsupported"
+						+ "BoogieType:" + bt.toString() + "in havoc statement");
+			}
 		}
 	}
 

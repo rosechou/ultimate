@@ -39,7 +39,7 @@ public class StatementsExecutor {
 	private ProgramState mCurrentProgramState;
 
 	public StatementsExecutor(final ProgramState programState) {
-		mCurrentProgramState = programState;
+		mCurrentProgramState = new ProgramState(programState);
 	}
 	
 	public void execute(final List<Statement> stmts) {

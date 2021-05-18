@@ -76,10 +76,19 @@ public class StatementsExecutor {
 		}
 	}
 	
-	
-	private void valuationUpdate(Map<String, Map<String, Object>> newValuation) {
-		ProgramState newState = new ProgramState(newValuation, mCurrentProgramState.getFuncInitValuationInfo());
-		mCurrentProgramState = newState;
+
+	private void updateValuation(final String procName, final String varName, final Object value) {
+		Map<String, Map<String, Object>> newValuation = new HashMap<>();
+		newValuation.putAll(mCurrentProgramState.getValuationMap());
+		assert(newValuation.containsKey(procName));
+		
+		Map<String, Object> id2v = newValuation.get(procName);
+		if(id2v.containsKey(varName)) {
+			id2v.replace(varName, value);
+		} else {
+			id2v.put(varName, value);
+		}
+		mCurrentProgramState = new ProgramState(newValuation, mCurrentProgramState.getFuncInitValuationInfo());
 	}
 	
 	
@@ -105,8 +114,6 @@ public class StatementsExecutor {
 		Expression[] rhs = stmt.getRhs();
 		assert(lhs.length == rhs.length);
 		
-		Map<String, Map<String, Object>> newValuation = new HashMap<>();
-		newValuation.putAll(mCurrentProgramState.getValuationMap());
 		/**
 		 * Handle multi-assignment
 		 * For example
@@ -117,7 +124,8 @@ public class StatementsExecutor {
 				final String procName = ((VariableLHS)lhs[i]).getDeclarationInformation().getProcedure();
 				final String identifier = ((VariableLHS)lhs[i]).getIdentifier();
 				final Object value = exprEvaluator.evaluate(rhs[i]);
-				newValuation.putAll(generateNewValuation(newValuation, procName, identifier, value));
+				
+				updateValuation(procName, identifier, value);
 			} else if(lhs[i] instanceof ArrayLHS) {
 				/**
 				 * I don't know how to produce these case.
@@ -130,9 +138,8 @@ public class StatementsExecutor {
 						+ "is not yet supported.");
 			}
 		}
-		
-		valuationUpdate(newValuation);
 	}
+
 
 	private void executeAssumeStatement(AssumeStatement stmt) {
 		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentProgramState);
@@ -160,7 +167,8 @@ public class StatementsExecutor {
 	}
 
 	private void executeHavocStatement(HavocStatement stmt) {
-		// TODO Auto-generated method stub
+		VariableLHS[] lhs = stmt.getIdentifiers();
+		
 	}
 
 	private void executeIfStatement(IfStatement stmt) {
@@ -181,31 +189,5 @@ public class StatementsExecutor {
 
 	private void executeWhileStatement(WhileStatement stmt) {
 		// TODO Auto-generated method stub
-	}
-
-	/**
-	 * Generate new valuation table due to the modification or declaration of variable.
-	 * We could not just set valuation because this modification leads to a new program state.
-	 * @param originValuation
-	 * 		origin valuation
-	 * @param procName
-	 * 		name of procedure
-	 * @param identifier
-	 * 		name of identifier
-	 * @param v
-	 * 		the new value of given identifier
-	 * @return
-	 * 		the new valuation
-	 */
-	private Map<String, Map<String, Object>> generateNewValuation(final Map<String, Map<String, Object>> originValuation,
-		final String procName, final String identifier, final Object v) {
-		Map<String, Map<String, Object>> newValuation = new HashMap<>();
-		newValuation.putAll(originValuation);
-		final Object result = newValuation.get(procName).replace(identifier, v);
-		if(result == null) {
-			throw new UnsupportedOperationException("No variable found in valuation table. "
-					+ "Variable update failed.");
-		}
-		return newValuation;
 	}
 }

@@ -93,8 +93,15 @@ public class VarAndParamAdder {
 		}
 	}
 	
+	/**
+	 * Caution: the where clause in Boogie's syntax is not yet implemented.
+	 */
 	private void addVarList2Valuation(final Map<String, Map<String, Object>> valuation
 			, final String procOrFuncName, final VarList varList) {
+		if(varList.getWhereClause() != null) {
+			throw new NotImplementedException("Where clause is not yet supported.");
+		}
+		
 		IBoogieType boogieType = varList.getType().getBoogieType();
 		
 		Object value = processBoogieType(boogieType);

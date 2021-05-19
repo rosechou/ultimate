@@ -21,10 +21,16 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.Stateme
  * This class check whether the statements is able to execute (enable).
  */
 public class StatementsChecker {
+	private final List<Statement> mStatements;
 	/**
 	 * the program state may change due to assignment and havoc statement.
 	 */
 	private ProgramState mProgramState;
+
+	public StatementsChecker(final List<Statement> statements, final ProgramState programState) {
+		mStatements = statements;
+		mProgramState = new ProgramState(programState);
+	}
 	
 	/**
 	 * Check whether the given statements(from Icfg edge) is enable.
@@ -37,9 +43,9 @@ public class StatementsChecker {
 	 * @return
 	 * 		true if no assume statement is violated
 	 */
-	public boolean checkStatementsEnable(final List<Statement> stmts) {
-		for(int i = 0; i < stmts.size(); i++) {
-			final Statement stmt = stmts.get(i);
+	public boolean checkStatementsEnable() {
+		for(int i = 0; i < mStatements.size(); i++) {
+			final Statement stmt = mStatements.get(i);
 			if(stmt instanceof AssumeStatement) {
 				// if the formula assumed is not hold, then not enable. 
 				if(!checkAssumeStatement((AssumeStatement) stmt)) {
@@ -53,10 +59,11 @@ public class StatementsChecker {
 				 */
 			} else if(stmt instanceof AssignmentStatement
 					|| stmt instanceof HavocStatement) {
-				final StatementsExecutor stmtsExecutor = new StatementsExecutor(mProgramState);
-				stmtsExecutor.execute(stmt);
-				moveToNewState(stmtsExecutor.getCurrentState());
-				return checkStatementsEnable(stmts.subList(i+1, stmts.size()));
+				final StatementsExecutor stmtsExecutor = new StatementsExecutor(stmt, mProgramState);
+				moveToNewState(stmtsExecutor.execute());
+				StatementsChecker nextStatementsChecker 
+						= new StatementsChecker(mStatements.subList(i+1, mStatements.size()), mProgramState);
+				return nextStatementsChecker.checkStatementsEnable();
 			}
 		}
 		return true;
@@ -65,10 +72,6 @@ public class StatementsChecker {
 	private boolean checkAssumeStatement(final AssumeStatement assumeStmt) {
 		final ExprEvaluator exprEvaluator = new ExprEvaluator(mProgramState);
 		return (boolean) exprEvaluator.evaluate(assumeStmt.getFormula());
-	}
-	
-	public StatementsChecker(final ProgramState programState) {
-		mProgramState = new ProgramState(programState);
 	}
 	
 	private void moveToNewState(final ProgramState newState) {

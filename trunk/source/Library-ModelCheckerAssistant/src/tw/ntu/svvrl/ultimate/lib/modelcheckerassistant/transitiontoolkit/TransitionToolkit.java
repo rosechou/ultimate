@@ -31,12 +31,16 @@ public class TransitionToolkit {
 	
 	public TransitionToolkit(final IcfgEdge edge, final ProgramState programState) {
 		mEdge = edge;
-		mCodeBlockExecutor = new CodeBlockExecutor(programState);
+		if (mEdge instanceof CodeBlock) {
+			mCodeBlockExecutor = new CodeBlockExecutor((CodeBlock) mEdge, programState);
+		} else {
+			mCodeBlockExecutor = null;
+		}
 	}
 	
 	public boolean checkTransEnable() {
 		if (mEdge instanceof CodeBlock) {
-			return mCodeBlockExecutor.checkEnable(mEdge);
+			return mCodeBlockExecutor.checkEnable();
 		} else if (mEdge instanceof RootEdge) {
 			throw new UnsupportedOperationException("Suppose the type " + mEdge.getClass().getSimpleName()
 					+ " should not appear in the function getEnableTrans()");
@@ -53,7 +57,7 @@ public class TransitionToolkit {
 	 */
 	public ProgramState doTransition() {
 		if (mEdge instanceof CodeBlock) {
-			ProgramState newState = mCodeBlockExecutor.execute(mEdge);
+			ProgramState newState = mCodeBlockExecutor.execute();
 			newState.setCorrespondingIcfgLoc((BoogieIcfgLocation) mEdge.getTarget());
 			return newState;
 		} else if (mEdge instanceof RootEdge) {

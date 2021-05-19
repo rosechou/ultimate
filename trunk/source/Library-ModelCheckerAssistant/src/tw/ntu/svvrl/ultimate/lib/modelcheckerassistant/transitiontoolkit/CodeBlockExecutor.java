@@ -1,10 +1,13 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit;
 
+import java.util.List;
+
 import org.apache.commons.lang3.NotImplementedException;
 
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Call;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadCurrent;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadOther;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.GotoEdge;
@@ -19,17 +22,20 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState
 
 public class CodeBlockExecutor {
 	private ProgramState mCurrentProgramState;
+	private final CodeBlock mCodeBlock;
 	
-	public CodeBlockExecutor(final ProgramState programState) {
+	public CodeBlockExecutor(final CodeBlock codeBlock, final ProgramState programState) {
+		mCodeBlock = codeBlock;
 		mCurrentProgramState = new ProgramState(programState);
 	}
 	
 
-	public boolean checkEnable(final IcfgEdge edge) {
-		final StatementsChecker statementChecker = new StatementsChecker(mCurrentProgramState);
-		if(edge instanceof StatementSequence) {
-			return statementChecker.checkStatementsEnable(((StatementSequence) edge).getStatements());
-		} else if(edge instanceof ParallelComposition) {
+	public boolean checkEnable() {
+		if(mCodeBlock instanceof StatementSequence) {
+			List<Statement> stmts = ((StatementSequence) mCodeBlock).getStatements();
+			final StatementsChecker statementChecker = new StatementsChecker(stmts, mCurrentProgramState);
+			return statementChecker.checkStatementsEnable();
+		} else if(mCodeBlock instanceof ParallelComposition) {
 			/**
 			 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
 			 * This case is not yet implemented because I'm lazy.
@@ -38,7 +44,7 @@ public class CodeBlockExecutor {
 			 */
 			throw new NotImplementedException(ParallelComposition.class.getSimpleName()
 					+ "is not yet implemented.");
-		} else if(edge instanceof SequentialComposition) {
+		} else if(mCodeBlock instanceof SequentialComposition) {
 			/**
 			 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
 			 * This case is not yet implemented because I'm lazy.
@@ -53,24 +59,24 @@ public class CodeBlockExecutor {
 		}
 	}
 	
-	public ProgramState execute(final IcfgEdge mEdge) {
-		if(mEdge instanceof StatementSequence) {
-			executeStatementSequence((StatementSequence) mEdge);
-		} else if(mEdge instanceof Call) {
-			executeCall((Call) mEdge);
-		} else if(mEdge instanceof Summary) {
-			executeSummary((Summary) mEdge);
-		} else if(mEdge instanceof Return) {
-			executeReturn((Return) mEdge);
-		} else if(mEdge instanceof ForkThreadCurrent) {
-			executeForkThreadCurrent((ForkThreadCurrent) mEdge);
-		} else if(mEdge instanceof ForkThreadOther) {
-			executeForkThreadOther((ForkThreadOther) mEdge);
-		} else if(mEdge instanceof JoinThreadCurrent) {
-			executeJoinThreadCurrent((JoinThreadCurrent) mEdge);
-		} else if(mEdge instanceof JoinThreadOther) {
-			executeJoinThreadOther((JoinThreadOther) mEdge);
-		} else if(mEdge instanceof ParallelComposition) {
+	public ProgramState execute() {
+		if(mCodeBlock instanceof StatementSequence) {
+			executeStatementSequence((StatementSequence) mCodeBlock);
+		} else if(mCodeBlock instanceof Call) {
+			executeCall((Call) mCodeBlock);
+		} else if(mCodeBlock instanceof Summary) {
+			executeSummary((Summary) mCodeBlock);
+		} else if(mCodeBlock instanceof Return) {
+			executeReturn((Return) mCodeBlock);
+		} else if(mCodeBlock instanceof ForkThreadCurrent) {
+			executeForkThreadCurrent((ForkThreadCurrent) mCodeBlock);
+		} else if(mCodeBlock instanceof ForkThreadOther) {
+			executeForkThreadOther((ForkThreadOther) mCodeBlock);
+		} else if(mCodeBlock instanceof JoinThreadCurrent) {
+			executeJoinThreadCurrent((JoinThreadCurrent) mCodeBlock);
+		} else if(mCodeBlock instanceof JoinThreadOther) {
+			executeJoinThreadOther((JoinThreadOther) mCodeBlock);
+		} else if(mCodeBlock instanceof ParallelComposition) {
 			/**
 			 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
 			 * This case is not yet implemented because I'm lazy.
@@ -79,7 +85,7 @@ public class CodeBlockExecutor {
 			 */
 			throw new NotImplementedException(ParallelComposition.class.getSimpleName()
 					+ "is not yet implemented.");
-		} else if(mEdge instanceof SequentialComposition) {
+		} else if(mCodeBlock instanceof SequentialComposition) {
 			/**
 			 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
 			 * This case is not yet implemented because I'm lazy.
@@ -88,18 +94,18 @@ public class CodeBlockExecutor {
 			 */
 			throw new NotImplementedException(ParallelComposition.class.getSimpleName()
 					+ "is not yet implemented.");
-		} else if(mEdge instanceof GotoEdge) {
-			throw new UnsupportedOperationException("Suppose the type " + mEdge.getClass().getSimpleName()
+		} else if(mCodeBlock instanceof GotoEdge) {
+			throw new UnsupportedOperationException("Suppose the type " + mCodeBlock.getClass().getSimpleName()
 					+ " should not appear in the resulting CFG");
 		} else {
-			throw new UnsupportedOperationException("Error: " + mEdge.getClass().getSimpleName()
+			throw new UnsupportedOperationException("Error: " + mCodeBlock.getClass().getSimpleName()
 					+ " is not supported.");
 		}
 		return mCurrentProgramState;
 	}
 	
 	private void moveToNewState(final ProgramState newState) {
-		mCurrentProgramState = newState;
+		mCurrentProgramState = new ProgramState(newState);
 	}
 	
 	public ProgramState getCurrentState() {
@@ -107,9 +113,9 @@ public class CodeBlockExecutor {
 	}
 
 	private void executeStatementSequence(final StatementSequence stmtSeq) {
-		final StatementsExecutor statementExecutor = new StatementsExecutor(mCurrentProgramState);
-		statementExecutor.execute(stmtSeq.getStatements());
-		moveToNewState(statementExecutor.getCurrentState());
+		List<Statement> stmts = stmtSeq.getStatements();
+		final StatementsExecutor statementExecutor = new StatementsExecutor(stmts, mCurrentProgramState);
+		moveToNewState(statementExecutor.execute());
 	}
 
 	private void executeCall(final Call call) {

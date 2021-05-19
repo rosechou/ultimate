@@ -36,19 +36,50 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.LeftHandSide;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ReturnStatement;
 
 public class StatementsExecutor {
+	private final List<Statement> mStatements;
+	private final Statement mStatement;
 	private ProgramState mCurrentProgramState;
-
-	public StatementsExecutor(final ProgramState programState) {
+	
+	/**
+	 * For many statements.
+	 * @param statements
+	 * 		List of statements
+	 * @param programState
+	 */
+	public StatementsExecutor(final List<Statement> statements, final ProgramState programState) {
+		mStatements = statements;
+		mStatement = null;
 		mCurrentProgramState = new ProgramState(programState);
 	}
 	
-	public void execute(final List<Statement> stmts) {
-		for(final Statement stmt : stmts) {
-			execute(stmt);
-		}
+	/**
+	 * For only one statement.
+	 * @param statement
+	 * @param programState
+	 */
+	public StatementsExecutor(final Statement statement, final ProgramState programState) {
+		mStatements = null;
+		mStatement = statement;
+		mCurrentProgramState = new ProgramState(programState);
 	}
 	
-	public void execute(final Statement stmt) {
+	/**
+	 * Execute one or many statements
+	 * @return
+	 * 		the new state reached after executing
+	 */
+	public ProgramState execute() {
+		if(mStatements != null) {
+			for(final Statement stmt : mStatements) {
+				executeOne(stmt);
+			}
+		} else {
+			executeOne(mStatement);
+		}
+		return mCurrentProgramState;
+	}
+	
+	public void executeOne(final Statement stmt) {
 		if(stmt instanceof AssertStatement) {
 			executeAssertStatement((AssertStatement) stmt);
 		} else if(stmt instanceof AssignmentStatement) {
@@ -208,9 +239,15 @@ public class StatementsExecutor {
 	private void executeIfStatement(IfStatement stmt) {
 		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentProgramState);
 		if((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
-			execute(Arrays.asList(stmt.getThenPart()));
+			StatementsExecutor newStatementsExecutor
+					 = new StatementsExecutor(Arrays.asList(stmt.getThenPart()), mCurrentProgramState);
+			ProgramState newState = newStatementsExecutor.execute();
+			setCurrentState(newState);
 		} else {
-			execute(Arrays.asList(stmt.getElsePart()));
+			StatementsExecutor newStatementsExecutor
+			 		= new StatementsExecutor(Arrays.asList(stmt.getElsePart()), mCurrentProgramState);
+			ProgramState newState = newStatementsExecutor.execute();
+			setCurrentState(newState);
 		}
 	}
 
@@ -229,7 +266,10 @@ public class StatementsExecutor {
 	private void executeWhileStatement(WhileStatement stmt) {
 		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentProgramState);
 		while((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
-			execute(Arrays.asList(stmt.getBody()));
+			StatementsExecutor newStatementsExecutor
+	 			= new StatementsExecutor(Arrays.asList(stmt.getBody()), mCurrentProgramState);
+			ProgramState newState = newStatementsExecutor.execute();
+			setCurrentState(newState);
 		}
 	}
 	
@@ -248,7 +288,7 @@ public class StatementsExecutor {
 	}
 	
 	
-	public ProgramState getCurrentState() {
-		return mCurrentProgramState;
+	private void setCurrentState(ProgramState newState) {
+		mCurrentProgramState = new ProgramState(newState);
 	}
 }

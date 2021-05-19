@@ -3,6 +3,7 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.NotImplementedException;
 
@@ -15,29 +16,46 @@ import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.Boogie2SmtSymbolTable;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.ILocalProgramVar;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramNonOldVar;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramOldVar;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramVar;
 
 public class VarAndParamAdder {
 	/*---------------RCFG fields---------------*/
 	private final Boogie2SmtSymbolTable mBoogie2SmtSymbolTable;
+	private final Set<String> mProcNames;
 	/*------------End of RCFG fields-----------*/
 	
+	/**
+	 * For Boogie functions.
+	 */
 	public VarAndParamAdder() {
 		mBoogie2SmtSymbolTable = null;
+		mProcNames = null;
 	}
 	
-	public VarAndParamAdder(Boogie2SmtSymbolTable boogie2SmtSymbolTable) {
+	/**
+	 * For globals, locals, procedures
+	 * @param boogie2SmtSymbolTable
+	 * @param procNames 
+	 * 		all procedure names
+	 */
+	public VarAndParamAdder(Boogie2SmtSymbolTable boogie2SmtSymbolTable, Set<String> procNames) {
 		mBoogie2SmtSymbolTable = boogie2SmtSymbolTable;
+		mProcNames = procNames;
 	}
 	
-	public void addInParams2Valuation(final Map<String, Map<String, Object>> valuation
+	/**
+	 * Because function params do not stored in symbol table,
+	 * we manually process it from the declaration level.
+	 */
+	public void addFunInParams2Valuation(final Map<String, Map<String, Object>> valuation
 			, final FunctionDeclaration funcDecl) {
 		/**
 		 * process all in params
 		 */
 		final String funcName = funcDecl.getIdentifier();
-		for(VarList inParam : funcDecl.getInParams()) {
-			addVarList2Valuation(valuation, funcName, inParam);
+		for(final VarList inParam : funcDecl.getInParams()) {
+			addVarList2Valuation(valuation, funcName, inParam, false);
 		}
 	}
 	
@@ -51,26 +69,64 @@ public class VarAndParamAdder {
 		/**
 		 * process all global variables
 		 */
-		for(IProgramNonOldVar globalVar : mBoogie2SmtSymbolTable.getGlobals()) {
+		for(final IProgramNonOldVar globalVar : mBoogie2SmtSymbolTable.getGlobals()) {
 			addVar2Valuation(valuation, globalVar);
 		}
 	}
 	
 	/**
-	 * Add local boogie variables' type and value to valuation.
+	 * Add all old global boogie variables' type and value to valuation.
+	 * @param valuation
+	 * 		the value map should be added.
+	 */
+	public void addOldGlobalVars2Valuation(final Map<String, Map<String, Object>> valuation) {
+		
+		/**
+		 * process all global variables
+		 */
+		for(final IProgramVar oldGlobalVar : mBoogie2SmtSymbolTable.getOldVars().values()) {
+			addVar2Valuation(valuation, oldGlobalVar);
+		}
+	}
+	
+	/**
+	 * Add all procedures' local boogie variables' type and value to valuation.
+	 * @param valuation
+	 * 		the value map should be added.
+	 */
+	public void addLocalVars2Valuation(final Map<String, Map<String, Object>> valuation) {
+		for(final String procName : mProcNames) {
+			for(final ILocalProgramVar localVar : mBoogie2SmtSymbolTable.getLocals(procName)) {
+				addVar2Valuation(valuation, localVar);
+			}
+		}
+	}
+	
+	/**
+	 * Add all boogie procedures' in parameters' type and value to valuation.
 	 * in a specific procedure.
 	 * @param valuation
 	 * 		the value map should be added.
-	 * @param procName
-	 * 		A specific procedure name.
 	 */
-	public void addLocalVars2Valuation(final Map<String, Map<String, Object>> valuation, final String procName) {
-		
-		/**
-		 * process all local variables
-		 */
-		for(ILocalProgramVar localVar : mBoogie2SmtSymbolTable.getLocals(procName)) {
-			addVar2Valuation(valuation, localVar);
+	public void addProcInParams2Valuation(final Map<String, Map<String, Object>> valuation) {
+		for(final String procName : mProcNames) {
+			for(final ILocalProgramVar inParam : mBoogie2SmtSymbolTable.getProc2InParams().get(procName)) {
+				addVar2Valuation(valuation, inParam);
+			}
+		}
+	}
+	
+	/**
+	 * Add all boogie procedures' out parameters' type and value to valuation.
+	 * in a specific procedure.
+	 * @param valuation
+	 * 		the value map should be added.
+	 */
+	public void addProcOutParams2Valuation(final Map<String, Map<String, Object>> valuation) {
+		for(final String procName : mProcNames) {
+			for(final ILocalProgramVar outParam : mBoogie2SmtSymbolTable.getProc2OutParams().get(procName)) {
+				addVar2Valuation(valuation, outParam);
+			}
 		}
 	}
 	
@@ -86,10 +142,14 @@ public class VarAndParamAdder {
 	 * 		the target variable.
 	 */
 	private void addVar2Valuation(final Map<String, Map<String, Object>> valuation, final IProgramVar var) {
-		String procName = var.getProcedure();
-		BoogieASTNode boogieASTNode = mBoogie2SmtSymbolTable.getAstNode(var);
+		final String procName = var.getProcedure();
+		final BoogieASTNode boogieASTNode = mBoogie2SmtSymbolTable.getAstNode(var);
+		boolean isOld = false;
+		if(var instanceof IProgramOldVar) {
+			isOld = true;
+		}
 		if(boogieASTNode instanceof VarList) {
-			addVarList2Valuation(valuation, procName, ((VarList) boogieASTNode));
+			addVarList2Valuation(valuation, procName, ((VarList) boogieASTNode), isOld);
 		}
 	}
 	
@@ -97,16 +157,19 @@ public class VarAndParamAdder {
 	 * Caution: the where clause in Boogie's syntax is not yet implemented.
 	 */
 	private void addVarList2Valuation(final Map<String, Map<String, Object>> valuation
-			, final String procOrFuncName, final VarList varList) {
+			, final String procOrFuncName, final VarList varList, final boolean isOld) {
 		if(varList.getWhereClause() != null) {
 			throw new NotImplementedException("Where clause is not yet supported.");
 		}
 		
-		IBoogieType boogieType = varList.getType().getBoogieType();
+		final IBoogieType boogieType = varList.getType().getBoogieType();
 		
-		Object value = processBoogieType(boogieType);
+		final Object value = processBoogieType(boogieType);
 		
 		for(String varName : varList.getIdentifiers()) {
+			if(isOld) {
+				varName = "old(" + varName + ")";
+			}
 			setValue(valuation, procOrFuncName, varName, value);
 		}
 	}
@@ -122,7 +185,7 @@ public class VarAndParamAdder {
 	private void setValue(final Map<String, Map<String, Object>> valuation
 			, final String procOrFuncName, final String varName
 			, final Object value) {
-		Map<String, Object> id2v = new HashMap<>();
+		final Map<String, Object> id2v = new HashMap<>();
 		id2v.put(varName, value);
 
 		if(valuation.containsKey(procOrFuncName)) {
@@ -179,8 +242,8 @@ public class VarAndParamAdder {
 					}
 				}
 			}
-			Object v = processBoogieType(((BoogieArrayType) bt).getValueType());
-			ArrayList<Object> array = new ArrayList<>();
+			final Object v = processBoogieType(((BoogieArrayType) bt).getValueType());
+			final ArrayList<Object> array = new ArrayList<>();
 			array.add(v);
 			return array;
 		} else {

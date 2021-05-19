@@ -44,7 +44,7 @@ public class FuncInitValuationInfo {
 	private void createFuncInitValuation(final List<FunctionDeclaration> functionDeclarations) {
 		final VarAndParamAdder mVarAdder = new VarAndParamAdder();
 		for(FunctionDeclaration funcDecl : functionDeclarations) {
-			mVarAdder.addInParams2Valuation(mFuncInitValuation, funcDecl);
+			mVarAdder.addFunInParams2Valuation(mFuncInitValuation, funcDecl);
 		}
 	}
 	

@@ -39,7 +39,8 @@ public class ProgramStateExplorer {
 		mInitialNodes = rcfg.getInitialNodes();
 		/*------------End of RCFG fields-----------*/
 		
-		mProgramStateFactory = new ProgramStateFactory(rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable());
+		mProgramStateFactory = new ProgramStateFactory(rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable()
+				, rcfg.getCfgSmtToolkit());
 	}
 	
 	

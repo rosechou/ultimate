@@ -1,0 +1,62 @@
+package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+public class Valuation {
+	private final Map<String, Map<String, Object>> mValueMap = new HashMap<>();
+	
+	public Valuation() {
+	}
+	
+	public Valuation(Map<String, Map<String, Object>> valueMap) {
+		mValueMap.putAll(valueMap);
+	}
+	
+	public Valuation shallowCopy(){
+		Map<String, Map<String, Object>> val = new HashMap<>();
+		for(String procName : mValueMap.keySet()) {
+			Map<String, Object> id2v = new HashMap<>(mValueMap.get(procName));
+			val.put(procName, id2v);
+		}
+		return new Valuation(val);
+	}
+	
+	/**
+	 * Update the value map.
+	 * @param procOrFuncName
+	 * @param varName
+	 * @param value
+	 */
+	public void setValue(final String procOrFuncName, final String varName, final Object value) {
+		final Map<String, Object> id2v = new HashMap<>();
+		id2v.put(varName, value);
+
+		if(mValueMap.containsKey(procOrFuncName)) {
+			mValueMap.get(procOrFuncName).putAll(id2v);
+		} else {
+			mValueMap.put(procOrFuncName, id2v);
+		}
+	}
+	
+	public final Set<String> getProcOrFuncNames() {
+		return mValueMap.keySet();
+	}
+	
+	public Map<String, Object> getProcOrFuncId2V(String procOrFunName) {
+		return mValueMap.get(procOrFunName);
+	}
+	
+	public final Object lookUpValue(final String procOrFuncName, String varName) {
+		return mValueMap.get(procOrFuncName).get(varName);
+	}
+	
+	public boolean containsProcOrFunc(final String procOrFuncName) {
+		return mValueMap.containsKey(procOrFuncName);
+	}
+	
+	public boolean equals(final Valuation anotherValuation) {
+		return mValueMap.equals(anotherValuation.mValueMap);
+	}
+}

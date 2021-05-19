@@ -29,9 +29,10 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.UnaryExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WildcardExpression;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.FuncInitValuationInfo;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.Valuation;
 
 public class ExprEvaluator {
-	private final Map<String, Map<String, Object>> mValuation = new HashMap<>();
+	private final Valuation mValuation;
 	/**
 	 * Initial function value table and function bodies.
 	 */
@@ -43,7 +44,7 @@ public class ExprEvaluator {
 	 * After functionApplicationExpr finished, this table should be
 	 * reset to <code>mFuncInitValuation<code>.
 	 */
-	private Map<String, Map<String, Object>> mFuncValuation;
+	private Valuation mFuncValuation;
 	
 	/**
 	 * To indicate recursive function application.
@@ -54,14 +55,13 @@ public class ExprEvaluator {
 	
 	
 	public ExprEvaluator(final ProgramState programState) {
-		mValuation.putAll(programState.getValuationMap());
+		mValuation = programState.getValuation().shallowCopy();
 		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
-		mFuncValuation = createFuncInitValuation(mFuncInitValuationInfo);
+		createFuncInitValuation(mFuncInitValuationInfo);
 	}
 	
-	private Map<String, Map<String, Object>> createFuncInitValuation(FuncInitValuationInfo funcInitValuationInfo) {
-		final Map<String, Map<String, Object>> valuation = new HashMap<>();
-		valuation.putAll(funcInitValuationInfo.getFuncInitValuation());
+	private void createFuncInitValuation(FuncInitValuationInfo funcInitValuationInfo) {
+		mFuncValuation = funcInitValuationInfo.getFuncInitValuation().shallowCopy();
 		
 		/**
 		 * Put all global variables to each function for {@link #evaluateFunctionApplication}
@@ -69,36 +69,12 @@ public class ExprEvaluator {
 		 * We can do this because boogie function has no side effects.
 		 * i.e. No variable assignment.
 		 */
-		for(String funcName : valuation.keySet()) {
-			final Map<String, Object> globalVarMap = mValuation.get(null);
-			final Map<String, Object> tempVarValuation = new HashMap<>();
-			tempVarValuation.putAll(globalVarMap);
-			tempVarValuation.putAll(valuation.get(funcName));
-			
-			valuation.put(funcName, tempVarValuation);
+		for(String funcName : mFuncValuation.getProcOrFuncNames()) {
+			final Map<String, Object> globalVarMap = mValuation.getProcOrFuncId2V(null);
+			for(final String globalVarName : globalVarMap.keySet()) {
+				mFuncValuation.setValue(funcName, globalVarName, globalVarMap.get(globalVarName));
+			}
 		}
-		return valuation;
-	}
-
-	/**
-	 * Look up the program state valuation table.
-	 * @param procName
-	 * 		name of procedure
-	 * @param identifier
-	 * 		name of identifier
-	 * @return
-	 * 		the value of given identifier
-	 */
-	private Object lookUpProcValue(final String procName, final String varName) {
-		return mValuation.get(procName).get(varName);
-	}
-	
-	private Object lookUpFuncValue(final String funcName, final String varName) {
-		return mFuncValuation.get(funcName).get(varName); 
-	}
-	
-	private void setFuncValue(final String funcName, final String varName, final Object value) {
-		mFuncValuation.get(funcName).replace(varName, value);
 	}
 	
 	public Object evaluate(Expression expr) {
@@ -193,11 +169,11 @@ public class ExprEvaluator {
 		if(mFuncNameStack.isEmpty()) {
 			final String procName = expr.getDeclarationInformation().getProcedure();
 			final String varName = expr.getIdentifier();
-			return lookUpProcValue(procName, varName);
+			return mValuation.lookUpValue(procName, varName);
 		} else {
 			final String funcName = mFuncNameStack.peek();
 			final String varName = expr.getIdentifier();
-			return lookUpFuncValue(funcName, varName);
+			return mFuncValuation.lookUpValue(funcName, varName);
 		}
 	}
 
@@ -221,7 +197,7 @@ public class ExprEvaluator {
 		ArrayList<String> argsName = mFuncInitValuationInfo.getInParams(funcName);
 		assert(args.length == argsName.size());
 		for(int i = 0; i < args.length; i++) {
-			setFuncValue(funcName, argsName.get(i), evaluate(args[i]));
+			mFuncValuation.setValue(funcName, argsName.get(i), evaluate(args[i]));
 		}
 		/**
 		 * Type casting is not yet implemented.

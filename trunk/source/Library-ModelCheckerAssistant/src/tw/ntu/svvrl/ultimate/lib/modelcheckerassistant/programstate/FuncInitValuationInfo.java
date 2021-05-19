@@ -10,13 +10,13 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.FunctionDeclaration;
 
 public class FuncInitValuationInfo {
 	/**
-	 * the initial valuation table of in params for each boogie function.
+	 * the initial valuation of in params for each boogie function.
 	 * This is used in functionApplication evaluation in {@link ExprEvaluator#evaluate(Expression)}
 	 * Type: 
 	 * String			× String		× Object	
 	 * function name	× identifier	× value
 	 */
-	private final Map<String, Map<String, Object>> mFuncInitValuation = new HashMap<>();
+	private final Valuation mFuncInitValuation = new Valuation();
 	
 	/**
 	 * Function name to list of in params.
@@ -31,8 +31,8 @@ public class FuncInitValuationInfo {
 	}
 	
 	private void createFunc2InParams() {
-		for(String funcName : mFuncInitValuation.keySet()) {
-			Map<String, Object> inParam2Value = mFuncInitValuation.get(funcName);
+		for(String funcName : mFuncInitValuation.getProcOrFuncNames()) {
+			Map<String, Object> inParam2Value = mFuncInitValuation.getProcOrFuncId2V(funcName);
 			ArrayList<String> inParams = new ArrayList<>();
 			for(String inParamName : inParam2Value.keySet()) {
 				inParams.add(inParamName);
@@ -56,7 +56,7 @@ public class FuncInitValuationInfo {
 		}
 	}
 	
-	public final Map<String, Map<String, Object>> getFuncInitValuation() {
+	public final Valuation getFuncInitValuation() {
 		return mFuncInitValuation;
 	}
 	

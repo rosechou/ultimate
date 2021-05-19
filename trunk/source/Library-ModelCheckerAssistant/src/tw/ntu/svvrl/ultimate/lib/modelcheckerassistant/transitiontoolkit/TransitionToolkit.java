@@ -58,6 +58,9 @@ public class TransitionToolkit {
 	public ProgramState doTransition() {
 		if (mEdge instanceof CodeBlock) {
 			ProgramState newState = mCodeBlockExecutor.execute();
+			/**
+			 * Set new state's CorrespondingIcfgLoc to original edge's target.
+			 */
 			newState.setCorrespondingIcfgLoc((BoogieIcfgLocation) mEdge.getTarget());
 			return newState;
 		} else if (mEdge instanceof RootEdge) {

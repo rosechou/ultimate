@@ -48,7 +48,7 @@ public class VarAndParamAdder {
 	 * Because function params do not stored in symbol table,
 	 * we manually process it from the declaration level.
 	 */
-	public void addFunInParams2Valuation(final Map<String, Map<String, Object>> valuation
+	public void addFunInParams2Valuation(final Valuation valuation
 			, final FunctionDeclaration funcDecl) {
 		/**
 		 * process all in params
@@ -64,7 +64,7 @@ public class VarAndParamAdder {
 	 * @param valuation
 	 * 		the value map should be added.
 	 */
-	public void addGlobalVars2Valuation(final Map<String, Map<String, Object>> valuation) {
+	public void addGlobalVars2Valuation(final Valuation valuation) {
 		
 		/**
 		 * process all global variables
@@ -79,7 +79,7 @@ public class VarAndParamAdder {
 	 * @param valuation
 	 * 		the value map should be added.
 	 */
-	public void addOldGlobalVars2Valuation(final Map<String, Map<String, Object>> valuation) {
+	public void addOldGlobalVars2Valuation(final Valuation valuation) {
 		
 		/**
 		 * process all global variables
@@ -94,7 +94,7 @@ public class VarAndParamAdder {
 	 * @param valuation
 	 * 		the value map should be added.
 	 */
-	public void addLocalVars2Valuation(final Map<String, Map<String, Object>> valuation) {
+	public void addLocalVars2Valuation(final Valuation valuation) {
 		for(final String procName : mProcNames) {
 			for(final ILocalProgramVar localVar : mBoogie2SmtSymbolTable.getLocals(procName)) {
 				addVar2Valuation(valuation, localVar);
@@ -108,7 +108,7 @@ public class VarAndParamAdder {
 	 * @param valuation
 	 * 		the value map should be added.
 	 */
-	public void addProcInParams2Valuation(final Map<String, Map<String, Object>> valuation) {
+	public void addProcInParams2Valuation(final Valuation valuation) {
 		for(final String procName : mProcNames) {
 			for(final ILocalProgramVar inParam : mBoogie2SmtSymbolTable.getProc2InParams().get(procName)) {
 				addVar2Valuation(valuation, inParam);
@@ -122,7 +122,7 @@ public class VarAndParamAdder {
 	 * @param valuation
 	 * 		the value map should be added.
 	 */
-	public void addProcOutParams2Valuation(final Map<String, Map<String, Object>> valuation) {
+	public void addProcOutParams2Valuation(final Valuation valuation) {
 		for(final String procName : mProcNames) {
 			for(final ILocalProgramVar outParam : mBoogie2SmtSymbolTable.getProc2OutParams().get(procName)) {
 				addVar2Valuation(valuation, outParam);
@@ -141,7 +141,7 @@ public class VarAndParamAdder {
 	 * @param var
 	 * 		the target variable.
 	 */
-	private void addVar2Valuation(final Map<String, Map<String, Object>> valuation, final IProgramVar var) {
+	private void addVar2Valuation(final Valuation valuation, final IProgramVar var) {
 		final String procName = var.getProcedure();
 		final BoogieASTNode boogieASTNode = mBoogie2SmtSymbolTable.getAstNode(var);
 		boolean isOld = false;
@@ -156,7 +156,7 @@ public class VarAndParamAdder {
 	/**
 	 * Caution: the where clause in Boogie's syntax is not yet implemented.
 	 */
-	private void addVarList2Valuation(final Map<String, Map<String, Object>> valuation
+	private void addVarList2Valuation(final Valuation valuation
 			, final String procOrFuncName, final VarList varList, final boolean isOld) {
 		if(varList.getWhereClause() != null) {
 			throw new NotImplementedException("Where clause is not yet supported.");
@@ -170,28 +170,7 @@ public class VarAndParamAdder {
 			if(isOld) {
 				varName = "old(" + varName + ")";
 			}
-			setValue(valuation, procOrFuncName, varName, value);
-		}
-	}
-	
-	/**
-	 * Update the variable value in the valuation table.
-	 * @param valuation
-	 * 			the table needs to be updated.
-	 * @param procOrFuncName
-	 * @param varName
-	 * @param value
-	 */
-	private void setValue(final Map<String, Map<String, Object>> valuation
-			, final String procOrFuncName, final String varName
-			, final Object value) {
-		final Map<String, Object> id2v = new HashMap<>();
-		id2v.put(varName, value);
-
-		if(valuation.containsKey(procOrFuncName)) {
-			valuation.get(procOrFuncName).putAll(id2v);
-		} else {
-			valuation.put(procOrFuncName, id2v);
+			valuation.setValue(procOrFuncName, varName, value);
 		}
 	}
 	

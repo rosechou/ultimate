@@ -7,6 +7,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.WhileStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogiePrimitiveType;
 import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.Valuation;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -144,7 +145,7 @@ public class StatementsExecutor {
 				final String varName = ((VariableLHS)lhs[i]).getIdentifier();
 				final Object value = exprEvaluator.evaluate(rhs[i]);
 				
-				updateValuation(procName, varName, value);
+				updateProgramState(procName, varName, value);
 			} else if(lhs[i] instanceof ArrayLHS) {
 				/**
 				 * I don't know how to produce these case.
@@ -189,6 +190,12 @@ public class StatementsExecutor {
 	}
 
 	private void executeCallStatement(CallStatement stmt) {
+		/**
+		 * {@link CallStatement#isForall} is not yet implemented.
+		 */
+		String procName = stmt.getMethodName();
+		Expression[] args = stmt.getArguments();
+		
 	}
 
 	private void executeForkStatement(ForkStatement stmt) {
@@ -216,10 +223,10 @@ public class StatementsExecutor {
 				switch(((BoogiePrimitiveType) bt).getTypeCode()) {
 					case BoogiePrimitiveType.BOOL:
 						value = r.nextBoolean();
-						updateValuation(procName, varName, value);
+						updateProgramState(procName, varName, value);
 					case BoogiePrimitiveType.INT:
 						value = r.nextInt();
-						updateValuation(procName, varName, value);
+						updateProgramState(procName, varName, value);
 					case BoogiePrimitiveType.REAL:
 						throw new NotImplementedException("Boogie variable with type"
 								+ ((BoogiePrimitiveType) bt).toString() + " is not yet implemented.");
@@ -273,17 +280,11 @@ public class StatementsExecutor {
 		}
 	}
 	
-	private void updateValuation(final String procName, final String varName, final Object value) {
-		final Map<String, Map<String, Object>> newValuation = new HashMap<>();
-		newValuation.putAll(mCurrentProgramState.getValuationMap());
-		assert(newValuation.containsKey(procName));
-		
-		final Map<String, Object> id2v = newValuation.get(procName);
-		if(id2v.containsKey(varName)) {
-			id2v.replace(varName, value);
-		} else {
-			id2v.put(varName, value);
-		}
+	private void updateProgramState(final String procName, final String varName, final Object value) {
+		Valuation newValuation = mCurrentProgramState.getValuation().shallowCopy();
+		assert(newValuation.containsProcOrFunc(procName));
+		newValuation.setValue(procName, varName, value);
+
 		mCurrentProgramState = new ProgramState(newValuation, mCurrentProgramState.getFuncInitValuationInfo());
 	}
 	

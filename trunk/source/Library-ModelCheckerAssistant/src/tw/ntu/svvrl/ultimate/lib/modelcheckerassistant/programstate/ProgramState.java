@@ -23,7 +23,7 @@ public class ProgramState {
 	 * To record the valuation of boogie variables.
 	 * Type: procedure name × identifier × value
 	 */
-	private final Map<String, Map<String, Object>> mValuation;
+	private final Valuation mValuation;
 
 	/**
 	 * To specify which IcfgLocation this state is generated from.
@@ -31,21 +31,23 @@ public class ProgramState {
 	private BoogieIcfgLocation mCorrespondingIcfgLoc;
 	private final FuncInitValuationInfo mFuncInitValuationInfo;
 	
+	//private final Map<String, String[]> mProc2Inparams;
+	
 	/**
 	 * A program state constructor that only cares the valuation.
 	 * Used in {@link StatementExecutor#executeAssignmentStatement}.
 	 * @param valuation
 	 */
-	public ProgramState(final Map<String, Map<String, Object>> valuation, final FuncInitValuationInfo funcInitValuationInfo) {
-		mValuation = valuation;
+	public ProgramState(final Valuation v, final FuncInitValuationInfo funcInitValuationInfo) {
+		mValuation = v;
 		mCorrespondingIcfgLoc = null;
 		mFuncInitValuationInfo = funcInitValuationInfo;
 	}
 	
-	public ProgramState(final Map<String, Map<String, Object>> valuation,
+	public ProgramState(final Valuation v,
 						final BoogieIcfgLocation boogieIcfgLocation,
 						final FuncInitValuationInfo funcInitValuationInfo) {
-		mValuation = valuation;
+		mValuation = v;
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
 		mFuncInitValuationInfo = funcInitValuationInfo;
 	}
@@ -55,7 +57,7 @@ public class ProgramState {
 	 * valuation is shallow copied.
 	 */
 	public ProgramState(final ProgramState programState) {
-		mValuation = shallowCopyValuation(programState.getValuationMap());
+		mValuation = programState.getValuation().shallowCopy();
 		mCorrespondingIcfgLoc = programState.getCorrespondingIcfgLoc();
 		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
 	}
@@ -77,7 +79,7 @@ public class ProgramState {
 		return mFuncInitValuationInfo;
 	}
 	
-	public Map<String, Map<String, Object>> getValuationMap() {
+	public Valuation getValuation() {
 		return mValuation;
 	}
 	
@@ -142,6 +144,6 @@ public class ProgramState {
 		if(!mCorrespondingIcfgLoc.equals(anotherProgramState.getCorrespondingIcfgLoc())) {
 			return false;
 		}
-		return mValuation.equals(anotherProgramState.getValuationMap()) ? true : false;
+		return mValuation.equals(anotherProgramState.getValuation()) ? true : false;
 	}
 }

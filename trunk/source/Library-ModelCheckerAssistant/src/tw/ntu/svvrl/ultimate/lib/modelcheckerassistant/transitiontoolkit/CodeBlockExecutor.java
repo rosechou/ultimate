@@ -6,7 +6,9 @@ import org.apache.commons.lang3.NotImplementedException;
 
 import de.uni_freiburg.informatik.ultimate.boogie.ast.CallStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Call;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadCurrent;
@@ -36,6 +38,16 @@ public class CodeBlockExecutor {
 			List<Statement> stmts = ((StatementSequence) mCodeBlock).getStatements();
 			final StatementsChecker statementChecker = new StatementsChecker(stmts, mCurrentProgramState);
 			return statementChecker.checkStatementsEnable();
+		} else if(mCodeBlock instanceof Return) {
+			/**
+			 * The caller procedure and return destination's procedure should match.
+			 */
+			String TargetProcName = ((BoogieIcfgLocation) mCodeBlock.getTarget()).getProcedure();
+			if(mCurrentProgramState.getCallerProc().equals(TargetProcName)) {
+				return true;
+			} else {
+				return false;
+			}
 		} else if(mCodeBlock instanceof ParallelComposition) {
 			/**
 			 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
@@ -124,13 +136,21 @@ public class CodeBlockExecutor {
 		final StatementsExecutor statementExecutor = new StatementsExecutor(callStmt, mCurrentProgramState);
 		moveToNewState(statementExecutor.execute());
 	}
-
+	
 	private void executeSummary(final Summary summary) {
-		// TODO Auto-generated method stub
 	}
 
 	private void executeReturn(final Return returnn) {
-		// TODO Auto-generated method stub
+		CallStatement correspondingCallStmt = returnn.getCallStatement();
+		final StatementsExecutor statementExecutor = new StatementsExecutor(mCurrentProgramState);
+		String procName = correspondingCallStmt.getMethodName();
+		
+		for(VariableLHS lhs : correspondingCallStmt.getLhs()) {
+			String outParamName = lhs.getIdentifier();
+			Object v = mCurrentProgramState.getValuationCopy().lookUpValue(procName, outParamName);
+			statementExecutor.updateProgramState(procName, outParamName, v);
+		}
+		moveToNewState(statementExecutor.getCurrentState());
 	}
 
 	private void executeForkThreadCurrent(final ForkThreadCurrent forkThreadCurrent) {

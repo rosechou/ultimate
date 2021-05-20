@@ -65,6 +65,16 @@ public class StatementsExecutor {
 	}
 	
 	/**
+	 * For no statement. ({@link Return} code block)
+	 * @param programState
+	 */
+	public StatementsExecutor(final ProgramState programState) {
+		mStatements = null;
+		mStatement = null;
+		mCurrentProgramState = new ProgramState(programState);
+	}
+	
+	/**
 	 * Execute one or many statements
 	 * @return
 	 * 		the new state reached after executing
@@ -205,6 +215,7 @@ public class StatementsExecutor {
 		for(int i = 0; i < args.length; i++) {
 			updateProgramState(procName, argsName.get(i), exprEvaluator.evaluate(args[i]));
 		}
+		mCurrentProgramState.setCallerProc(procName);
 		pushLhs(stmt.getLhs());
 	}
 
@@ -290,7 +301,7 @@ public class StatementsExecutor {
 		}
 	}
 	
-	private void updateProgramState(final String procName, final String varName, final Object value) {
+	public void updateProgramState(final String procName, final String varName, final Object value) {
 		Valuation newValuation = mCurrentProgramState.getValuationCopy();
 		assert(newValuation.containsProcOrFunc(procName));
 		newValuation.setValue(procName, varName, value);
@@ -303,6 +314,9 @@ public class StatementsExecutor {
 		mCurrentProgramState = new ProgramState(newState);
 	}
 	
+	public ProgramState getCurrentState() {
+		return mCurrentProgramState;
+	}
 
 	private void pushLhs(VariableLHS[] lhs) {
 		mCurrentProgramState.pushLhsStack(lhs);

@@ -15,10 +15,11 @@ public class ProgramStateFactory {
 	
 	/**
 	 * States which are generated from the same rcfg
-	 * have the same funcInitValuationInfo and proc2InParams.
+	 * have the same funcInitValuationInfo, proc2InParams and proc2OutParams.
 	 */
 	private final FuncInitValuationInfo mFuncInitValuationInfo;
 	private final Map<String, List<String>> mProc2InParams;
+	private final Map<String, List<String>> mProc2OutParams;
 	
 	private final VarAndParamAdder mVarAdder;
 	
@@ -26,21 +27,32 @@ public class ProgramStateFactory {
 			, final CfgSmtToolkit cfgSmtToolkit) {
 		mFuncInitValuationInfo = new FuncInitValuationInfo(
 			boogie2SmtSymbolTable.getBoogieDeclarations().getFunctionDeclarations());
-		mProc2InParams = createProc2InPrams(boogie2SmtSymbolTable);
+		mProc2InParams = createProc2Prams(boogie2SmtSymbolTable, "in");
+		mProc2OutParams = createProc2Prams(boogie2SmtSymbolTable, "out");
 		mVarAdder = new VarAndParamAdder(boogie2SmtSymbolTable, cfgSmtToolkit.getProcedures());
 	}
 	
 	
 
-	private Map<String, List<String>> createProc2InPrams(Boogie2SmtSymbolTable boogie2SmtSymbolTable) {
+	private Map<String, List<String>> createProc2Prams(Boogie2SmtSymbolTable boogie2SmtSymbolTable
+			, String inOrOut) {
 		final Map<String, List<String>> result = new HashMap<>();
-		final Map<String, List<ILocalProgramVar>> p2ip = boogie2SmtSymbolTable.getProc2InParams();
-		for(final String procName : p2ip.keySet()) {
-			List<String> inParamNames = new ArrayList<>();
-			for(final ILocalProgramVar inParam : p2ip.get(procName)) {
-				inParamNames.add(inParam.getIdentifier());
+		Map<String, List<ILocalProgramVar>> p2p = new HashMap<>();
+		if(inOrOut.equals("in")) {
+			p2p = boogie2SmtSymbolTable.getProc2InParams();
+		} else if(inOrOut.equals("out")) {
+			p2p = boogie2SmtSymbolTable.getProc2OutParams();
+		} else {
+			throw new UnsupportedOperationException("Invalid argument: "
+					+ inOrOut);
+		}
+				
+		for(final String procName : p2p.keySet()) {
+			List<String> paramNames = new ArrayList<>();
+			for(final ILocalProgramVar param : p2p.get(procName)) {
+				paramNames.add(param.getIdentifier());
 			}
-			result.put(procName, inParamNames);
+			result.put(procName, paramNames);
 		}
 		return result;
 	}
@@ -64,7 +76,8 @@ public class ProgramStateFactory {
 		mVarAdder.addLocalVars2Valuation(valuation);
 		mVarAdder.addProcInParams2Valuation(valuation);
 		mVarAdder.addProcOutParams2Valuation(valuation);
-		return new ProgramState(valuation, loc, mFuncInitValuationInfo, mProc2InParams);
+		return new ProgramState(valuation, loc, mFuncInitValuationInfo
+				, mProc2InParams, mProc2OutParams);
 	}
 	
 //	public ProgramState createNextProgramState(ProgramState lastProgramState, transition) {

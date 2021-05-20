@@ -215,7 +215,7 @@ public class StatementsExecutor {
 		for(int i = 0; i < args.length; i++) {
 			updateProgramState(procName, argsName.get(i), exprEvaluator.evaluate(args[i]));
 		}
-		mCurrentProgramState.setCallerProc(procName);
+		mCurrentProgramState.pushProc(procName);
 	}
 
 	private void executeForkStatement(ForkStatement stmt) {

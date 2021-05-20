@@ -43,7 +43,7 @@ public class CodeBlockExecutor {
 			 * The caller procedure and return destination's procedure should match.
 			 */
 			String TargetProcName = ((BoogieIcfgLocation) mCodeBlock.getTarget()).getProcedure();
-			if(mCurrentProgramState.getCallerProc().equals(TargetProcName)) {
+			if(mCurrentProgramState.getCurrentProc().equals(TargetProcName)) {
 				return true;
 			} else {
 				return false;
@@ -151,6 +151,7 @@ public class CodeBlockExecutor {
 			statementExecutor.updateProgramState(procName, outParamName, v);
 		}
 		moveToNewState(statementExecutor.getCurrentState());
+		mCurrentProgramState.popProc();
 	}
 
 	private void executeForkThreadCurrent(final ForkThreadCurrent forkThreadCurrent) {

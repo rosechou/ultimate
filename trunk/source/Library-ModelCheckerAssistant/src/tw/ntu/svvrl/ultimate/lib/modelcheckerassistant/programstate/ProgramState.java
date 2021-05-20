@@ -36,21 +36,14 @@ public class ProgramState {
 	private final FuncInitValuationInfo mFuncInitValuationInfo;
 	
 	private final Map<String, List<String>> mProc2InParams;
-	/**
-	 * The procedure that calls the current procedure.
-	 */
-	private String mCallerProc;
-	private String mCurrentProc;
 	
 	/**
-	 * Record the variables where the return values are written to
-	 * in the {@link CallStatement}.
-	 * 
-	 * call : push
-	 * return : assign the stack top to the return value and pop 
+	 * The stack that keeps the procedure calls.
+	 * top element is the current procedure name.
+	 * call: push
+	 * return: pop
 	 */
-	private Stack<VariableLHS[]> mLhsStack = new Stack<>();
-	
+	private Stack<String> mProcStack = new Stack<>();
 	
 	
 	/**
@@ -69,8 +62,7 @@ public class ProgramState {
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
 		mFuncInitValuationInfo = funcInitValuationInfo;
 		mProc2InParams = proc2InParams;
-		mCallerProc = null;
-		mCurrentProc = mCorrespondingIcfgLoc.getProcedure();
+		mProcStack.push(null);
 	}
 	
 	/**
@@ -87,8 +79,7 @@ public class ProgramState {
 		mCorrespondingIcfgLoc = null;
 		mFuncInitValuationInfo = oldState.getFuncInitValuationInfo();
 		mProc2InParams = oldState.getProc2InParams();
-		mCallerProc = oldState.getCallerProc();
-		mCurrentProc = oldState.getCallerProc();
+		mProcStack = oldState.getProcStackCopy();
 	}
 	
 	/**
@@ -100,8 +91,7 @@ public class ProgramState {
 		mCorrespondingIcfgLoc = programState.getCorrespondingIcfgLoc();
 		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
 		mProc2InParams = programState.getProc2InParams();
-		mCallerProc = programState.getCallerProc();
-		mCurrentProc = programState.getCallerProc();
+		mProcStack = programState.getProcStackCopy();
 	}
 
 	public BoogieIcfgLocation getCorrespondingIcfgLoc() {
@@ -116,20 +106,24 @@ public class ProgramState {
 		return mProc2InParams;
 	}
 	
-	public String getCallerProc() {
-		return mCallerProc;
-	}
-	
-	public void setCallerProc(final String c) {
-		mCallerProc = c;
-	}
-	
-	private String getCurrentProc() {
-		return mCallerProc;
-	}
-	
 	public Valuation getValuationCopy() {
 		return mValuation.clone();
+	}
+	
+	public Stack<String> getProcStackCopy() {
+		return (Stack<String>) mProcStack.clone();
+	}
+	
+	public void pushProc(String procName) {
+		mProcStack.push(procName);
+	}
+	
+	public void popProc() {
+		mProcStack.pop();
+	}
+	
+	public String getCurrentProc() {
+		return mProcStack.peek();
 	}
 	
 	/**

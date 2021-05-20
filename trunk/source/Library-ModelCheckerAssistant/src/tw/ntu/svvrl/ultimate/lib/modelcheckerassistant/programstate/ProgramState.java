@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
+
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssignmentStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
@@ -35,17 +38,15 @@ public class ProgramState {
 	private final Map<String, List<String>> mProc2InParams;
 	
 	/**
-	 * A program state constructor that only cares the valuation.
-	 * Used in {@link StatementsExecutor#updateProgramState}'s
-	 * Pass the old state to get FuncInitValuationInfo and Proc2InParams.
-	 * @param valuation
+	 * Record the variables where the return values are written to
+	 * in the {@link CallStatement}.
+	 * 
+	 * call : push
+	 * return : assign the stack top to the return value and pop 
 	 */
-	public ProgramState(final Valuation v, final ProgramState oldState) {
-		mValuation = v.clone();
-		mCorrespondingIcfgLoc = null;
-		mFuncInitValuationInfo = oldState.getFuncInitValuationInfo();
-		mProc2InParams = oldState.getProc2InParams();
-	}
+	private Stack<VariableLHS[]> mLhsStack = new Stack<>();
+	
+	
 	
 	/**
 	 * Initial constructor.
@@ -66,14 +67,32 @@ public class ProgramState {
 	}
 	
 	/**
+	 * A program state constructor that updates the valuation.
+	 * Thus the field <code>mCorrespondingIcfgLoc</code> may move
+	 * but we have no idea where it is. This field remains unknown until
+	 * {@link #setCorrespondingIcfgLoc} is called.
+	 * Used in {@link StatementsExecutor#updateProgramState}'s
+	 * Pass the old state to get FuncInitValuationInfo and Proc2InParams.
+	 * @param valuation
+	 */
+	public ProgramState(final Valuation v, final ProgramState oldState) {
+		mValuation = v.clone();
+		mCorrespondingIcfgLoc = null;
+		mFuncInitValuationInfo = oldState.getFuncInitValuationInfo();
+		mProc2InParams = oldState.getProc2InParams();
+		mLhsStack = (Stack<VariableLHS[]>) oldState.getLhsStack().clone();
+	}
+	
+	/**
 	 * copy constructor
-	 * valuation is deep copied.
+	 * valuation and stack are deep copied.
 	 */
 	public ProgramState(final ProgramState programState) {
 		mValuation = programState.getValuation().clone();
 		mCorrespondingIcfgLoc = programState.getCorrespondingIcfgLoc();
 		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
 		mProc2InParams = programState.getProc2InParams();
+		mLhsStack = (Stack<VariableLHS[]>) programState.getLhsStack().clone();
 	}
 
 	public BoogieIcfgLocation getCorrespondingIcfgLoc() {
@@ -90,6 +109,10 @@ public class ProgramState {
 	
 	public Valuation getValuation() {
 		return mValuation;
+	}
+	
+	private Stack<VariableLHS[]> getLhsStack(){
+		return mLhsStack;
 	}
 	
 	/**

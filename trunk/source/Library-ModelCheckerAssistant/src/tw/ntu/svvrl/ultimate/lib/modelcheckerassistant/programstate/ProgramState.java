@@ -115,6 +115,18 @@ public class ProgramState {
 		return mLhsStack;
 	}
 	
+	public void pushLhsStack(VariableLHS[] lhs){
+		mLhsStack.push(lhs);
+	}
+	
+	public void popLhsStack(){
+		mLhsStack.pop();
+	}
+	
+	public VariableLHS[] peekLhsStack(){
+		return mLhsStack.peek();
+	}
+	
 	/**
 	 * This method is used for make up the unknown <code>mCorrespondingIcfgLoc</code>.
 	 * see {@link #ProgramState(Map, FuncInitValuationInfo)}.
@@ -125,7 +137,7 @@ public class ProgramState {
 			mCorrespondingIcfgLoc = icfgLocation;
 		}
 		else {
-			throw new UnsupportedOperationException("Cannot change a state\'s"
+			throw new UnsupportedOperationException("Cannot change a state\'s "
 					+ "mCorrespondingIcfgLoc.");
 		}
 	}

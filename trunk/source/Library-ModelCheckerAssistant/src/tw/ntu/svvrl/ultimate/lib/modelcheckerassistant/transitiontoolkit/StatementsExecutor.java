@@ -199,10 +199,13 @@ public class StatementsExecutor {
 		
 		List<String> argsName = mCurrentProgramState.getProc2InParams().get(procName);
 		assert(args.length == argsName.size());
+		/**
+		 * assign values to in params
+		 */
 		for(int i = 0; i < args.length; i++) {
 			updateProgramState(procName, argsName.get(i), exprEvaluator.evaluate(args[i]));
 		}
-		
+		pushLhs(stmt.getLhs());
 	}
 
 	private void executeForkStatement(ForkStatement stmt) {
@@ -298,5 +301,10 @@ public class StatementsExecutor {
 	
 	private void setCurrentState(ProgramState newState) {
 		mCurrentProgramState = new ProgramState(newState);
+	}
+	
+
+	private void pushLhs(VariableLHS[] lhs) {
+		mCurrentProgramState.pushLhsStack(lhs);
 	}
 }

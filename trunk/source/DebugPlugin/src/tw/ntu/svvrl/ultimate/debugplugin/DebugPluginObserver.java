@@ -97,9 +97,10 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		ProgramStateExplorer explorer = mModelCheckerAssistant.getStateExplorer();
 		initialStates = explorer.getInitialStates();
 		
-		ProgramState aState = explorer.getLocStateById("mainENTRY");
+		ProgramState aState = explorer.getLocStateById("L14");
 		List<IcfgEdge> edges = aState.getEnableTrans();
-		aState.doTransition(edges.get(0));
+		IcfgEdge edge = edges.get(1);
+		ProgramState nextState = aState.doTransition(edge);
 		/*-------------------------------*/
 		
 //		for(ProgramState initialState : initialStates) {

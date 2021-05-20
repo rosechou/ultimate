@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
 
+import de.uni_freiburg.informatik.ultimate.boogie.ast.CallStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Call;
@@ -119,7 +120,9 @@ public class CodeBlockExecutor {
 	}
 
 	private void executeCall(final Call call) {
-		// TODO Auto-generated method stub
+		CallStatement callStmt = call.getCallStatement();
+		final StatementsExecutor statementExecutor = new StatementsExecutor(callStmt, mCurrentProgramState);
+		moveToNewState(statementExecutor.execute());
 	}
 
 	private void executeSummary(final Summary summary) {

@@ -216,7 +216,6 @@ public class StatementsExecutor {
 			updateProgramState(procName, argsName.get(i), exprEvaluator.evaluate(args[i]));
 		}
 		mCurrentProgramState.setCallerProc(procName);
-		pushLhs(stmt.getLhs());
 	}
 
 	private void executeForkStatement(ForkStatement stmt) {
@@ -318,7 +317,4 @@ public class StatementsExecutor {
 		return mCurrentProgramState;
 	}
 
-	private void pushLhs(VariableLHS[] lhs) {
-		mCurrentProgramState.pushLhsStack(lhs);
-	}
 }

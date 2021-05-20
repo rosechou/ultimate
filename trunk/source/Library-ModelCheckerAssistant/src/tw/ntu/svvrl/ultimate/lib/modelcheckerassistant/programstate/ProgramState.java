@@ -36,8 +36,6 @@ public class ProgramState {
 	private final FuncInitValuationInfo mFuncInitValuationInfo;
 	
 	private final Map<String, List<String>> mProc2InParams;
-	private final Map<String, List<String>> mProc2OutParams;
-	
 	/**
 	 * The procedure that calls the current procedure.
 	 */
@@ -66,13 +64,11 @@ public class ProgramState {
 	public ProgramState(final Valuation v,
 						final BoogieIcfgLocation boogieIcfgLocation,
 						final FuncInitValuationInfo funcInitValuationInfo,
-						final Map<String, List<String>> proc2InParams,
-						final Map<String, List<String>> proc2OutParams) {
+						final Map<String, List<String>> proc2InParams) {
 		mValuation = v.clone();
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
 		mFuncInitValuationInfo = funcInitValuationInfo;
 		mProc2InParams = proc2InParams;
-		mProc2OutParams = proc2OutParams;
 		mCallerProc = null;
 		mCurrentProc = mCorrespondingIcfgLoc.getProcedure();
 	}
@@ -91,8 +87,6 @@ public class ProgramState {
 		mCorrespondingIcfgLoc = null;
 		mFuncInitValuationInfo = oldState.getFuncInitValuationInfo();
 		mProc2InParams = oldState.getProc2InParams();
-		mProc2OutParams = oldState.getProc2OutParams();
-		mLhsStack = (Stack<VariableLHS[]>) oldState.getLhsStack().clone();
 		mCallerProc = oldState.getCallerProc();
 		mCurrentProc = oldState.getCallerProc();
 	}
@@ -106,8 +100,6 @@ public class ProgramState {
 		mCorrespondingIcfgLoc = programState.getCorrespondingIcfgLoc();
 		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
 		mProc2InParams = programState.getProc2InParams();
-		mProc2OutParams = programState.getProc2OutParams();
-		mLhsStack = (Stack<VariableLHS[]>) programState.getLhsStack().clone();
 		mCallerProc = programState.getCallerProc();
 		mCurrentProc = programState.getCallerProc();
 	}
@@ -121,10 +113,6 @@ public class ProgramState {
 	}
 	
 	public Map<String, List<String>> getProc2InParams() {
-		return mProc2InParams;
-	}
-	
-	public Map<String, List<String>> getProc2OutParams() {
 		return mProc2InParams;
 	}
 	
@@ -142,22 +130,6 @@ public class ProgramState {
 	
 	public Valuation getValuationCopy() {
 		return mValuation.clone();
-	}
-	
-	private Stack<VariableLHS[]> getLhsStack(){
-		return mLhsStack;
-	}
-	
-	public void pushLhsStack(final VariableLHS[] lhs){
-		mLhsStack.push(lhs);
-	}
-	
-	public void popLhsStack(){
-		mLhsStack.pop();
-	}
-	
-	public VariableLHS[] peekLhsStack(){
-		return mLhsStack.peek();
 	}
 	
 	/**

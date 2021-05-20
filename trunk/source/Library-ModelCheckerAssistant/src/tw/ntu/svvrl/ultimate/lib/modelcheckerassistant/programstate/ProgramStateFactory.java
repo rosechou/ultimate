@@ -19,7 +19,6 @@ public class ProgramStateFactory {
 	 */
 	private final FuncInitValuationInfo mFuncInitValuationInfo;
 	private final Map<String, List<String>> mProc2InParams;
-	private final Map<String, List<String>> mProc2OutParams;
 	
 	private final VarAndParamAdder mVarAdder;
 	
@@ -28,7 +27,6 @@ public class ProgramStateFactory {
 		mFuncInitValuationInfo = new FuncInitValuationInfo(
 			boogie2SmtSymbolTable.getBoogieDeclarations().getFunctionDeclarations());
 		mProc2InParams = createProc2Prams(boogie2SmtSymbolTable, "in");
-		mProc2OutParams = createProc2Prams(boogie2SmtSymbolTable, "out");
 		mVarAdder = new VarAndParamAdder(boogie2SmtSymbolTable, cfgSmtToolkit.getProcedures());
 	}
 	
@@ -77,7 +75,7 @@ public class ProgramStateFactory {
 		mVarAdder.addProcInParams2Valuation(valuation);
 		mVarAdder.addProcOutParams2Valuation(valuation);
 		return new ProgramState(valuation, loc, mFuncInitValuationInfo
-				, mProc2InParams, mProc2OutParams);
+				, mProc2InParams);
 	}
 	
 //	public ProgramState createNextProgramState(ProgramState lastProgramState, transition) {

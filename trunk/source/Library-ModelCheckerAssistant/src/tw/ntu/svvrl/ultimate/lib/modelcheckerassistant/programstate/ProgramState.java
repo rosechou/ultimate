@@ -62,7 +62,7 @@ public class ProgramState {
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
 		mFuncInitValuationInfo = funcInitValuationInfo;
 		mProc2InParams = proc2InParams;
-		mProcStack.push(null);
+		mProcStack.push(mCorrespondingIcfgLoc.getProcedure());
 	}
 	
 	/**
@@ -126,19 +126,26 @@ public class ProgramState {
 		return mProcStack.peek();
 	}
 	
+	public String getCallerProc() {
+		if(mProcStack.size() > 1) {
+			String temp = mProcStack.peek();
+			mProcStack.pop();
+			String result = mProcStack.peek();
+			mProcStack.push(temp);
+			return result;
+		} else {
+			throw new UnsupportedOperationException("No caller proc.");
+		}
+		
+	}
+	
 	/**
 	 * This method is used for make up the unknown <code>mCorrespondingIcfgLoc</code>.
 	 * see {@link #ProgramState(Map, FuncInitValuationInfo)}.
 	 * @param icfgLocation
 	 */
 	public void setCorrespondingIcfgLoc(final BoogieIcfgLocation icfgLocation) {
-		if(mCorrespondingIcfgLoc == null) {
-			mCorrespondingIcfgLoc = icfgLocation;
-		}
-		else {
-			throw new UnsupportedOperationException("Cannot change a state\'s "
-					+ "mCorrespondingIcfgLoc.");
-		}
+		mCorrespondingIcfgLoc = icfgLocation;
 	}
 	
 	/**

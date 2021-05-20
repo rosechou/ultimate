@@ -40,10 +40,11 @@ public class CodeBlockExecutor {
 			return statementChecker.checkStatementsEnable();
 		} else if(mCodeBlock instanceof Return) {
 			/**
-			 * The caller procedure and return destination's procedure should match.
+			 * The caller procedure (top-1)
+			 * and return destination's procedure should match.
 			 */
 			String TargetProcName = ((BoogieIcfgLocation) mCodeBlock.getTarget()).getProcedure();
-			if(mCurrentProgramState.getCurrentProc().equals(TargetProcName)) {
+			if(mCurrentProgramState.getCallerProc().equals(TargetProcName)) {
 				return true;
 			} else {
 				return false;

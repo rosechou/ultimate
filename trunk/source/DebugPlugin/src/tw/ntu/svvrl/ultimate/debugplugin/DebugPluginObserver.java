@@ -108,6 +108,18 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		edge = edges.get(0);
 		ProgramState dState = cState.doTransition(edge);
 		edges = dState.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState eState = dState.doTransition(edge);
+		edges = eState.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState fState = eState.doTransition(edge);
+		edges = fState.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState gState = fState.doTransition(edge);
+		edges = gState.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState hState = gState.doTransition(edge);
+		edges = hState.getEnableTrans();
 		/*-------------------------------*/
 		
 //		for(ProgramState initialState : initialStates) {

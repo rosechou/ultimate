@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class Valuation {
+public class Valuation implements Cloneable {
 	private final Map<String, Map<String, Object>> mValueMap = new HashMap<>();
 	
 	public Valuation() {
@@ -14,14 +14,20 @@ public class Valuation {
 		mValueMap.putAll(valueMap);
 	}
 	
-	public Valuation shallowCopy(){
+	/**
+	 * deep copy
+	 */
+	@Override
+	public Valuation clone()
+    {
 		Map<String, Map<String, Object>> val = new HashMap<>();
 		for(String procName : mValueMap.keySet()) {
 			Map<String, Object> id2v = new HashMap<>(mValueMap.get(procName));
 			val.put(procName, id2v);
 		}
 		return new Valuation(val);
-	}
+    }
+
 	
 	/**
 	 * Update the value map.

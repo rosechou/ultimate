@@ -41,7 +41,7 @@ public class ProgramState {
 	 * @param valuation
 	 */
 	public ProgramState(final Valuation v, final ProgramState oldState) {
-		mValuation = v;
+		mValuation = v.clone();
 		mCorrespondingIcfgLoc = null;
 		mFuncInitValuationInfo = oldState.getFuncInitValuationInfo();
 		mProc2InParams = oldState.getProc2InParams();
@@ -59,7 +59,7 @@ public class ProgramState {
 						final BoogieIcfgLocation boogieIcfgLocation,
 						final FuncInitValuationInfo funcInitValuationInfo,
 						final Map<String, List<String>> proc2InParams) {
-		mValuation = v;
+		mValuation = v.clone();
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
 		mFuncInitValuationInfo = funcInitValuationInfo;
 		mProc2InParams = proc2InParams;
@@ -67,22 +67,13 @@ public class ProgramState {
 	
 	/**
 	 * copy constructor
-	 * valuation is shallow copied.
+	 * valuation is deep copied.
 	 */
 	public ProgramState(final ProgramState programState) {
-		mValuation = programState.getValuation().shallowCopy();
+		mValuation = programState.getValuation().clone();
 		mCorrespondingIcfgLoc = programState.getCorrespondingIcfgLoc();
 		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
 		mProc2InParams = programState.getProc2InParams();
-	}
-	
-	private Map<String, Map<String, Object>> shallowCopyValuation(final Map<String, Map<String, Object>> valuationMap) {
-		Map<String, Map<String, Object>> val = new HashMap<>();
-		for(String procName : valuationMap.keySet()) {
-			Map<String, Object> id2v = new HashMap<>(valuationMap.get(procName));
-			val.put(procName, id2v);
-		}
-		return val;
 	}
 
 	public BoogieIcfgLocation getCorrespondingIcfgLoc() {

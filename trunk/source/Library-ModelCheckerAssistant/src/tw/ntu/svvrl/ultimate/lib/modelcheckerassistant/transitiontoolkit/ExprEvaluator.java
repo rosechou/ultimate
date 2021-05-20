@@ -55,13 +55,13 @@ public class ExprEvaluator {
 	
 	
 	public ExprEvaluator(final ProgramState programState) {
-		mValuation = programState.getValuation().shallowCopy();
+		mValuation = programState.getValuation().clone();
 		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
 		createFuncInitValuation(mFuncInitValuationInfo);
 	}
 	
 	private void createFuncInitValuation(FuncInitValuationInfo funcInitValuationInfo) {
-		mFuncValuation = funcInitValuationInfo.getFuncInitValuation().shallowCopy();
+		mFuncValuation = funcInitValuationInfo.getFuncInitValuation().clone();
 		
 		/**
 		 * Put all global variables to each function for {@link #evaluateFunctionApplication}

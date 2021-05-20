@@ -195,6 +195,13 @@ public class StatementsExecutor {
 		 */
 		String procName = stmt.getMethodName();
 		Expression[] args = stmt.getArguments();
+		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentProgramState);
+		
+		List<String> argsName = mCurrentProgramState.getProc2InParams().get(procName);
+		assert(args.length == argsName.size());
+		for(int i = 0; i < args.length; i++) {
+			updateProgramState(procName, argsName.get(i), exprEvaluator.evaluate(args[i]));
+		}
 		
 	}
 
@@ -285,7 +292,7 @@ public class StatementsExecutor {
 		assert(newValuation.containsProcOrFunc(procName));
 		newValuation.setValue(procName, varName, value);
 
-		mCurrentProgramState = new ProgramState(newValuation, mCurrentProgramState.getFuncInitValuationInfo());
+		mCurrentProgramState = new ProgramState(newValuation, mCurrentProgramState);
 	}
 	
 	

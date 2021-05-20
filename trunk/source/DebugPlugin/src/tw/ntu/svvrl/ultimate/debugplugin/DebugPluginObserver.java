@@ -29,6 +29,7 @@ package tw.ntu.svvrl.ultimate.debugplugin;
 
 import java.util.ArrayList;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.*;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
 
 import java.util.HashSet;
@@ -90,13 +91,13 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		// new crawler here. 
 //		mModelCheckerAssistant = new ModelCheckerAssistant(mNeverClaimNWAContainer.getValue(), mRcfg, mLogger, mServices);
 		mModelCheckerAssistant = new ModelCheckerAssistant(mRcfg, mLogger, mServices);
-		mLogger.info("Break point...");
-		Set<ProgramState> initialStates = new HashSet<>();
-		initialStates = mModelCheckerAssistant.getStateExplorer().getInitialStates();
+		
 		/*-----------debugging-----------*/
-		List<IcfgEdge> edges = ((ProgramState) initialStates.toArray()[0]).getEnableTrans();
-		((ProgramState) initialStates.toArray()[0]).doTransition(edges.get(0));
-		//ProgramState aState = mModelCheckerAssistant.getStateExplorer().getLocState();
+		Set<ProgramState> initialStates = new HashSet<>();
+		ProgramStateExplorer explorer = mModelCheckerAssistant.getStateExplorer();
+		initialStates = explorer.getInitialStates();
+		
+		ProgramState aState = explorer.getLocStateById("L14");
 		//aState.getEnableTrans();
 		/*-------------------------------*/
 		

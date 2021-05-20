@@ -194,7 +194,7 @@ public class ExprEvaluator {
 		 * Set parameters' values.
 		 */
 		Expression[] args = expr.getArguments();
-		ArrayList<String> argsName = mFuncInitValuationInfo.getInParams(funcName);
+		List<String> argsName = mFuncInitValuationInfo.getInParams(funcName);
 		assert(args.length == argsName.size());
 		for(int i = 0; i < args.length; i++) {
 			mFuncValuation.setValue(funcName, argsName.get(i), evaluate(args[i]));

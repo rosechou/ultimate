@@ -9,6 +9,7 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.I
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
 
 /**
  * This class represents a boogie program state.
@@ -31,25 +32,37 @@ public class ProgramState {
 	private BoogieIcfgLocation mCorrespondingIcfgLoc;
 	private final FuncInitValuationInfo mFuncInitValuationInfo;
 	
-	//private final Map<String, String[]> mProc2Inparams;
+	private final Map<String, List<String>> mProc2InParams;
 	
 	/**
 	 * A program state constructor that only cares the valuation.
-	 * Used in {@link StatementExecutor#executeAssignmentStatement}.
+	 * Used in {@link StatementsExecutor#updateProgramState}'s
+	 * Pass the old state to get FuncInitValuationInfo and Proc2InParams.
 	 * @param valuation
 	 */
-	public ProgramState(final Valuation v, final FuncInitValuationInfo funcInitValuationInfo) {
+	public ProgramState(final Valuation v, final ProgramState oldState) {
 		mValuation = v;
 		mCorrespondingIcfgLoc = null;
-		mFuncInitValuationInfo = funcInitValuationInfo;
+		mFuncInitValuationInfo = oldState.getFuncInitValuationInfo();
+		mProc2InParams = oldState.getProc2InParams();
 	}
 	
+	/**
+	 * Initial constructor.
+	 * @param v
+	 * @param boogieIcfgLocation
+	 * 		Corresponding rcfg location.
+	 * @param funcInitValuationInfo
+	 * 		function info
+	 */
 	public ProgramState(final Valuation v,
 						final BoogieIcfgLocation boogieIcfgLocation,
-						final FuncInitValuationInfo funcInitValuationInfo) {
+						final FuncInitValuationInfo funcInitValuationInfo,
+						final Map<String, List<String>> proc2InParams) {
 		mValuation = v;
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
 		mFuncInitValuationInfo = funcInitValuationInfo;
+		mProc2InParams = proc2InParams;
 	}
 	
 	/**
@@ -60,6 +73,7 @@ public class ProgramState {
 		mValuation = programState.getValuation().shallowCopy();
 		mCorrespondingIcfgLoc = programState.getCorrespondingIcfgLoc();
 		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
+		mProc2InParams = programState.getProc2InParams();
 	}
 	
 	private Map<String, Map<String, Object>> shallowCopyValuation(final Map<String, Map<String, Object>> valuationMap) {
@@ -77,6 +91,10 @@ public class ProgramState {
 	
 	public FuncInitValuationInfo getFuncInitValuationInfo() {
 		return mFuncInitValuationInfo;
+	}
+	
+	public Map<String, List<String>> getProc2InParams() {
+		return mProc2InParams;
 	}
 	
 	public Valuation getValuation() {

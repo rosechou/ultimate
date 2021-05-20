@@ -61,11 +61,14 @@ public class ProgramStateExplorer {
 	/**
 	 * Only for debugging
 	 */
-	public ProgramState getLocState() {
-		return mProgramStateFactory.createInitialState(
-				mLocNodes.get("ULTIMATE.start")
-				.get(mLocNodes.get("ULTIMATE.start").keySet().toArray()[0]));
-
+	public ProgramState getLocStateById(String id) {
+		for(Map<DebugIdentifier, BoogieIcfgLocation> m : mLocNodes.values()) {
+			for(BoogieIcfgLocation l : m.values()) {
+				if(l.toString().equals(id)) {
+					return mProgramStateFactory.createInitialState(l);
+				}
+			}
+		}
+		return null;
 	}
-
 }

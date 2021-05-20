@@ -21,7 +21,7 @@ public class FuncInitValuationInfo {
 	/**
 	 * Function name to list of in params.
 	 */
-	private final Map<String, ArrayList<String>> mFunc2InParams =  new HashMap<>();
+	private final Map<String, List<String>> mFunc2InParams =  new HashMap<>();
 	private final Map<String, Expression> mFunc2Body = new HashMap<>();
 	
 	public FuncInitValuationInfo(final List<FunctionDeclaration> functionDeclarations) {
@@ -33,7 +33,7 @@ public class FuncInitValuationInfo {
 	private void createFunc2InParams() {
 		for(String funcName : mFuncInitValuation.getProcOrFuncNames()) {
 			Map<String, Object> inParam2Value = mFuncInitValuation.getProcOrFuncId2V(funcName);
-			ArrayList<String> inParams = new ArrayList<>();
+			List<String> inParams = new ArrayList<>();
 			for(String inParamName : inParam2Value.keySet()) {
 				inParams.add(inParamName);
 			}
@@ -64,7 +64,7 @@ public class FuncInitValuationInfo {
 		return mFunc2Body.get(funcName);
 	}
 
-	public final ArrayList<String> getInParams(String funcName) {
+	public final List<String> getInParams(String funcName) {
 		return mFunc2InParams.get(funcName);
 	}
 }

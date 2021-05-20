@@ -55,7 +55,7 @@ public class ExprEvaluator {
 	
 	
 	public ExprEvaluator(final ProgramState programState) {
-		mValuation = programState.getValuation().clone();
+		mValuation = programState.getValuationCopy();
 		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
 		createFuncInitValuation(mFuncInitValuationInfo);
 	}

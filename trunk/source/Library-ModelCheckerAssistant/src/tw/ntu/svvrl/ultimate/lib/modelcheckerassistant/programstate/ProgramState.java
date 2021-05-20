@@ -88,7 +88,7 @@ public class ProgramState {
 	 * valuation and stack are deep copied.
 	 */
 	public ProgramState(final ProgramState programState) {
-		mValuation = programState.getValuation().clone();
+		mValuation = programState.getValuationCopy();
 		mCorrespondingIcfgLoc = programState.getCorrespondingIcfgLoc();
 		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
 		mProc2InParams = programState.getProc2InParams();
@@ -107,8 +107,8 @@ public class ProgramState {
 		return mProc2InParams;
 	}
 	
-	public Valuation getValuation() {
-		return mValuation;
+	public Valuation getValuationCopy() {
+		return mValuation.clone();
 	}
 	
 	private Stack<VariableLHS[]> getLhsStack(){
@@ -176,6 +176,6 @@ public class ProgramState {
 		if(!mCorrespondingIcfgLoc.equals(anotherProgramState.getCorrespondingIcfgLoc())) {
 			return false;
 		}
-		return mValuation.equals(anotherProgramState.getValuation()) ? true : false;
+		return mValuation.equals(anotherProgramState.getValuationCopy()) ? true : false;
 	}
 }

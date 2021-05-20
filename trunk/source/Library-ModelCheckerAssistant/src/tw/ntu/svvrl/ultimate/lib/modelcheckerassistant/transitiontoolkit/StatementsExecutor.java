@@ -288,7 +288,7 @@ public class StatementsExecutor {
 	}
 	
 	private void updateProgramState(final String procName, final String varName, final Object value) {
-		Valuation newValuation = mCurrentProgramState.getValuation().clone();
+		Valuation newValuation = mCurrentProgramState.getValuationCopy();
 		assert(newValuation.containsProcOrFunc(procName));
 		newValuation.setValue(procName, varName, value);
 

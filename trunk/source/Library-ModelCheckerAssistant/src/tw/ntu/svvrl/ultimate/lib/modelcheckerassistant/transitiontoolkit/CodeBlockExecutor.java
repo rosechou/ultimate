@@ -1,6 +1,7 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.NotImplementedException;
 
@@ -43,7 +44,7 @@ public class CodeBlockExecutor {
 			 * The caller procedure (top-1)
 			 * and return destination's procedure should match.
 			 */
-			String TargetProcName = ((BoogieIcfgLocation) mCodeBlock.getTarget()).getProcedure();
+			String TargetProcName = mCodeBlock.getSucceedingProcedure();
 			if(mCurrentProgramState.getCallerProc().equals(TargetProcName)) {
 				return true;
 			} else {
@@ -151,8 +152,19 @@ public class CodeBlockExecutor {
 			Object v = mCurrentProgramState.getValuationCopy().lookUpValue(procName, outParamName);
 			statementExecutor.updateProgramState(procName, outParamName, v);
 		}
+		
+		/**
+		 * set all <code>procName</code>'s local variables to null.
+		 */
+		Map<String, Object> id2v = mCurrentProgramState.getValuationCopy().getProcOrFuncId2V(procName);
+		for(String varName : id2v.keySet()) {
+			statementExecutor.updateProgramState(procName, varName, null);
+		}
+		
 		moveToNewState(statementExecutor.getCurrentState());
 		mCurrentProgramState.popProc();
+		
+		
 	}
 
 	private void executeForkThreadCurrent(final ForkThreadCurrent forkThreadCurrent) {

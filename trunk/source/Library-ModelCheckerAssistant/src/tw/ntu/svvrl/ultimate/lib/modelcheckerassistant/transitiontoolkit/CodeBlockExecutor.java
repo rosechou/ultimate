@@ -50,6 +50,12 @@ public class CodeBlockExecutor {
 			} else {
 				return false;
 			}
+		} else if(mCodeBlock instanceof Summary) {
+			/**
+			 * We force the program to execute call and return,
+			 * and never execute Summary.
+			 */
+			return false;
 		} else if(mCodeBlock instanceof ParallelComposition) {
 			/**
 			 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
@@ -80,7 +86,8 @@ public class CodeBlockExecutor {
 		} else if(mCodeBlock instanceof Call) {
 			executeCall((Call) mCodeBlock);
 		} else if(mCodeBlock instanceof Summary) {
-			executeSummary((Summary) mCodeBlock);
+			throw new UnsupportedOperationException("Suppose the type " + mCodeBlock.getClass().getSimpleName()
+					+ " is not enable.");
 		} else if(mCodeBlock instanceof Return) {
 			executeReturn((Return) mCodeBlock);
 		} else if(mCodeBlock instanceof ForkThreadCurrent) {
@@ -139,8 +146,11 @@ public class CodeBlockExecutor {
 		moveToNewState(statementExecutor.execute());
 	}
 	
-	private void executeSummary(final Summary summary) {
-	}
+	/**
+	 * not enable transition, no need to implement.
+	 */
+//	private void executeSummary(final Summary summary) {
+//	}
 
 	private void executeReturn(final Return returnn) {
 		final CallStatement correspondingCallStmt = returnn.getCallStatement();

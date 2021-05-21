@@ -97,29 +97,29 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		ProgramStateExplorer explorer = mModelCheckerAssistant.getStateExplorer();
 		initialStates = explorer.getInitialStates();
 		
-		ProgramState aState = explorer.getLocStateById("mainENTRY");
-		List<IcfgEdge> edges = aState.getEnableTrans();
-		IcfgEdge edge = edges.get(1);
-		ProgramState bState = aState.doTransition(edge);
-		edges = bState.getEnableTrans();
-		edge = edges.get(1);
-		ProgramState cState = bState.doTransition(edge);
-		edges = cState.getEnableTrans();
-		edge = edges.get(0);
-		ProgramState dState = cState.doTransition(edge);
-		edges = dState.getEnableTrans();
-		edge = edges.get(0);
-		ProgramState eState = dState.doTransition(edge);
-		edges = eState.getEnableTrans();
-		edge = edges.get(0);
-		ProgramState fState = eState.doTransition(edge);
-		edges = fState.getEnableTrans();
-		edge = edges.get(0);
-		ProgramState gState = fState.doTransition(edge);
-		edges = gState.getEnableTrans();
-		edge = edges.get(0);
-		ProgramState hState = gState.doTransition(edge);
-		edges = hState.getEnableTrans();
+//		ProgramState aState = explorer.getLocStateById("mainENTRY");
+//		List<IcfgEdge> edges = aState.getEnableTrans();
+//		IcfgEdge edge = edges.get(1);
+//		ProgramState bState = aState.doTransition(edge);
+//		edges = bState.getEnableTrans();
+//		edge = edges.get(1);
+//		ProgramState cState = bState.doTransition(edge);
+//		edges = cState.getEnableTrans();
+//		edge = edges.get(0);
+//		ProgramState dState = cState.doTransition(edge);
+//		edges = dState.getEnableTrans();
+//		edge = edges.get(0);
+//		ProgramState eState = dState.doTransition(edge);
+//		edges = eState.getEnableTrans();
+//		edge = edges.get(0);
+//		ProgramState fState = eState.doTransition(edge);
+//		edges = fState.getEnableTrans();
+//		edge = edges.get(0);
+//		ProgramState gState = fState.doTransition(edge);
+//		edges = gState.getEnableTrans();
+//		edge = edges.get(0);
+//		ProgramState hState = gState.doTransition(edge);
+//		edges = hState.getEnableTrans();
 		/*-------------------------------*/
 		
 //		for(ProgramState initialState : initialStates) {

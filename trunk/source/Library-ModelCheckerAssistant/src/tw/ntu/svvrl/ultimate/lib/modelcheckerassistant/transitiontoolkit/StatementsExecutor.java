@@ -288,6 +288,11 @@ public class StatementsExecutor {
 	}
 
 	private void executeReturnStatement(ReturnStatement stmt) {
+		/**
+		 * Cannot produce this case
+		 */
+		throw new NotImplementedException(stmt.getClass().getSimpleName()
+				+ "is not yet implemented.");
 	}
 
 	private void executeWhileStatement(WhileStatement stmt) {

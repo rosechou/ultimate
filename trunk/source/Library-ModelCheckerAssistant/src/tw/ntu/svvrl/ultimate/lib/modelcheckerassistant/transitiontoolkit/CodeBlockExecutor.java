@@ -128,13 +128,13 @@ public class CodeBlockExecutor {
 	}
 
 	private void executeStatementSequence(final StatementSequence stmtSeq) {
-		List<Statement> stmts = stmtSeq.getStatements();
+		final List<Statement> stmts = stmtSeq.getStatements();
 		final StatementsExecutor statementExecutor = new StatementsExecutor(stmts, mCurrentProgramState);
 		moveToNewState(statementExecutor.execute());
 	}
 
 	private void executeCall(final Call call) {
-		CallStatement callStmt = call.getCallStatement();
+		final CallStatement callStmt = call.getCallStatement();
 		final StatementsExecutor statementExecutor = new StatementsExecutor(callStmt, mCurrentProgramState);
 		moveToNewState(statementExecutor.execute());
 	}
@@ -143,22 +143,29 @@ public class CodeBlockExecutor {
 	}
 
 	private void executeReturn(final Return returnn) {
-		CallStatement correspondingCallStmt = returnn.getCallStatement();
+		final CallStatement correspondingCallStmt = returnn.getCallStatement();
 		final StatementsExecutor statementExecutor = new StatementsExecutor(mCurrentProgramState);
-		String procName = correspondingCallStmt.getMethodName();
+		final String currentProcName = mCurrentProgramState.getCurrentProc();
+		final String returnProcName = mCurrentProgramState.getCallerProc();
 		
-		for(VariableLHS lhs : correspondingCallStmt.getLhs()) {
-			String outParamName = lhs.getIdentifier();
-			Object v = mCurrentProgramState.getValuationCopy().lookUpValue(procName, outParamName);
-			statementExecutor.updateProgramState(procName, outParamName, v);
+		/**
+		 * assign return value to lhs(s).
+		 */
+		final List<String> outParamNames = mCurrentProgramState.getProc2OutParams().get(currentProcName);
+		final VariableLHS[] lhss = correspondingCallStmt.getLhs();
+		assert(lhss.length == outParamNames.size());
+		for(int i = 0; i < lhss.length; i++) {
+			final String lhsName = lhss[i].getIdentifier();
+			final Object v = mCurrentProgramState.getValuationCopy().lookUpValue(currentProcName, outParamNames.get(i));
+			statementExecutor.updateProgramState(returnProcName, lhsName, v);
 		}
 		
 		/**
-		 * set all <code>procName</code>'s local variables to null.
+		 * set all <code>currentProcName</code>'s local variables to null.
 		 */
-		Map<String, Object> id2v = mCurrentProgramState.getValuationCopy().getProcOrFuncId2V(procName);
-		for(String varName : id2v.keySet()) {
-			statementExecutor.updateProgramState(procName, varName, null);
+		final Map<String, Object> id2v = mCurrentProgramState.getValuationCopy().getProcOrFuncId2V(currentProcName);
+		for(final String varName : id2v.keySet()) {
+			statementExecutor.updateProgramState(currentProcName, varName, null);
 		}
 		
 		moveToNewState(statementExecutor.getCurrentState());
@@ -182,11 +189,6 @@ public class CodeBlockExecutor {
 	private void executeJoinThreadOther(final JoinThreadOther joinThreadOther) {
 		// TODO Auto-generated method stub
 	}
-
-
-	
-
-
 
 
 }

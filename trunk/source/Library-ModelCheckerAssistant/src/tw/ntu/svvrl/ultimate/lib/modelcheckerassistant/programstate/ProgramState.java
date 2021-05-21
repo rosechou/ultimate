@@ -36,6 +36,7 @@ public class ProgramState {
 	private final FuncInitValuationInfo mFuncInitValuationInfo;
 	
 	private final Map<String, List<String>> mProc2InParams;
+	private final Map<String, List<String>> mProc2OutParams;
 	
 	/**
 	 * The stack that keeps the procedure calls.
@@ -57,11 +58,13 @@ public class ProgramState {
 	public ProgramState(final Valuation v,
 						final BoogieIcfgLocation boogieIcfgLocation,
 						final FuncInitValuationInfo funcInitValuationInfo,
-						final Map<String, List<String>> proc2InParams) {
+						final Map<String, List<String>> proc2InParams,
+						final Map<String, List<String>> proc2OutParams) {
 		mValuation = v.clone();
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
 		mFuncInitValuationInfo = funcInitValuationInfo;
 		mProc2InParams = proc2InParams;
+		mProc2OutParams = proc2OutParams;
 		mProcStack.push(mCorrespondingIcfgLoc.getProcedure());
 	}
 	
@@ -79,6 +82,7 @@ public class ProgramState {
 		mCorrespondingIcfgLoc = null;
 		mFuncInitValuationInfo = oldState.getFuncInitValuationInfo();
 		mProc2InParams = oldState.getProc2InParams();
+		mProc2OutParams = oldState.getProc2OutParams();
 		mProcStack = oldState.getProcStackCopy();
 	}
 	
@@ -91,6 +95,7 @@ public class ProgramState {
 		mCorrespondingIcfgLoc = programState.getCorrespondingIcfgLoc();
 		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
 		mProc2InParams = programState.getProc2InParams();
+		mProc2OutParams = programState.getProc2OutParams();
 		mProcStack = programState.getProcStackCopy();
 	}
 
@@ -104,6 +109,10 @@ public class ProgramState {
 	
 	public Map<String, List<String>> getProc2InParams() {
 		return mProc2InParams;
+	}
+	
+	public Map<String, List<String>> getProc2OutParams() {
+		return mProc2OutParams;
 	}
 	
 	public Valuation getValuationCopy() {

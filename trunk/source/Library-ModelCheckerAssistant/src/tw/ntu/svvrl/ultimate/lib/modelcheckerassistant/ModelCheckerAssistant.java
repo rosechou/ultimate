@@ -31,7 +31,7 @@ public class ModelCheckerAssistant {
 	 * The first main component, which generates program states on-the-fly and 
 	 * keep exploring.
 	 */
-	private final ProgramStateExplorer mStateExplorer;
+	private final ProgramStateExplorer mProgramStateExplorer;
 	private final NeverClaimAutExplorer mNeverClaimAutExplorer;
 	
 	/**
@@ -46,7 +46,7 @@ public class ModelCheckerAssistant {
 		mRcfgRoot = rcfg;
 		mNWA = null;
 		
-		mStateExplorer = new ProgramStateExplorer(rcfg);
+		mProgramStateExplorer = new ProgramStateExplorer(rcfg);
 		mNeverClaimAutExplorer = null;
 	}
 	
@@ -60,12 +60,12 @@ public class ModelCheckerAssistant {
 		mRcfgRoot = rcfg;
 		mNWA = nwa;
 		
-		mStateExplorer = new ProgramStateExplorer(rcfg);
-		mNeverClaimAutExplorer = new NeverClaimAutExplorer();
+		mProgramStateExplorer = new ProgramStateExplorer(rcfg);
+		mNeverClaimAutExplorer = new NeverClaimAutExplorer(nwa);
 	}
 	
-	public ProgramStateExplorer getStateExplorer() {
-		return mStateExplorer;
+	public ProgramStateExplorer getProgramStateExplorer() {
+		return mProgramStateExplorer;
 	}
 	
 	public NeverClaimAutExplorer getNeverClaimAutExplorer() {

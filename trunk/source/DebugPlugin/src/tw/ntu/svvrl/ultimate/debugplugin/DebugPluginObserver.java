@@ -29,6 +29,7 @@ package tw.ntu.svvrl.ultimate.debugplugin;
 
 import java.util.ArrayList;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.*;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.NeverClaimAutExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
 
@@ -79,23 +80,26 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 
 	@Override
 	public void finish() throws Throwable {
-//		if (mNeverClaimNWAContainer == null || mRcfg == null) {
-//			return;
-//		}
+		if (mNeverClaimNWAContainer == null || mRcfg == null) {
+			return;
+		}
 
 		// measure size of nwa and rcfg
-//		reportSizeBenchmark("Initial property automaton", mNeverClaimNWAContainer.getValue());
-//		reportSizeBenchmark("Initial RCFG", mRcfg);
+		reportSizeBenchmark("Initial property automaton", mNeverClaimNWAContainer.getValue());
+		reportSizeBenchmark("Initial RCFG", mRcfg);
 
 		mLogger.info("Do something with these two models...");
 		// new crawler here. 
-//		mModelCheckerAssistant = new ModelCheckerAssistant(mNeverClaimNWAContainer.getValue(), mRcfg, mLogger, mServices);
-		mModelCheckerAssistant = new ModelCheckerAssistant(mRcfg, mLogger, mServices);
+		mModelCheckerAssistant = new ModelCheckerAssistant(mNeverClaimNWAContainer.getValue(), mRcfg, mLogger, mServices);
+		// mModelCheckerAssistant = new ModelCheckerAssistant(mRcfg, mLogger, mServices);
 		
 		/*-----------debugging-----------*/
 		Set<ProgramState> initialStates = new HashSet<>();
-		ProgramStateExplorer explorer = mModelCheckerAssistant.getStateExplorer();
-		initialStates = explorer.getInitialStates();
+		ProgramStateExplorer pExplorer = mModelCheckerAssistant.getProgramStateExplorer();
+		initialStates = pExplorer.getInitialStates();
+		
+		NeverClaimAutExplorer nExplorer = mModelCheckerAssistant.getNeverClaimAutExplorer();
+		
 		
 //		ProgramState aState = explorer.getLocStateById("mainENTRY");
 //		List<IcfgEdge> edges = aState.getEnableTrans();

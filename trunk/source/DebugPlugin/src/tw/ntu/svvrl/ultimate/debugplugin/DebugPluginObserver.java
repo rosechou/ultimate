@@ -97,11 +97,10 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		
 		/*-----------debugging-----------*/
 		Set<ProgramState> pInitialStates = new HashSet<>();
-		ProgramStateExplorer pExplorer = mModelCheckerAssistant.getProgramStateExplorer();
-		pInitialStates = pExplorer.getInitialStates();
+		pInitialStates = mModelCheckerAssistant.getProgramInitialStates();
 		
 		
-		ProgramState aState = pExplorer.getLocStateById("ULTIMATE.startENTRY");
+		ProgramState aState = ((ProgramState) pInitialStates.toArray()[0]);
 		List<IcfgEdge> edges = aState.getEnableTrans();
 		IcfgEdge edge = edges.get(0);
 		ProgramState bState = aState.doTransition(edge);
@@ -109,9 +108,9 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		edge = edges.get(0);
 		ProgramState cState = bState.doTransition(edge);
 		
-		NeverClaimAutExplorer nExplorer = mModelCheckerAssistant.getNeverClaimAutExplorer();
+		
 		Set<NeverState> nInitialStates = new HashSet<>();
-		nInitialStates = nExplorer.getInitialStates();
+		nInitialStates = mModelCheckerAssistant.getNeverInitialStates();
 		NeverState nState = ((NeverState) nInitialStates.toArray()[0]);
 		List<OutgoingInternalTransition<CodeBlock, NeverState>> nedges = nState.getEnableTrans(cState);
 		OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);

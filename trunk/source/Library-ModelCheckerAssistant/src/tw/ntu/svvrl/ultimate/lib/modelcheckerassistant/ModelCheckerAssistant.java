@@ -1,11 +1,15 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant;
 
+import java.util.Set;
+
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.INestedWordAutomaton;
 import de.uni_freiburg.informatik.ultimate.core.model.services.ILogger;
 import de.uni_freiburg.informatik.ultimate.core.model.services.IUltimateServiceProvider;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgContainer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.NeverClaimAutExplorer;
 
 /**
@@ -64,11 +68,12 @@ public class ModelCheckerAssistant {
 		mNeverClaimAutExplorer = new NeverClaimAutExplorer(nwa);
 	}
 	
-	public ProgramStateExplorer getProgramStateExplorer() {
-		return mProgramStateExplorer;
+	public Set<ProgramState> getProgramInitialStates() {
+		return mProgramStateExplorer.getInitialStates();
 	}
 	
-	public NeverClaimAutExplorer getNeverClaimAutExplorer() {
-		return mNeverClaimAutExplorer;
+	public Set<NeverState> getNeverInitialStates() {
+		return mNeverClaimAutExplorer.getInitialStates();
 	}
+	
 }

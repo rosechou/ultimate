@@ -81,52 +81,52 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 
 	@Override
 	public void finish() throws Throwable {
-		if (mNeverClaimNWAContainer == null || mRcfg == null) {
-			return;
-		}
+//		if (mNeverClaimNWAContainer == null || mRcfg == null) {
+//			return;
+//		}
 
 		// measure size of nwa and rcfg
-		reportSizeBenchmark("Initial property automaton", mNeverClaimNWAContainer.getValue());
-		reportSizeBenchmark("Initial RCFG", mRcfg);
-
-		mLogger.info("Do something with these two models...");
+//		reportSizeBenchmark("Initial property automaton", mNeverClaimNWAContainer.getValue());
+//		reportSizeBenchmark("Initial RCFG", mRcfg);
+//
+//		mLogger.info("Do something with these two models...");
 		// new crawler here. 
-		mModelCheckerAssistant = new ModelCheckerAssistant(mNeverClaimNWAContainer.getValue(), mRcfg, mLogger, mServices);
-		// mModelCheckerAssistant = new ModelCheckerAssistant(mRcfg, mLogger, mServices);
+//		mModelCheckerAssistant = new ModelCheckerAssistant(mNeverClaimNWAContainer.getValue(), mRcfg, mLogger, mServices);
+		mModelCheckerAssistant = new ModelCheckerAssistant(mRcfg, mLogger, mServices);
 		
 		/*-----------debugging-----------*/
-//		Set<ProgramState> initialStates = new HashSet<>();
-//		ProgramStateExplorer pExplorer = mModelCheckerAssistant.getProgramStateExplorer();
-//		initialStates = pExplorer.getInitialStates();
+		Set<ProgramState> initialStates = new HashSet<>();
+		ProgramStateExplorer pExplorer = mModelCheckerAssistant.getProgramStateExplorer();
+		initialStates = pExplorer.getInitialStates();
 		
-		Set<NeverState> initialStates = new HashSet<>();
-		NeverClaimAutExplorer nExplorer = mModelCheckerAssistant.getNeverClaimAutExplorer();
-		initialStates = nExplorer.getInitialStates();
+//		Set<NeverState> initialStates = new HashSet<>();
+//		NeverClaimAutExplorer nExplorer = mModelCheckerAssistant.getNeverClaimAutExplorer();
+//		initialStates = nExplorer.getInitialStates();
 		
 		
-//		ProgramState aState = explorer.getLocStateById("mainENTRY");
-//		List<IcfgEdge> edges = aState.getEnableTrans();
-//		IcfgEdge edge = edges.get(1);
-//		ProgramState bState = aState.doTransition(edge);
-//		edges = bState.getEnableTrans();
-//		edge = edges.get(1);
-//		ProgramState cState = bState.doTransition(edge);
-//		edges = cState.getEnableTrans();
-//		edge = edges.get(0);
-//		ProgramState dState = cState.doTransition(edge);
-//		edges = dState.getEnableTrans();
-//		edge = edges.get(0);
-//		ProgramState eState = dState.doTransition(edge);
-//		edges = eState.getEnableTrans();
-//		edge = edges.get(0);
-//		ProgramState fState = eState.doTransition(edge);
-//		edges = fState.getEnableTrans();
-//		edge = edges.get(0);
-//		ProgramState gState = fState.doTransition(edge);
-//		edges = gState.getEnableTrans();
-//		edge = edges.get(0);
-//		ProgramState hState = gState.doTransition(edge);
-//		edges = hState.getEnableTrans();
+		ProgramState aState = pExplorer.getLocStateById("mainENTRY");
+		List<IcfgEdge> edges = aState.getEnableTrans();
+		IcfgEdge edge = edges.get(0);
+		ProgramState bState = aState.doTransition(edge);
+		edges = bState.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState cState = bState.doTransition(edge);
+		edges = cState.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState dState = cState.doTransition(edge);
+		edges = dState.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState eState = dState.doTransition(edge);
+		edges = eState.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState fState = eState.doTransition(edge);
+		edges = fState.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState gState = fState.doTransition(edge);
+		edges = gState.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState hState = gState.doTransition(edge);
+		edges = hState.getEnableTrans();
 		/*-------------------------------*/
 		
 //		for(ProgramState initialState : initialStates) {

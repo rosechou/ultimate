@@ -95,17 +95,18 @@ public class TransitionToolkit<T, S> {
 	 * 		A new Never state reached after doing this transition(edge).
 	 */
 	public S doTransition(ProgramState correspondingProgramState) {
-		if(mAutType == AutTypes.NeverClaim) {
-			if(mCodeBlockExecutor != null) {
-				NeverState targetState = ((OutgoingInternalTransition<?, ?>) mTrans).getSucc();
-				mCodeBlockExecutor.setTargrtState(targetState);
-				S newState = mCodeBlockExecutor.execute();
-				return newState;
-			} else {
-				throw new UnsupportedOperationException("No CodeBlockExecutor");
-			}
-		} else {
-			throw new UnsupportedOperationException("This doTransition function is for NeverState");
-		}
+//		if(mAutType == AutTypes.NeverClaim) {
+//			if(mCodeBlockExecutor != null) {
+//				NeverState targetState = ((OutgoingInternalTransition<?, ?>) mTrans).getSucc();
+//				mCodeBlockExecutor.setTargrtState(targetState);
+//				S newState = mCodeBlockExecutor.execute();
+//				return newState;
+//			} else {
+//				throw new UnsupportedOperationException("No CodeBlockExecutor");
+//			}
+//		} else {
+//			throw new UnsupportedOperationException("This doTransition function is for NeverState");
+//		}
+		return null;
 	}
 }

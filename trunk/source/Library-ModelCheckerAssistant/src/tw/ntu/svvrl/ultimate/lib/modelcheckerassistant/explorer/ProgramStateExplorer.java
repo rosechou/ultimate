@@ -51,6 +51,12 @@ public class ProgramStateExplorer {
 	 */
 	public Set<ProgramState> getInitialStates() {
 		Set<ProgramState> initialProgramStates = new HashSet<>();
+		
+		/**
+		 * These initialLocs are Entry nodes,
+		 * Not real program initial states
+		 * Needs to fix...  
+		 */
 		for(BoogieIcfgLocation initialLoc: mInitialNodes) {
 			initialProgramStates.add(mProgramStateFactory.createInitialState(initialLoc));
 		}

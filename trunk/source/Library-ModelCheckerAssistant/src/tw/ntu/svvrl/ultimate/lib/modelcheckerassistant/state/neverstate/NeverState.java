@@ -42,8 +42,9 @@ public class NeverState implements State<NeverState, OutgoingInternalTransition<
 		/**
 		 * All NonOld global variables must be initialized, or some errors
 		 * will occur during expression evaluation.
+		 * If some global variables are not initialized yet, return empty list.
 		 */
-		if(!allNonOldGlobalInitialized(correspondingProgramState)) {
+		if(!correspondingProgramState.allNonOldGlobalInitialized()) {
 			return enableTrans;
 		}
 		
@@ -55,11 +56,6 @@ public class NeverState implements State<NeverState, OutgoingInternalTransition<
 			}
 		}
 		return enableTrans;
-	}
-	
-	private boolean allNonOldGlobalInitialized(ProgramState correspondingProgramState) {
-		// TODO Auto-generated method stub
-		return false;
 	}
 
 	public NeverState doTransition(final OutgoingInternalTransition<CodeBlock, NeverState> edge

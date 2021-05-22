@@ -3,6 +3,8 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Valuation implements Cloneable {
 	private final Map<String, Map<String, Object>> mValueMap = new HashMap<>();
@@ -64,5 +66,27 @@ public class Valuation implements Cloneable {
 	
 	public boolean equals(final Valuation anotherValuation) {
 		return mValueMap.equals(anotherValuation.mValueMap);
+	}
+
+	public boolean allNonOldGlobalInitialized() {
+		Map<String, Object> globalVarMap = mValueMap.get(null);
+		for(String globalVarName : globalVarMap.keySet()) {
+			boolean isOld = isOld(globalVarName);
+		    if(!isOld && globalVarMap.get(globalVarName) == null) {
+		    	return false;
+		    }
+		}
+		return true;
+	}
+
+	private boolean isOld(String s) {
+		if(s.length() <= 5) {
+			return false;
+		} else {
+			if(s.startsWith("old(") && s.endsWith(")")) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

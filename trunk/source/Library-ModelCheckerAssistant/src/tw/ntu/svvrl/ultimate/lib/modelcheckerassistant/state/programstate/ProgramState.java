@@ -208,4 +208,8 @@ public class ProgramState implements State<ProgramState, IcfgEdge>{
 		return mValuation.equals(anotherProgramState.getValuationCopy()) ? true : false;
 	}
 
+	public boolean allNonOldGlobalInitialized() {
+		return mValuation.allNonOldGlobalInitialized();
+	}
+
 }

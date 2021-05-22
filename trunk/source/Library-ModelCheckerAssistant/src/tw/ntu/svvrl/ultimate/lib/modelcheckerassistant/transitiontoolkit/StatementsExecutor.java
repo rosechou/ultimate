@@ -244,9 +244,11 @@ public class StatementsExecutor {
 					case BoogiePrimitiveType.BOOL:
 						value = r.nextBoolean();
 						updateProgramState(procName, varName, value);
+						break;
 					case BoogiePrimitiveType.INT:
 						value = r.nextInt();
 						updateProgramState(procName, varName, value);
+						break;
 					case BoogiePrimitiveType.REAL:
 						throw new NotImplementedException("Boogie variable with type"
 								+ ((BoogiePrimitiveType) bt).toString() + " is not yet implemented.");

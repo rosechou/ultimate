@@ -46,7 +46,7 @@ public class TransitionToolkit<T, S> {
 			}
 		} else if(trans instanceof OutgoingInternalTransition<?, ?> && state instanceof NeverState) {
 			if(((OutgoingInternalTransition<?, ?>) trans).getLetter() instanceof CodeBlock
-					&& ((OutgoingInternalTransition<?, ?>) trans).getSucc() instanceof String) {
+					&& ((OutgoingInternalTransition<?, ?>) trans).getSucc() instanceof NeverState) {
 				mAutType = AutTypes.NeverClaim;
 				mCodeBlockExecutor
 				= new CodeBlockExecutor<S>((CodeBlock) ((OutgoingInternalTransition<?, ?>) trans).getLetter(), state, mAutType);
@@ -65,6 +65,28 @@ public class TransitionToolkit<T, S> {
 			return mCodeBlockExecutor.checkEnable();
 		} else {
 			throw new UnsupportedOperationException("No CodeBlockExecutor");
+		}
+	}
+	
+	/**
+	 * For NeverClaim Automata, we need to know the current program valuation.
+	 * @param correspondingProgramState
+	 * 		Current program State which contains the valuation.
+	 * @return
+	 * 		True if this trans is enable for correspondingProgramState, false if not.
+	 */
+	public boolean checkTransEnable(ProgramState correspondingProgramState) {
+		if(mAutType == AutTypes.NeverClaim) {
+			if(mCodeBlockExecutor != null) {
+				mCodeBlockExecutor.setCorrespondingProgramState(correspondingProgramState);
+				NeverState targetState = (NeverState) ((OutgoingInternalTransition<?, ?>) mTrans).getSucc();
+				mCodeBlockExecutor.setTargrtState(targetState);
+				return mCodeBlockExecutor.checkEnable();
+			} else {
+				throw new UnsupportedOperationException("No CodeBlockExecutor");
+			}
+		} else {
+			throw new UnsupportedOperationException("This doTransition function is for NeverState");
 		}
 	}
 	
@@ -95,19 +117,18 @@ public class TransitionToolkit<T, S> {
 	 * 		A new Never state reached after doing this transition(edge).
 	 */
 	public S doTransition(ProgramState correspondingProgramState) {
-//		if(mAutType == AutTypes.NeverClaim) {
-//			if(mCodeBlockExecutor != null) {
-		// ...?
-//				NeverState targetState = ((OutgoingInternalTransition<?, ?>) mTrans).getSucc();
-//				mCodeBlockExecutor.setTargrtState(targetState);
-//				S newState = mCodeBlockExecutor.execute();
-//				return newState;
-//			} else {
-//				throw new UnsupportedOperationException("No CodeBlockExecutor");
-//			}
-//		} else {
-//			throw new UnsupportedOperationException("This doTransition function is for NeverState");
-//		}
-		return null;
+		if(mAutType == AutTypes.NeverClaim) {
+			if(mCodeBlockExecutor != null) {
+				mCodeBlockExecutor.setCorrespondingProgramState(correspondingProgramState);
+				NeverState targetState = (NeverState) ((OutgoingInternalTransition<?, ?>) mTrans).getSucc();
+				mCodeBlockExecutor.setTargrtState(targetState);
+				S newState = mCodeBlockExecutor.execute();
+				return newState;
+			} else {
+				throw new UnsupportedOperationException("No CodeBlockExecutor");
+			}
+		} else {
+			throw new UnsupportedOperationException("This doTransition function is for NeverState");
+		}
 	}
 }

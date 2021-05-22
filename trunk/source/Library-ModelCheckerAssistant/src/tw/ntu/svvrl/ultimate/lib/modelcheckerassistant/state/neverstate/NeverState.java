@@ -33,23 +33,44 @@ public class NeverState implements State<NeverState, OutgoingInternalTransition<
 		mTranss.add(trans);
 	}
 	
-	@Override
-	public List<OutgoingInternalTransition<CodeBlock, NeverState>> getEnableTrans() {
+	public String getName() {
+		return mStateName;
+	}
+	
+	public List<OutgoingInternalTransition<CodeBlock, NeverState>> getEnableTrans(final ProgramState correspondingProgramState) {
 		List<OutgoingInternalTransition<CodeBlock, NeverState>> enableTrans = new ArrayList<>();
+		/**
+		 * All NonOld global variables must be initialized, or some errors
+		 * will occur during expression evaluation.
+		 */
+		if(!allNonOldGlobalInitialized(correspondingProgramState)) {
+			return enableTrans;
+		}
+		
 		for(final OutgoingInternalTransition<CodeBlock, NeverState> edge : mTranss) {
 			final TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState> transitionToolkit
 			= new TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState>(edge, this);
-			if (transitionToolkit.checkTransEnable()) {
+			if (transitionToolkit.checkTransEnable(correspondingProgramState)) {
 				enableTrans.add(edge);
 			}
 		}
-		return null;
+		return enableTrans;
 	}
 	
+	private boolean allNonOldGlobalInitialized(ProgramState correspondingProgramState) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 	public NeverState doTransition(final OutgoingInternalTransition<CodeBlock, NeverState> edge
 			, final ProgramState correspondingProgramState) {
 		final TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState> transitionToolkit
 		= new TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState>(edge, this);
 		return (NeverState) transitionToolkit.doTransition(correspondingProgramState);
+	}
+	
+	@Override
+	public boolean equals(NeverState anotherState) {
+		return mStateName.equals(anotherState.getName()) ? true : false;
 	}
 }

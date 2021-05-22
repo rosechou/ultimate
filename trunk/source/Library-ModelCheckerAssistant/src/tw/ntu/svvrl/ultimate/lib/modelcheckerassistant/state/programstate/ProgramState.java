@@ -164,7 +164,6 @@ public class ProgramState implements State<ProgramState, IcfgEdge>{
 	 * @return
 	 * 		a list of enable transitions.
 	 */
-	@Override
 	public List<IcfgEdge> getEnableTrans() {
 		List<IcfgEdge> edges = mCorrespondingIcfgLoc.getOutgoingEdges();
 		List<IcfgEdge> enableTrans = new ArrayList<>();
@@ -201,6 +200,7 @@ public class ProgramState implements State<ProgramState, IcfgEdge>{
 	 * @return
 	 * 		true if two states are equivalent, false if not.
 	 */
+	@Override
 	public boolean equals(final ProgramState anotherProgramState) {
 		if(!mCorrespondingIcfgLoc.equals(anotherProgramState.getCorrespondingIcfgLoc())) {
 			return false;

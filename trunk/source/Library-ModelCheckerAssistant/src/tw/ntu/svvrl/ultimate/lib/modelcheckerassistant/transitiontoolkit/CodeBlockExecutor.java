@@ -66,8 +66,15 @@ public class CodeBlockExecutor<S> {
 	public boolean checkEnable() {
 		if(mCodeBlock instanceof StatementSequence) {
 			List<Statement> stmts = ((StatementSequence) mCodeBlock).getStatements();
-			final StatementsChecker statementChecker = new StatementsChecker(stmts, (ProgramState) mCurrentState);
-			return statementChecker.checkStatementsEnable();
+			if(mAutType == TransitionToolkit.AutTypes.Program) {
+				final StatementsChecker statementChecker = new StatementsChecker(stmts, (ProgramState) mCurrentState);
+				return statementChecker.checkStatementsEnable();
+			} else if(mAutType == TransitionToolkit.AutTypes.NeverClaim) {
+				final StatementsChecker statementChecker = new StatementsChecker(stmts, mCorrespondingProgramState);
+				return statementChecker.checkStatementsEnable();
+			} else {
+				throw new UnsupportedOperationException("Unsupported automata type.");
+			}
 		} else if(mCodeBlock instanceof Return) {
 			assert mAutType == TransitionToolkit.AutTypes.Program;
 			/**

@@ -40,6 +40,7 @@ import java.util.Set;
 
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.INestedWordAutomaton;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.NestedWordAutomataSizeBenchmark;
+import de.uni_freiburg.informatik.ultimate.automata.nestedword.transitions.OutgoingInternalTransition;
 import de.uni_freiburg.informatik.ultimate.boogie.annotation.LTLPropertyCheck;
 import de.uni_freiburg.informatik.ultimate.core.model.models.IElement;
 import de.uni_freiburg.informatik.ultimate.core.model.models.ModelType;
@@ -95,12 +96,19 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		// mModelCheckerAssistant = new ModelCheckerAssistant(mRcfg, mLogger, mServices);
 		
 		/*-----------debugging-----------*/
-		Set<ProgramState> initialStates = new HashSet<>();
+		Set<ProgramState> pInitialStates = new HashSet<>();
 		ProgramStateExplorer pExplorer = mModelCheckerAssistant.getProgramStateExplorer();
-		initialStates = pExplorer.getInitialStates();
+		pInitialStates = pExplorer.getInitialStates();
 		
+		
+		ProgramState aState = pExplorer.getLocStateById("ULTIMATE.startENTRY");
 		NeverClaimAutExplorer nExplorer = mModelCheckerAssistant.getNeverClaimAutExplorer();
-		
+		Set<NeverState> nInitialStates = new HashSet<>();
+		nInitialStates = nExplorer.getInitialStates();
+		NeverState nState = ((NeverState) nInitialStates.toArray()[0]);
+		List<OutgoingInternalTransition<CodeBlock, NeverState>> edges = nState.getEnableTrans(aState);
+		OutgoingInternalTransition<CodeBlock, NeverState> edge = edges.get(0);
+		NeverState mState = nState.doTransition(edge, aState);
 		
 //		ProgramState aState = explorer.getLocStateById("mainENTRY");
 //		List<IcfgEdge> edges = aState.getEnableTrans();

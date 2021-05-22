@@ -6,5 +6,5 @@ import java.util.List;
 
 
 public interface State<S extends State<S, T>, T> {
-	public List<T> getEnableTrans();
+	public boolean equals(S anotherS);
 }

@@ -42,14 +42,14 @@ public class TransitionToolkit<T, S> {
 		if(trans instanceof IcfgEdge && state instanceof ProgramState) {
 			mAutType = AutTypes.Program;
 			if (mTrans instanceof CodeBlock) {
-				mCodeBlockExecutor = new CodeBlockExecutor((CodeBlock) mTrans, state, mAutType);
+				mCodeBlockExecutor = new CodeBlockExecutor<S>((CodeBlock) mTrans, state, mAutType);
 			}
 		} else if(trans instanceof OutgoingInternalTransition<?, ?> && state instanceof NeverState) {
 			if(((OutgoingInternalTransition<?, ?>) trans).getLetter() instanceof CodeBlock
 					&& ((OutgoingInternalTransition<?, ?>) trans).getSucc() instanceof String) {
 				mAutType = AutTypes.NeverClaim;
 				mCodeBlockExecutor
-				= new CodeBlockExecutor((CodeBlock) ((OutgoingInternalTransition<?, ?>) trans).getLetter(), state, mAutType);
+				= new CodeBlockExecutor<S>((CodeBlock) ((OutgoingInternalTransition<?, ?>) trans).getLetter(), state, mAutType);
 			} else {
 				throw new UnsupportedOperationException("Unknown Transition Type: " 
 						+ trans.getClass().getSimpleName());
@@ -97,6 +97,8 @@ public class TransitionToolkit<T, S> {
 	public S doTransition(ProgramState correspondingProgramState) {
 		if(mAutType == AutTypes.NeverClaim) {
 			if(mCodeBlockExecutor != null) {
+				NeverState targetState = ((OutgoingInternalTransition<?, ?>) mTrans).getSucc();
+				mCodeBlockExecutor.setTargrtState(targetState);
 				S newState = mCodeBlockExecutor.execute();
 				return newState;
 			} else {

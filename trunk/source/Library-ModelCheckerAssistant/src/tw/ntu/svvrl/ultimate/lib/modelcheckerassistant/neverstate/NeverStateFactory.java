@@ -1,11 +1,14 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.neverstate;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.INestedWordAutomaton;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.transitions.OutgoingInternalTransition;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 
 public class NeverStateFactory {
@@ -30,12 +33,13 @@ public class NeverStateFactory {
 			
 			Iterator<OutgoingInternalTransition<CodeBlock, String>> iter
 						= mNwa.internalSuccessors(stateName).iterator();
-			
+			List<OutgoingInternalTransition<CodeBlock, String>> transs = new ArrayList<>();
 			while(iter.hasNext()) {
-				OutgoingInternalTransition<CodeBlock, String> trans = iter.next();
-				NeverState s = new NeverState(stateName, trans, mNwa.isInitial(stateName), mNwa.isFinal(stateName));
-				name2State.put(stateName, s);
+				final OutgoingInternalTransition<CodeBlock, String> trans = iter.next();
+				transs.add(trans);
 			}
+			NeverState s = new NeverState(stateName, transs, mNwa.isInitial(stateName), mNwa.isFinal(stateName));
+			name2State.put(stateName, s);
 		}
 		return name2State;
 	}

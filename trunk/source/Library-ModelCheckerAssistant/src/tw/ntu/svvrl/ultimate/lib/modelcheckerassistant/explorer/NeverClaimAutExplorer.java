@@ -23,7 +23,12 @@ public class NeverClaimAutExplorer {
 	}
 	
 	public Set<NeverState> getInitialStates() {
-		return null;
+		final Set<NeverState> result = new HashSet<>();
+		final Set<String> initialNames = mNwa.getInitialStates();
+		for(final String initialName : initialNames) {
+			result.add(mName2State.get(initialName));
+		}
+		return result;
 	}
 	
 	

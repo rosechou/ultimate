@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.*;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.NeverClaimAutExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.neverstate.NeverState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
 
 import java.util.HashSet;
@@ -94,11 +95,13 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		// mModelCheckerAssistant = new ModelCheckerAssistant(mRcfg, mLogger, mServices);
 		
 		/*-----------debugging-----------*/
-		Set<ProgramState> initialStates = new HashSet<>();
-		ProgramStateExplorer pExplorer = mModelCheckerAssistant.getProgramStateExplorer();
-		initialStates = pExplorer.getInitialStates();
+//		Set<ProgramState> initialStates = new HashSet<>();
+//		ProgramStateExplorer pExplorer = mModelCheckerAssistant.getProgramStateExplorer();
+//		initialStates = pExplorer.getInitialStates();
 		
+		Set<NeverState> initialStates = new HashSet<>();
 		NeverClaimAutExplorer nExplorer = mModelCheckerAssistant.getNeverClaimAutExplorer();
+		initialStates = nExplorer.getInitialStates();
 		
 		
 //		ProgramState aState = explorer.getLocStateById("mainENTRY");

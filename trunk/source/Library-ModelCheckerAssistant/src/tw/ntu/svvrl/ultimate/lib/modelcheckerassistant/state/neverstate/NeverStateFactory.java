@@ -31,15 +31,23 @@ public class NeverStateFactory {
 			assert !mNwa.returnPredecessors(stateName).iterator().hasNext();
 			assert !mNwa.returnSuccessors(stateName).iterator().hasNext();
 			
+			
+			NeverState s = new NeverState(stateName, mNwa.isInitial(stateName), mNwa.isFinal(stateName));
+			name2State.put(stateName, s);
+		}
+		
+		for(final String stateName : mNwa.getStates()) {
 			Iterator<OutgoingInternalTransition<CodeBlock, String>> iter
-						= mNwa.internalSuccessors(stateName).iterator();
+											= mNwa.internalSuccessors(stateName).iterator();
 			List<OutgoingInternalTransition<CodeBlock, String>> transs = new ArrayList<>();
 			while(iter.hasNext()) {
 				final OutgoingInternalTransition<CodeBlock, String> trans = iter.next();
-				transs.add(trans);
+				final CodeBlock letterName = trans.getLetter();
+				final String targetStateName = trans.getSucc();
+				final OutgoingInternalTransition<CodeBlock, NeverState> newTrans
+						= new OutgoingInternalTransition<>(letterName, name2State.get(targetStateName));
+				name2State.get(stateName).addTrans(newTrans);
 			}
-			NeverState s = new NeverState(stateName, transs, mNwa.isInitial(stateName), mNwa.isFinal(stateName));
-			name2State.put(stateName, s);
 		}
 		return name2State;
 	}

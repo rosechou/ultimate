@@ -12,17 +12,15 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.State;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
 
-public class NeverState implements State<NeverState, OutgoingInternalTransition<CodeBlock, String>>{
+public class NeverState implements State<NeverState, OutgoingInternalTransition<CodeBlock, NeverState>>{
 	private final String mStateName;
-	private final List<OutgoingInternalTransition<CodeBlock, String>> mTranss;
+	private final List<OutgoingInternalTransition<CodeBlock, NeverState>> mTranss = new ArrayList<>();
 	
 	private final boolean mIsInitial;
 	private final boolean mIsFinal;
 	
-	public NeverState(String stateName, List<OutgoingInternalTransition<CodeBlock, String>> transs
-			, boolean isInitial, boolean isFinal) {
+	public NeverState(String stateName, boolean isInitial, boolean isFinal) {
 		mStateName = stateName;
-		mTranss = transs;
 		mIsInitial = isInitial;
 		mIsFinal = isFinal;
 	}
@@ -31,12 +29,16 @@ public class NeverState implements State<NeverState, OutgoingInternalTransition<
 		return mIsFinal;
 	}
 	
+	public void addTrans(OutgoingInternalTransition<CodeBlock, NeverState> trans) {
+		mTranss.add(trans);
+	}
+	
 	@Override
-	public List<OutgoingInternalTransition<CodeBlock, String>> getEnableTrans() {
-		List<OutgoingInternalTransition<CodeBlock, String>> enableTrans = new ArrayList<>();
-		for(final OutgoingInternalTransition<CodeBlock, String> edge : mTranss) {
-			final TransitionToolkit<OutgoingInternalTransition<CodeBlock, String>, NeverState> transitionToolkit
-			= new TransitionToolkit<OutgoingInternalTransition<CodeBlock, String>, NeverState>(edge, this);
+	public List<OutgoingInternalTransition<CodeBlock, NeverState>> getEnableTrans() {
+		List<OutgoingInternalTransition<CodeBlock, NeverState>> enableTrans = new ArrayList<>();
+		for(final OutgoingInternalTransition<CodeBlock, NeverState> edge : mTranss) {
+			final TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState> transitionToolkit
+			= new TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState>(edge, this);
 			if (transitionToolkit.checkTransEnable()) {
 				enableTrans.add(edge);
 			}
@@ -44,10 +46,10 @@ public class NeverState implements State<NeverState, OutgoingInternalTransition<
 		return null;
 	}
 	
-	public NeverState doTransition(final OutgoingInternalTransition<CodeBlock, String> edge
+	public NeverState doTransition(final OutgoingInternalTransition<CodeBlock, NeverState> edge
 			, final ProgramState correspondingProgramState) {
-		final TransitionToolkit<OutgoingInternalTransition<CodeBlock, String>, NeverState> transitionToolkit
-		= new TransitionToolkit<OutgoingInternalTransition<CodeBlock, String>, NeverState>(edge, this);
+		final TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState> transitionToolkit
+		= new TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState>(edge, this);
 		return (NeverState) transitionToolkit.doTransition(correspondingProgramState);
 	}
 }

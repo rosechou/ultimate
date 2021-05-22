@@ -97,6 +97,7 @@ public class TransitionToolkit<T, S> {
 	public S doTransition(ProgramState correspondingProgramState) {
 //		if(mAutType == AutTypes.NeverClaim) {
 //			if(mCodeBlockExecutor != null) {
+		// ...?
 //				NeverState targetState = ((OutgoingInternalTransition<?, ?>) mTrans).getSucc();
 //				mCodeBlockExecutor.setTargrtState(targetState);
 //				S newState = mCodeBlockExecutor.execute();

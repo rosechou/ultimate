@@ -29,26 +29,27 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Progra
  *
  */
 public class TransitionToolkit<T, S> {
-	private static enum AutTypes{
+	public static enum AutTypes{
 		Program, NeverClaim
 	}
 	
 	private final T mTrans;
 	private CodeBlockExecutor<S> mCodeBlockExecutor = null;
-	private AutTypes mAutType;
+	private final AutTypes mAutType;
 	
 	public TransitionToolkit(final T trans, final S state) {
 		mTrans = trans;
 		if(trans instanceof IcfgEdge && state instanceof ProgramState) {
 			mAutType = AutTypes.Program;
 			if (mTrans instanceof CodeBlock) {
-				mCodeBlockExecutor = new CodeBlockExecutor((CodeBlock) mTrans, state);
+				mCodeBlockExecutor = new CodeBlockExecutor((CodeBlock) mTrans, state, mAutType);
 			}
 		} else if(trans instanceof OutgoingInternalTransition<?, ?> && state instanceof NeverState) {
 			if(((OutgoingInternalTransition<?, ?>) trans).getLetter() instanceof CodeBlock
 					&& ((OutgoingInternalTransition<?, ?>) trans).getSucc() instanceof String) {
 				mAutType = AutTypes.NeverClaim;
-				mCodeBlockExecutor = new CodeBlockExecutor((CodeBlock) ((OutgoingInternalTransition<?, ?>) trans).getLetter(), state);
+				mCodeBlockExecutor
+				= new CodeBlockExecutor((CodeBlock) ((OutgoingInternalTransition<?, ?>) trans).getLetter(), state, mAutType);
 			} else {
 				throw new UnsupportedOperationException("Unknown Transition Type: " 
 						+ trans.getClass().getSimpleName());
@@ -70,17 +71,39 @@ public class TransitionToolkit<T, S> {
 	/**
 	 * Execute the {@link CodeBlock} on the edge.
 	 * @return
-	 * 		A new state reached after doing this transition(edge).
+	 * 		A new Program state reached after doing this transition(edge).
 	 */
 	public S doTransition() {
-		if(mCodeBlockExecutor != null) {
-			S newState = mCodeBlockExecutor.execute();
-			if(mAutType == AutTypes.Program) {
+		if(mAutType == AutTypes.Program) {
+			if(mCodeBlockExecutor != null) {
+				S newState = mCodeBlockExecutor.execute();
 				((ProgramState) newState).setCorrespondingIcfgLoc((BoogieIcfgLocation) ((IcfgEdge) mTrans).getTarget());
+				return newState;
+			} else {
+				throw new UnsupportedOperationException("No CodeBlockExecutor");
 			}
-			return newState;
 		} else {
-			throw new UnsupportedOperationException("No CodeBlockExecutor");
+			throw new UnsupportedOperationException("This doTransition function is for ProgramState");
+		}
+	}
+
+	/**
+	 * For NeverClaim Automata, we need to know the current program valuation.
+	 * @param correspondingProgramState
+	 * 		Current program State which contains the valuation.
+	 * @return
+	 * 		A new Never state reached after doing this transition(edge).
+	 */
+	public S doTransition(ProgramState correspondingProgramState) {
+		if(mAutType == AutTypes.NeverClaim) {
+			if(mCodeBlockExecutor != null) {
+				S newState = mCodeBlockExecutor.execute();
+				return newState;
+			} else {
+				throw new UnsupportedOperationException("No CodeBlockExecutor");
+			}
+		} else {
+			throw new UnsupportedOperationException("This doTransition function is for NeverState");
 		}
 	}
 }

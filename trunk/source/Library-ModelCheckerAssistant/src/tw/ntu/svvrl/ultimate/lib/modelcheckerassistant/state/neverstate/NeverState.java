@@ -33,14 +33,21 @@ public class NeverState implements State<NeverState, OutgoingInternalTransition<
 	
 	@Override
 	public List<OutgoingInternalTransition<CodeBlock, String>> getEnableTrans() {
-		List<IcfgEdge> enableTrans = new ArrayList<>();
-		//...
+		List<OutgoingInternalTransition<CodeBlock, String>> enableTrans = new ArrayList<>();
+		for(final OutgoingInternalTransition<CodeBlock, String> edge : mTranss) {
+			final TransitionToolkit<OutgoingInternalTransition<CodeBlock, String>, NeverState> transitionToolkit
+			= new TransitionToolkit<OutgoingInternalTransition<CodeBlock, String>, NeverState>(edge, this);
+			if (transitionToolkit.checkTransEnable()) {
+				enableTrans.add(edge);
+			}
+		}
 		return null;
 	}
 	
-	@Override
-	public NeverState doTransition(final OutgoingInternalTransition<CodeBlock, String> edge) {
-		//...
-		return null;
+	public NeverState doTransition(final OutgoingInternalTransition<CodeBlock, String> edge
+			, final ProgramState correspondingProgramState) {
+		final TransitionToolkit<OutgoingInternalTransition<CodeBlock, String>, NeverState> transitionToolkit
+		= new TransitionToolkit<OutgoingInternalTransition<CodeBlock, String>, NeverState>(edge, this);
+		return (NeverState) transitionToolkit.doTransition(correspondingProgramState);
 	}
 }

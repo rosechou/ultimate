@@ -23,13 +23,18 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Seq
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.StatementSequence;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Summary;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit.AutTypes;
 
 public class CodeBlockExecutor<S> {
-	private ProgramState mCurrentProgramState;
+	private S mCurrentState;
 	private final CodeBlock mCodeBlock;
+	private final AutTypes mAutType;
 	
-	public CodeBlockExecutor(final CodeBlock codeBlock, final S state) {
+	public CodeBlockExecutor(final CodeBlock codeBlock, final S state, final TransitionToolkit.AutTypes autType) {
 		mCodeBlock = codeBlock;
+		mAutType = autType;
+		
+		// two cases...
 		mCurrentProgramState = new ProgramState(state);
 	}
 	

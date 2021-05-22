@@ -5,7 +5,7 @@ import java.util.List;
 
 
 
-public interface State<S extends State<S, Trans>, Trans> {
-	public List<Trans> getEnableTrans();
-	public S doTransition(Trans t);
+public interface State<S extends State<S, T>, T> {
+	public List<T> getEnableTrans();
+	public S doTransition(T t);
 }

@@ -24,13 +24,13 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Sta
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Summary;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 
-public class CodeBlockExecutor {
+public class CodeBlockExecutor<S> {
 	private ProgramState mCurrentProgramState;
 	private final CodeBlock mCodeBlock;
 	
-	public CodeBlockExecutor(final CodeBlock codeBlock, final ProgramState programState) {
+	public CodeBlockExecutor(final CodeBlock codeBlock, final S state) {
 		mCodeBlock = codeBlock;
-		mCurrentProgramState = new ProgramState(programState);
+		mCurrentProgramState = new ProgramState(state);
 	}
 	
 
@@ -80,7 +80,7 @@ public class CodeBlockExecutor {
 		}
 	}
 	
-	public ProgramState execute() {
+	public S execute() {
 		if(mCodeBlock instanceof StatementSequence) {
 			executeStatementSequence((StatementSequence) mCodeBlock);
 		} else if(mCodeBlock instanceof Call) {

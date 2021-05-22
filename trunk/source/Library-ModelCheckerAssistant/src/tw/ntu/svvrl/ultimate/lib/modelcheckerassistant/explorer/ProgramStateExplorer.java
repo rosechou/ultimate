@@ -7,8 +7,8 @@ import java.util.Set;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.debugidentifiers.DebugIdentifier;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgContainer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramStateFactory;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramStateFactory;
 
 /**
  * This class explores the boogie program states with the help of

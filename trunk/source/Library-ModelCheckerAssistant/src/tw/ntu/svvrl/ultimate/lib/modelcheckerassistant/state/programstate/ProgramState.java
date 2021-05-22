@@ -1,4 +1,4 @@
-package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate;
+package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,6 +12,7 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.I
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.State;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
 
 /**
@@ -22,7 +23,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.Stateme
  *
  */
 
-public class ProgramState {
+public class ProgramState implements State<ProgramState, IcfgEdge>{
 	/**
 	 * To record the valuation of boogie variables.
 	 * Type: procedure name × identifier × value
@@ -163,6 +164,7 @@ public class ProgramState {
 	 * @return
 	 * 		a list of enable transitions.
 	 */
+	@Override
 	public List<IcfgEdge> getEnableTrans() {
 		List<IcfgEdge> edges = mCorrespondingIcfgLoc.getOutgoingEdges();
 		List<IcfgEdge> enableTrans = new ArrayList<>();
@@ -186,6 +188,7 @@ public class ProgramState {
 	 * @return
 	 * 		The next program state.
 	 */
+	@Override
 	public ProgramState doTransition(final IcfgEdge edge) {
 		final TransitionToolkit transitionToolkit = new TransitionToolkit(edge, this);
 		return transitionToolkit.doTransition();
@@ -205,4 +208,5 @@ public class ProgramState {
 		}
 		return mValuation.equals(anotherProgramState.getValuationCopy()) ? true : false;
 	}
+
 }

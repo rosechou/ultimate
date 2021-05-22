@@ -31,8 +31,8 @@ import java.util.ArrayList;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.*;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.NeverClaimAutExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.neverstate.NeverState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 
 import java.util.HashSet;
 import java.util.List;

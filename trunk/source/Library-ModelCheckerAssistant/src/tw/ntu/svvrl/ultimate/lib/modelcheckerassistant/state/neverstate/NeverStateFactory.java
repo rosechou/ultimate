@@ -1,4 +1,4 @@
-package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.neverstate;
+package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate;
 
 import java.util.ArrayList;
 import java.util.HashMap;

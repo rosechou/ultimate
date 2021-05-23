@@ -89,4 +89,9 @@ public class Valuation implements Cloneable {
 		}
 		return false;
 	}
+	
+	@Override
+	public String toString() {
+		return mValueMap.toString();
+	}
 }

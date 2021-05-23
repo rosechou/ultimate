@@ -69,4 +69,9 @@ public class NeverState implements State<NeverState, OutgoingInternalTransition<
 	public boolean equals(NeverState anotherState) {
 		return mStateName.equals(anotherState.getName()) ? true : false;
 	}
+	
+	@Override
+	public String toString() {
+		return "NeverState@" + mStateName;
+	}
 }

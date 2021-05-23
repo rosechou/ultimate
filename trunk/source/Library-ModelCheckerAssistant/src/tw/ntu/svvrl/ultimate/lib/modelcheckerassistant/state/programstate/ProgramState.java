@@ -212,4 +212,8 @@ public class ProgramState implements State<ProgramState, IcfgEdge>{
 		return mValuation.allNonOldGlobalInitialized();
 	}
 
+	@Override
+	public String toString() {
+		return "ProgramState@" + mCorrespondingIcfgLoc.toString();
+	}
 }

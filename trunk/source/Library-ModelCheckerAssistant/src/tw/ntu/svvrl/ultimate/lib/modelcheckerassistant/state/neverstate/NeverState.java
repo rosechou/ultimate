@@ -11,6 +11,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Cod
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.State;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.NeverTransitionToolkit;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
 
 public class NeverState implements State<NeverState>{
@@ -50,8 +51,8 @@ public class NeverState implements State<NeverState>{
 		}
 		
 		for(final OutgoingInternalTransition<CodeBlock, NeverState> edge : mTranss) {
-			final TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState> transitionToolkit
-			= new TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState>(edge, this);
+			final NeverTransitionToolkit transitionToolkit
+			= new NeverTransitionToolkit(edge, this);
 			if (transitionToolkit.checkTransEnable(correspondingProgramState)) {
 				enableTrans.add(edge);
 			}
@@ -61,8 +62,8 @@ public class NeverState implements State<NeverState>{
 
 	public NeverState doTransition(final OutgoingInternalTransition<CodeBlock, NeverState> edge
 			, final ProgramState correspondingProgramState) {
-		final TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState> transitionToolkit
-		= new TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState>(edge, this);
+		final NeverTransitionToolkit transitionToolkit
+		= new NeverTransitionToolkit(edge, this);
 		return (NeverState) transitionToolkit.doTransition(correspondingProgramState);
 	}
 	

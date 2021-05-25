@@ -17,6 +17,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.ValuationState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.FuncInitValuationInfo;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Valuation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.ThreadTransitionToolkit;
 
 /**
  * This class represents a boogie state in a specific thread.
@@ -175,13 +176,12 @@ public class ThreadState extends ValuationState<ThreadState>{
 		List<ThreadStateTransition> enableTrans = new ArrayList<>();
 		for(final IcfgEdge edge : edges) {
 			ThreadStateTransition trans = new ThreadStateTransition(edge, mThreadID);
-			final TransitionToolkit<ThreadStateTransition, ThreadState> transitionToolkit 
-					= new TransitionToolkit<ThreadStateTransition, ThreadState>(trans, this);
+			final ThreadTransitionToolkit transitionToolkit 
+					= new ThreadTransitionToolkit(trans, this);
 			if (transitionToolkit.checkTransEnable()) {
 				enableTrans.add(trans);
 			}
 		}
-		
 		return enableTrans;
 	}
 	
@@ -196,8 +196,8 @@ public class ThreadState extends ValuationState<ThreadState>{
 	 * 		The next program state.
 	 */
 	public ThreadState doTransition(final ThreadStateTransition edge) {
-		final TransitionToolkit<ThreadStateTransition, ThreadState> transitionToolkit
-				= new TransitionToolkit<ThreadStateTransition, ThreadState>(edge, this);
+		final ThreadTransitionToolkit transitionToolkit
+				= new ThreadTransitionToolkit(edge, this);
 		return (ThreadState) transitionToolkit.doTransition();
 	}
 	

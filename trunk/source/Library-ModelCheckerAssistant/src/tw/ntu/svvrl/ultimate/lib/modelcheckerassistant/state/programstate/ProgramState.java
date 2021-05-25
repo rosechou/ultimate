@@ -8,7 +8,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.IState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.ValuationState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.ITransitionToolkit;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
 
 public class ProgramState extends ValuationState<ProgramState> {
 	final List<ThreadState> mThreadStates = new ArrayList<>();

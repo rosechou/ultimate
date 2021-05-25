@@ -28,7 +28,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.ValuationState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.ITransitionToolkit.AutTypes;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit.AutTypes;
 
 public class CodeBlockExecutor<S extends IState<S>> {
 	private S mCurrentState;
@@ -51,7 +51,7 @@ public class CodeBlockExecutor<S extends IState<S>> {
 	 * @param state
 	 * @param autType
 	 */
-	public CodeBlockExecutor(final CodeBlock codeBlock, final S state, final ITransitionToolkit.AutTypes autType) {
+	public CodeBlockExecutor(final CodeBlock codeBlock, final S state, final TransitionToolkit.AutTypes autType) {
 		mCodeBlock = codeBlock;
 		mAutType = autType;
 		mCurrentState = (S) new ThreadState((ThreadState) state);
@@ -67,7 +67,7 @@ public class CodeBlockExecutor<S extends IState<S>> {
 	 * @param correspondingProgramState
 	 */
 	public CodeBlockExecutor(final CodeBlock codeBlock, final S state
-			, final ITransitionToolkit.AutTypes autType, final ProgramState correspondingProgramState
+			, final TransitionToolkit.AutTypes autType, final ProgramState correspondingProgramState
 			, final NeverState targetState) {
 		mCodeBlock = codeBlock;
 		mAutType = autType;
@@ -81,17 +81,17 @@ public class CodeBlockExecutor<S extends IState<S>> {
 	public boolean checkEnable() {
 		if(mCodeBlock instanceof StatementSequence) {
 			List<Statement> stmts = ((StatementSequence) mCodeBlock).getStatements();
-			if(mAutType == ITransitionToolkit.AutTypes.Program) {
+			if(mAutType == ITransitionToolkit.TransitionToolkit.Program) {
 				final StatementsChecker<ThreadState> statementChecker = new StatementsChecker<>(stmts, (ThreadState) mCurrentState);
 				return statementChecker.checkStatementsEnable();
-			} else if(mAutType == ITransitionToolkit.AutTypes.NeverClaim) {
+			} else if(mAutType == ITransitionToolkit.TransitionToolkit.NeverClaim) {
 				final StatementsChecker<ProgramState> statementChecker = new StatementsChecker<>(stmts, mCorrespondingProgramState);
 				return statementChecker.checkStatementsEnable();
 			} else {
 				throw new UnsupportedOperationException("Unsupported automata type.");
 			}
 		} else if(mCodeBlock instanceof Return) {
-			assert mAutType == ITransitionToolkit.AutTypes.Program;
+			assert mAutType == ITransitionToolkit.TransitionToolkit.Program;
 			/**
 			 * The caller procedure (top-1)
 			 * and return destination's procedure should match.
@@ -103,7 +103,7 @@ public class CodeBlockExecutor<S extends IState<S>> {
 				return false;
 			}
 		} else if(mCodeBlock instanceof Summary) {
-			assert mAutType == ITransitionToolkit.AutTypes.Program;
+			assert mAutType == ITransitionToolkit.TransitionToolkit.Program;
 			/**
 			 * If there are {@link Call} and {@link Summary}
 			 * at the same CFG location, then block the {@link Summary}.
@@ -116,7 +116,7 @@ public class CodeBlockExecutor<S extends IState<S>> {
 			}
 			return true;
 		} else if(mCodeBlock instanceof ParallelComposition) {
-			assert mAutType == ITransitionToolkit.AutTypes.Program;
+			assert mAutType == ITransitionToolkit.TransitionToolkit.Program;
 			/**
 			 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
 			 * This case is not yet implemented because I'm lazy.
@@ -126,7 +126,7 @@ public class CodeBlockExecutor<S extends IState<S>> {
 			throw new NotImplementedException(ParallelComposition.class.getSimpleName()
 					+ "is not yet implemented.");
 		} else if(mCodeBlock instanceof SequentialComposition) {
-			assert mAutType == ITransitionToolkit.AutTypes.Program;
+			assert mAutType == ITransitionToolkit.TransitionToolkit.Program;
 			/**
 			 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
 			 * This case is not yet implemented because I'm lazy.
@@ -136,7 +136,7 @@ public class CodeBlockExecutor<S extends IState<S>> {
 			throw new NotImplementedException(ParallelComposition.class.getSimpleName()
 					+ "is not yet implemented.");
 		} else {
-			assert mAutType == ITransitionToolkit.AutTypes.Program;
+			assert mAutType == ITransitionToolkit.TransitionToolkit.Program;
 			// other edge types are OK.
 			return true;
 		}
@@ -197,9 +197,9 @@ public class CodeBlockExecutor<S extends IState<S>> {
 	}
 	
 	private void moveToNewState(final S newState) {
-		if(mAutType == ITransitionToolkit.AutTypes.Program) {
+		if(mAutType == ITransitionToolkit.TransitionToolkit.Program) {
 			mCurrentState = (S) new ThreadState((ThreadState) newState);
-		} else if(mAutType == ITransitionToolkit.AutTypes.NeverClaim) {
+		} else if(mAutType == ITransitionToolkit.TransitionToolkit.NeverClaim) {
 			mCurrentState = (S) mTargrtState;
 		} else {
 			throw new UnsupportedOperationException("Unsupported automata type.");
@@ -212,10 +212,10 @@ public class CodeBlockExecutor<S extends IState<S>> {
 
 	private void executeStatementSequence(final StatementSequence stmtSeq) {
 		final List<Statement> stmts = stmtSeq.getStatements();
-		if(mAutType == ITransitionToolkit.AutTypes.Program) {
+		if(mAutType == ITransitionToolkit.TransitionToolkit.Program) {
 			final StatementsExecutor<ThreadState> statementExecutor = new StatementsExecutor<>(stmts, (ThreadState) mCurrentState);
 			moveToNewState((S) statementExecutor.execute());
-		} else if(mAutType == ITransitionToolkit.AutTypes.NeverClaim) {
+		} else if(mAutType == ITransitionToolkit.TransitionToolkit.NeverClaim) {
 			final StatementsExecutor<ProgramState> statementExecutor = new StatementsExecutor<>(stmts, mCorrespondingProgramState);
 			moveToNewState((S) statementExecutor.execute());
 		} else {
@@ -224,7 +224,7 @@ public class CodeBlockExecutor<S extends IState<S>> {
 	}
 
 	private void executeCall(final Call call) {
-		assert mAutType == ITransitionToolkit.AutTypes.Program;
+		assert mAutType == ITransitionToolkit.TransitionToolkit.Program;
 		final CallStatement callStmt = call.getCallStatement();
 		final StatementsExecutor<ThreadState> statementExecutor = new StatementsExecutor<>(callStmt, (ThreadState) mCurrentState);
 		moveToNewState((S) statementExecutor.execute());
@@ -238,7 +238,7 @@ public class CodeBlockExecutor<S extends IState<S>> {
 	}
 
 	private void executeReturn(final Return returnn) {
-		assert mAutType == ITransitionToolkit.AutTypes.Program;
+		assert mAutType == ITransitionToolkit.TransitionToolkit.Program;
 		final CallStatement correspondingCallStmt = returnn.getCallStatement();
 		final StatementsExecutor<ThreadState> statementExecutor = new StatementsExecutor<>((ThreadState) mCurrentState);
 		final String currentProcName = ((ThreadState) mCurrentState).getCurrentProc();

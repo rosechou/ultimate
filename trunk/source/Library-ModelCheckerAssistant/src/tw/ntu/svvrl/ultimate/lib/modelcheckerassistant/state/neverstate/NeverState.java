@@ -9,6 +9,7 @@ import de.uni_freiburg.informatik.ultimate.automata.nestedword.transitions.Outgo
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.State;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
 
@@ -37,7 +38,7 @@ public class NeverState implements State<NeverState, OutgoingInternalTransition<
 		return mStateName;
 	}
 	
-	public List<OutgoingInternalTransition<CodeBlock, NeverState>> getEnableTrans(final ThreadState correspondingProgramState) {
+	public List<OutgoingInternalTransition<CodeBlock, NeverState>> getEnableTrans(final ProgramState correspondingProgramState) {
 		List<OutgoingInternalTransition<CodeBlock, NeverState>> enableTrans = new ArrayList<>();
 		/**
 		 * All NonOld global variables must be initialized, or some errors

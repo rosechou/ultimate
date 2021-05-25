@@ -6,7 +6,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WhileStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogiePrimitiveType;
 import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Valuation;
 
 import java.util.HashMap;
@@ -39,39 +39,39 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.ReturnStatement;
 public class StatementsExecutor {
 	private final List<Statement> mStatements;
 	private final Statement mStatement;
-	private ProgramState mCurrentProgramState;
+	private ThreadState mCurrentThreadState;
 	
 	/**
 	 * For many statements.
 	 * @param statements
 	 * 		List of statements
-	 * @param programState
+	 * @param threadState
 	 */
-	public StatementsExecutor(final List<Statement> statements, final ProgramState programState) {
+	public StatementsExecutor(final List<Statement> statements, final ThreadState programState) {
 		mStatements = statements;
 		mStatement = null;
-		mCurrentProgramState = new ProgramState(programState);
+		mCurrentThreadState = new ThreadState(programState);
 	}
 	
 	/**
 	 * For only one statement.
 	 * @param statement
-	 * @param programState
+	 * @param threadState
 	 */
-	public StatementsExecutor(final Statement statement, final ProgramState programState) {
+	public StatementsExecutor(final Statement statement, final ThreadState threadState) {
 		mStatements = null;
 		mStatement = statement;
-		mCurrentProgramState = new ProgramState(programState);
+		mCurrentThreadState = new ThreadState(threadState);
 	}
 	
 	/**
 	 * For no statement. ({@link Return} code block)
-	 * @param programState
+	 * @param threadState
 	 */
-	public StatementsExecutor(final ProgramState programState) {
+	public StatementsExecutor(final ThreadState threadState) {
 		mStatements = null;
 		mStatement = null;
-		mCurrentProgramState = new ProgramState(programState);
+		mCurrentThreadState = new ThreadState(threadState);
 	}
 	
 	/**
@@ -79,7 +79,7 @@ public class StatementsExecutor {
 	 * @return
 	 * 		the new state reached after executing
 	 */
-	public ProgramState execute() {
+	public ThreadState execute() {
 		if(mStatements != null) {
 			for(final Statement stmt : mStatements) {
 				executeOne(stmt);
@@ -87,7 +87,7 @@ public class StatementsExecutor {
 		} else {
 			executeOne(mStatement);
 		}
-		return mCurrentProgramState;
+		return mCurrentThreadState;
 	}
 	
 	public void executeOne(final Statement stmt) {
@@ -135,10 +135,10 @@ public class StatementsExecutor {
 	 * @param stmt
 	 * 		an assignment statement.
 	 * @return
-	 * 		new program state.
+	 * 		new thread state.
 	 */
 	private void executeAssignmentStatement(final AssignmentStatement stmt) {
-		final ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentProgramState);
+		final ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentThreadState);
 		
 		final LeftHandSide[] lhs = stmt.getLhs();
 		final Expression[] rhs = stmt.getRhs();
@@ -155,7 +155,7 @@ public class StatementsExecutor {
 				final String varName = ((VariableLHS)lhs[i]).getIdentifier();
 				final Object value = exprEvaluator.evaluate(rhs[i]);
 				
-				updateProgramState(procName, varName, value);
+				updateThreadState(procName, varName, value);
 			} else if(lhs[i] instanceof ArrayLHS) {
 				/**
 				 * I don't know how to produce these case.
@@ -172,7 +172,7 @@ public class StatementsExecutor {
 
 
 	private void executeAssumeStatement(AssumeStatement stmt) {
-		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentProgramState);
+		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentThreadState);
 		assert((boolean) exprEvaluator.evaluate(stmt.getFormula()) == true);
 	}
 
@@ -205,17 +205,17 @@ public class StatementsExecutor {
 		 */
 		String procName = stmt.getMethodName();
 		Expression[] args = stmt.getArguments();
-		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentProgramState);
+		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentThreadState);
 		
-		List<String> argsName = mCurrentProgramState.getProc2InParams().get(procName);
+		List<String> argsName = mCurrentThreadState.getProc2InParams().get(procName);
 		assert(args.length == argsName.size());
 		/**
 		 * assign values to in params
 		 */
 		for(int i = 0; i < args.length; i++) {
-			updateProgramState(procName, argsName.get(i), exprEvaluator.evaluate(args[i]));
+			updateThreadState(procName, argsName.get(i), exprEvaluator.evaluate(args[i]));
 		}
-		mCurrentProgramState.pushProc(procName);
+		mCurrentThreadState.pushProc(procName);
 	}
 
 	private void executeForkStatement(ForkStatement stmt) {
@@ -243,11 +243,11 @@ public class StatementsExecutor {
 				switch(((BoogiePrimitiveType) bt).getTypeCode()) {
 					case BoogiePrimitiveType.BOOL:
 						value = r.nextBoolean();
-						updateProgramState(procName, varName, value);
+						updateThreadState(procName, varName, value);
 						break;
 					case BoogiePrimitiveType.INT:
 						value = r.nextInt();
-						updateProgramState(procName, varName, value);
+						updateThreadState(procName, varName, value);
 						break;
 					case BoogiePrimitiveType.REAL:
 						throw new NotImplementedException("Boogie variable with type"
@@ -266,16 +266,16 @@ public class StatementsExecutor {
 	}
 
 	private void executeIfStatement(IfStatement stmt) {
-		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentProgramState);
+		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentThreadState);
 		if((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
 			StatementsExecutor newStatementsExecutor
-					 = new StatementsExecutor(Arrays.asList(stmt.getThenPart()), mCurrentProgramState);
-			ProgramState newState = newStatementsExecutor.execute();
+					 = new StatementsExecutor(Arrays.asList(stmt.getThenPart()), mCurrentThreadState);
+			ThreadState newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		} else {
 			StatementsExecutor newStatementsExecutor
-			 		= new StatementsExecutor(Arrays.asList(stmt.getElsePart()), mCurrentProgramState);
-			ProgramState newState = newStatementsExecutor.execute();
+			 		= new StatementsExecutor(Arrays.asList(stmt.getElsePart()), mCurrentThreadState);
+			ThreadState newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}
 	}
@@ -298,30 +298,30 @@ public class StatementsExecutor {
 	}
 
 	private void executeWhileStatement(WhileStatement stmt) {
-		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentProgramState);
+		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentThreadState);
 		while((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
 			StatementsExecutor newStatementsExecutor
-	 			= new StatementsExecutor(Arrays.asList(stmt.getBody()), mCurrentProgramState);
-			ProgramState newState = newStatementsExecutor.execute();
+	 			= new StatementsExecutor(Arrays.asList(stmt.getBody()), mCurrentThreadState);
+			ThreadState newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}
 	}
 	
-	public void updateProgramState(final String procName, final String varName, final Object value) {
-		Valuation newValuation = mCurrentProgramState.getValuationCopy();
+	public void updateThreadState(final String procName, final String varName, final Object value) {
+		Valuation newValuation = mCurrentThreadState.getValuationCopy();
 		assert(newValuation.containsProcOrFunc(procName));
 		newValuation.setValue(procName, varName, value);
 
-		mCurrentProgramState = new ProgramState(newValuation, mCurrentProgramState);
+		mCurrentThreadState = new ThreadState(newValuation, mCurrentThreadState);
 	}
 	
 	
-	private void setCurrentState(ProgramState newState) {
-		mCurrentProgramState = new ProgramState(newState);
+	private void setCurrentState(ThreadState newState) {
+		mCurrentThreadState = new ThreadState(newState);
 	}
 	
-	public ProgramState getCurrentState() {
-		return mCurrentProgramState;
+	public ThreadState getCurrentState() {
+		return mCurrentThreadState;
 	}
 
 }

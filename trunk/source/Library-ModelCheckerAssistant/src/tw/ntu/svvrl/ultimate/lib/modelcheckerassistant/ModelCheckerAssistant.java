@@ -9,7 +9,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Boo
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.NeverClaimAutExplorer;
 
 /**
@@ -68,7 +68,7 @@ public class ModelCheckerAssistant {
 		mNeverClaimAutExplorer = new NeverClaimAutExplorer(nwa);
 	}
 	
-	public Set<ProgramState> getProgramInitialStates() {
+	public Set<ThreadState> getProgramInitialStates() {
 		return mProgramStateExplorer.getInitialStates();
 	}
 	

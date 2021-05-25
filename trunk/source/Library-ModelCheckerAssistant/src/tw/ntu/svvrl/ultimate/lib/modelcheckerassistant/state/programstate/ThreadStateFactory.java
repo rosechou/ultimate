@@ -11,7 +11,7 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.CfgSmtToolk
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.ILocalProgramVar;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 
-public class ProgramStateFactory {
+public class ThreadStateFactory {
 	
 	/**
 	 * States which are generated from the same rcfg
@@ -23,7 +23,7 @@ public class ProgramStateFactory {
 	
 	private final VarAndParamAdder mVarAdder;
 	
-	public ProgramStateFactory(final Boogie2SmtSymbolTable boogie2SmtSymbolTable
+	public ThreadStateFactory(final Boogie2SmtSymbolTable boogie2SmtSymbolTable
 			, final CfgSmtToolkit cfgSmtToolkit) {
 		mFuncInitValuationInfo = new FuncInitValuationInfo(
 			boogie2SmtSymbolTable.getBoogieDeclarations().getFunctionDeclarations());
@@ -69,14 +69,14 @@ public class ProgramStateFactory {
 	 * @return
 	 * 		the result initial state.
 	 */
-	public ProgramState createInitialState(final BoogieIcfgLocation loc) {
+	public ThreadState createInitialState(final BoogieIcfgLocation loc) {
 		Valuation valuation = new Valuation();
 		mVarAdder.addGlobalVars2Valuation(valuation);
 		mVarAdder.addOldGlobalVars2Valuation(valuation);
 		mVarAdder.addLocalVars2Valuation(valuation);
 		mVarAdder.addProcInParams2Valuation(valuation);
 		mVarAdder.addProcOutParams2Valuation(valuation);
-		return new ProgramState(valuation, loc, mFuncInitValuationInfo
+		return new ThreadState(valuation, loc, mFuncInitValuationInfo
 				, mProc2InParams, mProc2OutParams);
 	}
 	

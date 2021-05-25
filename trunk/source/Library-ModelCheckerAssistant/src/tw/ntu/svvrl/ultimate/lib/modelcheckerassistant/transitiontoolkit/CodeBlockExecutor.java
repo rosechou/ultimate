@@ -24,7 +24,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Seq
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.StatementSequence;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Summary;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit.AutTypes;
 
 public class CodeBlockExecutor<S> {
@@ -35,7 +35,7 @@ public class CodeBlockExecutor<S> {
 	/**
 	 * Only for NeverClaim Automata.
 	 */
-	private ProgramState mCorrespondingProgramState = null;
+	private ThreadState mCorrespondingProgramState = null;
 	/**
 	 *  Only for NeverClaim Automata.
 	 * If execute successfully, move to this state.
@@ -48,7 +48,7 @@ public class CodeBlockExecutor<S> {
 		mAutType = autType;
 		
 		if(autType == TransitionToolkit.AutTypes.Program) {
-			mCurrentState = (S) new ProgramState((ProgramState) state);
+			mCurrentState = (S) new ThreadState((ThreadState) state);
 		} else if(autType == TransitionToolkit.AutTypes.NeverClaim) {
 			mCurrentState = state;
 		} else {
@@ -56,8 +56,8 @@ public class CodeBlockExecutor<S> {
 		}
 	}
 	
-	public void setCorrespondingProgramState(ProgramState correspondingProgramState) {
-		mCorrespondingProgramState = correspondingProgramState;
+	public void setCorrespondingThreadState(ThreadState correspondingThreadState) {
+		mCorrespondingProgramState = correspondingThreadState;
 	}
 	
 	public void setTargrtState(NeverState targetState) {
@@ -68,7 +68,7 @@ public class CodeBlockExecutor<S> {
 		if(mCodeBlock instanceof StatementSequence) {
 			List<Statement> stmts = ((StatementSequence) mCodeBlock).getStatements();
 			if(mAutType == TransitionToolkit.AutTypes.Program) {
-				final StatementsChecker statementChecker = new StatementsChecker(stmts, (ProgramState) mCurrentState);
+				final StatementsChecker statementChecker = new StatementsChecker(stmts, (ThreadState) mCurrentState);
 				return statementChecker.checkStatementsEnable();
 			} else if(mAutType == TransitionToolkit.AutTypes.NeverClaim) {
 				final StatementsChecker statementChecker = new StatementsChecker(stmts, mCorrespondingProgramState);
@@ -83,7 +83,7 @@ public class CodeBlockExecutor<S> {
 			 * and return destination's procedure should match.
 			 */
 			String TargetProcName = mCodeBlock.getSucceedingProcedure();
-			if(((ProgramState) mCurrentState).getCallerProc().equals(TargetProcName)) {
+			if(((ThreadState) mCurrentState).getCallerProc().equals(TargetProcName)) {
 				return true;
 			} else {
 				return false;
@@ -182,9 +182,9 @@ public class CodeBlockExecutor<S> {
 		return mCurrentState;
 	}
 	
-	private void moveToNewState(final ProgramState newState) {
+	private void moveToNewState(final ThreadState newState) {
 		if(mAutType == TransitionToolkit.AutTypes.Program) {
-			mCurrentState = (S) new ProgramState((ProgramState) newState);
+			mCurrentState = (S) new ThreadState((ThreadState) newState);
 		} else if(mAutType == TransitionToolkit.AutTypes.NeverClaim) {
 			mCurrentState = (S) mTargrtState;
 		} else {
@@ -199,7 +199,7 @@ public class CodeBlockExecutor<S> {
 	private void executeStatementSequence(final StatementSequence stmtSeq) {
 		final List<Statement> stmts = stmtSeq.getStatements();
 		if(mAutType == TransitionToolkit.AutTypes.Program) {
-			final StatementsExecutor statementExecutor = new StatementsExecutor(stmts, (ProgramState) mCurrentState);
+			final StatementsExecutor statementExecutor = new StatementsExecutor(stmts, (ThreadState) mCurrentState);
 			moveToNewState(statementExecutor.execute());
 		} else if(mAutType == TransitionToolkit.AutTypes.NeverClaim) {
 			final StatementsExecutor statementExecutor = new StatementsExecutor(stmts, mCorrespondingProgramState);
@@ -212,43 +212,46 @@ public class CodeBlockExecutor<S> {
 	private void executeCall(final Call call) {
 		assert mAutType == TransitionToolkit.AutTypes.Program;
 		final CallStatement callStmt = call.getCallStatement();
-		final StatementsExecutor statementExecutor = new StatementsExecutor(callStmt, (ProgramState) mCurrentState);
+		final StatementsExecutor statementExecutor = new StatementsExecutor(callStmt, (ThreadState) mCurrentState);
 		moveToNewState(statementExecutor.execute());
 	}
 
 	private void executeSummary(final Summary summary) {
-		
+		if(summary.calledProcedureHasImplementation()) {
+			throw new UnsupportedOperationException("Error: Summary with"
+					+ " implementation is not supported.");
+		}
 	}
 
 	private void executeReturn(final Return returnn) {
 		assert mAutType == TransitionToolkit.AutTypes.Program;
 		final CallStatement correspondingCallStmt = returnn.getCallStatement();
-		final StatementsExecutor statementExecutor = new StatementsExecutor((ProgramState) mCurrentState);
-		final String currentProcName = ((ProgramState) mCurrentState).getCurrentProc();
-		final String returnProcName = ((ProgramState) mCurrentState).getCallerProc();
+		final StatementsExecutor statementExecutor = new StatementsExecutor((ThreadState) mCurrentState);
+		final String currentProcName = ((ThreadState) mCurrentState).getCurrentProc();
+		final String returnProcName = ((ThreadState) mCurrentState).getCallerProc();
 		
 		/**
 		 * assign return value to lhs(s).
 		 */
-		final List<String> outParamNames = ((ProgramState) mCurrentState).getProc2OutParams().get(currentProcName);
+		final List<String> outParamNames = ((ThreadState) mCurrentState).getProc2OutParams().get(currentProcName);
 		final VariableLHS[] lhss = correspondingCallStmt.getLhs();
 		assert(lhss.length == outParamNames.size());
 		for(int i = 0; i < lhss.length; i++) {
 			final String lhsName = lhss[i].getIdentifier();
-			final Object v = ((ProgramState) mCurrentState).getValuationCopy().lookUpValue(currentProcName, outParamNames.get(i));
-			statementExecutor.updateProgramState(returnProcName, lhsName, v);
+			final Object v = ((ThreadState) mCurrentState).getValuationCopy().lookUpValue(currentProcName, outParamNames.get(i));
+			statementExecutor.updateThreadState(returnProcName, lhsName, v);
 		}
 		
 		/**
 		 * set all <code>currentProcName</code>'s local variables to null.
 		 */
-		final Map<String, Object> id2v = ((ProgramState) mCurrentState).getValuationCopy().getProcOrFuncId2V(currentProcName);
+		final Map<String, Object> id2v = ((ThreadState) mCurrentState).getValuationCopy().getProcOrFuncId2V(currentProcName);
 		for(final String varName : id2v.keySet()) {
-			statementExecutor.updateProgramState(currentProcName, varName, null);
+			statementExecutor.updateThreadState(currentProcName, varName, null);
 		}
 		
 		moveToNewState(statementExecutor.getCurrentState());
-		((ProgramState) mCurrentState).popProc();
+		((ThreadState) mCurrentState).popProc();
 		
 		
 	}

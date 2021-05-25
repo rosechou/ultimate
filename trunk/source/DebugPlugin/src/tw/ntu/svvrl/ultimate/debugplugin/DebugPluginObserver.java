@@ -32,7 +32,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.*;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.NeverClaimAutExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ThreadState;
 
 import java.util.HashSet;
 import java.util.List;
@@ -96,7 +96,7 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		// mModelCheckerAssistant = new ModelCheckerAssistant(mRcfg, mLogger, mServices);
 		
 		/*-----------debugging-----------*/
-		Set<ProgramState> pInitialStates = new HashSet<>();
+		Set<ThreadState> pInitialStates = new HashSet<>();
 		pInitialStates = mModelCheckerAssistant.getProgramInitialStates();
 		
 		Set<NeverState> nInitialStates = new HashSet<>();
@@ -104,10 +104,10 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		NeverState n = ((NeverState) nInitialStates.toArray()[0]);
 		
 		
-		ProgramState a = ((ProgramState) pInitialStates.toArray()[0]);
+		ThreadState a = ((ThreadState) pInitialStates.toArray()[0]);
 		List<IcfgEdge> edges = a.getEnableTrans();
 		IcfgEdge edge = edges.get(0);
-		ProgramState b = a.doTransition(edge);
+		ThreadState b = a.doTransition(edge);
 		
 		List<OutgoingInternalTransition<CodeBlock, NeverState>> nedges = n.getEnableTrans(b);
 		if(nedges.size() > 0) {
@@ -118,7 +118,7 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		
 		edges = b.getEnableTrans();
 		edge = edges.get(0);
-		ProgramState c = b.doTransition(edge);
+		ThreadState c = b.doTransition(edge);
 		
 		nedges = n.getEnableTrans(c);
 		if(nedges.size() > 0) {
@@ -129,7 +129,7 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		
 		edges = c.getEnableTrans();
 		edge = edges.get(0);
-		ProgramState d = c.doTransition(edge);
+		ThreadState d = c.doTransition(edge);
 		
 		nedges = n.getEnableTrans(d);
 		if(nedges.size() > 0) {
@@ -140,7 +140,7 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		
 		edges = d.getEnableTrans();
 		edge = edges.get(0);
-		ProgramState e = d.doTransition(edge);
+		ThreadState e = d.doTransition(edge);
 		
 		nedges = n.getEnableTrans(e);
 		if(nedges.size() > 0) {
@@ -151,7 +151,7 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		
 		edges = e.getEnableTrans();
 		edge = edges.get(0);
-		ProgramState f = e.doTransition(edge);
+		ThreadState f = e.doTransition(edge);
 		
 		nedges = n.getEnableTrans(f);
 		if(nedges.size() > 0) {
@@ -162,7 +162,7 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		
 		edges = f.getEnableTrans();
 		edge = edges.get(0);
-		ProgramState g = f.doTransition(edge);
+		ThreadState g = f.doTransition(edge);
 		
 		nedges = n.getEnableTrans(g);
 		if(nedges.size() > 0) {
@@ -173,7 +173,7 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		
 		edges = g.getEnableTrans();
 		edge = edges.get(0);
-		ProgramState h = g.doTransition(edge);
+		ThreadState h = g.doTransition(edge);
 		
 		nedges = n.getEnableTrans(h);
 		if(nedges.size() > 0) {

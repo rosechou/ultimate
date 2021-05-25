@@ -22,7 +22,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Sta
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Summary;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.FuncInitValuationInfo;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ThreadState;
 
 /**
  * This class handle all issues about a transition(edge) and the statements on it.
@@ -39,7 +39,7 @@ public class TransitionToolkit<T, S> {
 	
 	public TransitionToolkit(final T trans, final S state) {
 		mTrans = trans;
-		if(trans instanceof IcfgEdge && state instanceof ProgramState) {
+		if(trans instanceof IcfgEdge && state instanceof ThreadState) {
 			mAutType = AutTypes.Program;
 			if (mTrans instanceof CodeBlock) {
 				mCodeBlockExecutor = new CodeBlockExecutor<S>((CodeBlock) mTrans, state, mAutType);
@@ -70,15 +70,15 @@ public class TransitionToolkit<T, S> {
 	
 	/**
 	 * For NeverClaim Automata, we need to know the current program valuation.
-	 * @param correspondingProgramState
+	 * @param correspondingThreadState
 	 * 		Current program State which contains the valuation.
 	 * @return
-	 * 		True if this trans is enable for correspondingProgramState, false if not.
+	 * 		True if this trans is enable for correspondingThreadState, false if not.
 	 */
-	public boolean checkTransEnable(ProgramState correspondingProgramState) {
+	public boolean checkTransEnable(ThreadState correspondingThreadState) {
 		if(mAutType == AutTypes.NeverClaim) {
 			if(mCodeBlockExecutor != null) {
-				mCodeBlockExecutor.setCorrespondingProgramState(correspondingProgramState);
+				mCodeBlockExecutor.setCorrespondingThreadState(correspondingThreadState);
 				NeverState targetState = (NeverState) ((OutgoingInternalTransition<?, ?>) mTrans).getSucc();
 				mCodeBlockExecutor.setTargrtState(targetState);
 				return mCodeBlockExecutor.checkEnable();
@@ -93,33 +93,33 @@ public class TransitionToolkit<T, S> {
 	/**
 	 * Execute the {@link CodeBlock} on the edge.
 	 * @return
-	 * 		A new Program state reached after doing this transition(edge).
+	 * 		A new Thread state reached after doing this transition(edge).
 	 */
 	public S doTransition() {
 		if(mAutType == AutTypes.Program) {
 			if(mCodeBlockExecutor != null) {
 				S newState = mCodeBlockExecutor.execute();
-				((ProgramState) newState).setCorrespondingIcfgLoc((BoogieIcfgLocation) ((IcfgEdge) mTrans).getTarget());
+				((ThreadState) newState).setCorrespondingIcfgLoc((BoogieIcfgLocation) ((IcfgEdge) mTrans).getTarget());
 				return newState;
 			} else {
 				throw new UnsupportedOperationException("No CodeBlockExecutor");
 			}
 		} else {
-			throw new UnsupportedOperationException("This doTransition function is for ProgramState");
+			throw new UnsupportedOperationException("This doTransition function is for ThreadState");
 		}
 	}
 
 	/**
 	 * For NeverClaim Automata, we need to know the current program valuation.
-	 * @param correspondingProgramState
+	 * @param correspondingThreadState
 	 * 		Current program State which contains the valuation.
 	 * @return
 	 * 		A new Never state reached after doing this transition(edge).
 	 */
-	public S doTransition(ProgramState correspondingProgramState) {
+	public S doTransition(ThreadState correspondingThreadState) {
 		if(mAutType == AutTypes.NeverClaim) {
 			if(mCodeBlockExecutor != null) {
-				mCodeBlockExecutor.setCorrespondingProgramState(correspondingProgramState);
+				mCodeBlockExecutor.setCorrespondingThreadState(correspondingThreadState);
 				NeverState targetState = (NeverState) ((OutgoingInternalTransition<?, ?>) mTrans).getSucc();
 				mCodeBlockExecutor.setTargrtState(targetState);
 				S newState = mCodeBlockExecutor.execute();

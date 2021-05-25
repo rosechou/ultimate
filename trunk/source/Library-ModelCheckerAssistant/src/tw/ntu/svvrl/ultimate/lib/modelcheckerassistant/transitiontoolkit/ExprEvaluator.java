@@ -28,7 +28,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.StructConstructor;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.UnaryExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WildcardExpression;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.FuncInitValuationInfo;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Valuation;
 
 public class ExprEvaluator {
@@ -54,9 +54,9 @@ public class ExprEvaluator {
 	private Stack<String> mFuncNameStack = new Stack<>();
 	
 	
-	public ExprEvaluator(final ProgramState programState) {
-		mValuation = programState.getValuationCopy();
-		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
+	public ExprEvaluator(final ThreadState threadState) {
+		mValuation = threadState.getValuationCopy();
+		mFuncInitValuationInfo = threadState.getFuncInitValuationInfo();
 		createFuncInitValuation(mFuncInitValuationInfo);
 	}
 	

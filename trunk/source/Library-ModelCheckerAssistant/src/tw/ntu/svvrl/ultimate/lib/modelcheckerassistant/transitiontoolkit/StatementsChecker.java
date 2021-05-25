@@ -14,7 +14,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.LeftHandSide;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.StructLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
 
 /**
@@ -25,11 +25,11 @@ public class StatementsChecker {
 	/**
 	 * the program state may change due to assignment and havoc statement.
 	 */
-	private ProgramState mProgramState;
+	private ThreadState mThreadState;
 
-	public StatementsChecker(final List<Statement> statements, final ProgramState programState) {
+	public StatementsChecker(final List<Statement> statements, final ThreadState threadState) {
 		mStatements = statements;
-		mProgramState = new ProgramState(programState);
+		mThreadState = new ThreadState(threadState);
 	}
 	
 	/**
@@ -59,10 +59,10 @@ public class StatementsChecker {
 				 */
 			} else if(stmt instanceof AssignmentStatement
 					|| stmt instanceof HavocStatement) {
-				final StatementsExecutor stmtsExecutor = new StatementsExecutor(stmt, mProgramState);
+				final StatementsExecutor stmtsExecutor = new StatementsExecutor(stmt, mThreadState);
 				moveToNewState(stmtsExecutor.execute());
 				StatementsChecker nextStatementsChecker 
-						= new StatementsChecker(mStatements.subList(i+1, mStatements.size()), mProgramState);
+						= new StatementsChecker(mStatements.subList(i+1, mStatements.size()), mThreadState);
 				return nextStatementsChecker.checkStatementsEnable();
 			}
 		}
@@ -70,11 +70,11 @@ public class StatementsChecker {
 	}
 	
 	private boolean checkAssumeStatement(final AssumeStatement assumeStmt) {
-		final ExprEvaluator exprEvaluator = new ExprEvaluator(mProgramState);
+		final ExprEvaluator exprEvaluator = new ExprEvaluator(mThreadState);
 		return (boolean) exprEvaluator.evaluate(assumeStmt.getFormula());
 	}
 	
-	private void moveToNewState(final ProgramState newState) {
-		mProgramState = new ProgramState(newState);
+	private void moveToNewState(final ThreadState newState) {
+		mThreadState = new ThreadState(newState);
 	}
 }

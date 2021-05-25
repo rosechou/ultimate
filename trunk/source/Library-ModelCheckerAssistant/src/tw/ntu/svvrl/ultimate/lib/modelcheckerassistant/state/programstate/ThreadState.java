@@ -16,14 +16,14 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.State;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
 
 /**
- * This class represents a boogie program state.
+ * This class represents a boogie state in a specific thread.
  * It differs from {@link BoogieIcfgLocation} in the existence of actual valuation
  * during the program execution.
  * @author Hong-Yang Lin
  *
  */
 
-public class ProgramState implements State<ProgramState, IcfgEdge>{
+public class ThreadState implements State<ThreadState, IcfgEdge>{
 	/**
 	 * To record the valuation of boogie variables.
 	 * Type: procedure name × identifier × value
@@ -56,7 +56,7 @@ public class ProgramState implements State<ProgramState, IcfgEdge>{
 	 * @param funcInitValuationInfo
 	 * 		function info
 	 */
-	public ProgramState(final Valuation v,
+	public ThreadState(final Valuation v,
 						final BoogieIcfgLocation boogieIcfgLocation,
 						final FuncInitValuationInfo funcInitValuationInfo,
 						final Map<String, List<String>> proc2InParams,
@@ -74,11 +74,11 @@ public class ProgramState implements State<ProgramState, IcfgEdge>{
 	 * Thus the field <code>mCorrespondingIcfgLoc</code> may move
 	 * but we have no idea where it is. This field remains unknown until
 	 * {@link #setCorrespondingIcfgLoc} is called.
-	 * Used in {@link StatementsExecutor#updateProgramState}'s
+	 * Used in {@link StatementsExecutor#updateThreadState}'s
 	 * Pass the old state to get FuncInitValuationInfo and Proc2InParams.
 	 * @param valuation
 	 */
-	public ProgramState(final Valuation v, final ProgramState oldState) {
+	public ThreadState(final Valuation v, final ThreadState oldState) {
 		mValuation = v.clone();
 		mCorrespondingIcfgLoc = null;
 		mFuncInitValuationInfo = oldState.getFuncInitValuationInfo();
@@ -91,7 +91,7 @@ public class ProgramState implements State<ProgramState, IcfgEdge>{
 	 * copy constructor
 	 * valuation and stack are deep copied.
 	 */
-	public ProgramState(final ProgramState programState) {
+	public ThreadState(final ThreadState programState) {
 		mValuation = programState.getValuationCopy();
 		mCorrespondingIcfgLoc = programState.getCorrespondingIcfgLoc();
 		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
@@ -151,7 +151,7 @@ public class ProgramState implements State<ProgramState, IcfgEdge>{
 	
 	/**
 	 * This method is used for make up the unknown <code>mCorrespondingIcfgLoc</code>.
-	 * see {@link #ProgramState(Map, FuncInitValuationInfo)}.
+	 * see {@link #ThreadState(Map, FuncInitValuationInfo)}.
 	 * @param icfgLocation
 	 */
 	public void setCorrespondingIcfgLoc(final BoogieIcfgLocation icfgLocation) {
@@ -168,7 +168,7 @@ public class ProgramState implements State<ProgramState, IcfgEdge>{
 		List<IcfgEdge> edges = mCorrespondingIcfgLoc.getOutgoingEdges();
 		List<IcfgEdge> enableTrans = new ArrayList<>();
 		for(final IcfgEdge edge : edges) {
-			final TransitionToolkit<IcfgEdge, ProgramState> transitionToolkit = new TransitionToolkit<IcfgEdge, ProgramState>(edge, this);
+			final TransitionToolkit<IcfgEdge, ThreadState> transitionToolkit = new TransitionToolkit<IcfgEdge, ThreadState>(edge, this);
 			if (transitionToolkit.checkTransEnable()) {
 				enableTrans.add(edge);
 			}
@@ -187,25 +187,25 @@ public class ProgramState implements State<ProgramState, IcfgEdge>{
 	 * @return
 	 * 		The next program state.
 	 */
-	public ProgramState doTransition(final IcfgEdge edge) {
-		final TransitionToolkit<IcfgEdge, ProgramState> transitionToolkit = new TransitionToolkit<IcfgEdge, ProgramState>(edge, this);
-		return (ProgramState) transitionToolkit.doTransition();
+	public ThreadState doTransition(final IcfgEdge edge) {
+		final TransitionToolkit<IcfgEdge, ThreadState> transitionToolkit = new TransitionToolkit<IcfgEdge, ThreadState>(edge, this);
+		return (ThreadState) transitionToolkit.doTransition();
 	}
 	
 	/**
 	 * Check whether two automaton states are equivalent.
 	 * This method is needed in the nested DFS procedure. 
-	 * @param anotherProgramState
+	 * @param anotherThreadState
 	 * 		the state which is going to be compared to.
 	 * @return
 	 * 		true if two states are equivalent, false if not.
 	 */
 	@Override
-	public boolean equals(final ProgramState anotherProgramState) {
-		if(!mCorrespondingIcfgLoc.equals(anotherProgramState.getCorrespondingIcfgLoc())) {
+	public boolean equals(final ThreadState anotherThreadState) {
+		if(!mCorrespondingIcfgLoc.equals(anotherThreadState.getCorrespondingIcfgLoc())) {
 			return false;
 		}
-		return mValuation.equals(anotherProgramState.getValuationCopy()) ? true : false;
+		return mValuation.equals(anotherThreadState.getValuationCopy()) ? true : false;
 	}
 
 	public boolean allNonOldGlobalInitialized() {
@@ -214,6 +214,6 @@ public class ProgramState implements State<ProgramState, IcfgEdge>{
 
 	@Override
 	public String toString() {
-		return "ProgramState@" + mCorrespondingIcfgLoc.toString();
+		return "ThreadState@" + mCorrespondingIcfgLoc.toString();
 	}
 }

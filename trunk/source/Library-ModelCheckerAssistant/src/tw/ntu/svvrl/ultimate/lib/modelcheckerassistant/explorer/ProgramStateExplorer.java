@@ -7,13 +7,13 @@ import java.util.Set;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.debugidentifiers.DebugIdentifier;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgContainer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramStateFactory;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ThreadState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ThreadStateFactory;
 
 /**
  * This class explores the boogie program states with the help of
  * the pre-build {@link BoogieIcfgContainer}.
- * The {@link ProgramState}s is generated when a Icfg transition is going to be moved. 
+ * The {@link ThreadState}s is generated when a Icfg transition is going to be moved. 
  * 
  * @author Hong-Yang Lin
  */
@@ -27,7 +27,7 @@ public class ProgramStateExplorer {
 	private final Set<BoogieIcfgLocation> mInitialNodes;
 	/*------------End of RCFG fields-----------*/
 	
-	private final ProgramStateFactory mProgramStateFactory;
+	private final ThreadStateFactory mProgramStateFactory;
 
 	public ProgramStateExplorer(final BoogieIcfgContainer rcfg) {
 		/*---------------RCFG fields---------------*/
@@ -39,7 +39,7 @@ public class ProgramStateExplorer {
 		mInitialNodes = rcfg.getInitialNodes();
 		/*------------End of RCFG fields-----------*/
 		
-		mProgramStateFactory = new ProgramStateFactory(rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable()
+		mProgramStateFactory = new ThreadStateFactory(rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable()
 				, rcfg.getCfgSmtToolkit());
 	}
 	
@@ -49,8 +49,8 @@ public class ProgramStateExplorer {
 	 * value tables so that they become automaton initial states.
 	 * @return	A set containing all initial states.
 	 */
-	public Set<ProgramState> getInitialStates() {
-		Set<ProgramState> initialProgramStates = new HashSet<>();
+	public Set<ThreadState> getInitialStates() {
+		Set<ThreadState> initialProgramStates = new HashSet<>();
 		
 		for(BoogieIcfgLocation initialLoc: mInitialNodes) {
 			initialProgramStates.add(mProgramStateFactory.createInitialState(initialLoc));
@@ -62,7 +62,7 @@ public class ProgramStateExplorer {
 	/**
 	 * Only for debugging
 	 */
-	public ProgramState getLocStateById(String id) {
+	public ThreadState getLocStateById(String id) {
 		for(Map<DebugIdentifier, BoogieIcfgLocation> m : mLocNodes.values()) {
 			for(BoogieIcfgLocation l : m.values()) {
 				if(l.toString().equals(id)) {

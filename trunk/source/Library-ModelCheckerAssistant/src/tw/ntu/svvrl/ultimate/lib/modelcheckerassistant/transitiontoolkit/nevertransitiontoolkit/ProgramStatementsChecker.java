@@ -1,4 +1,4 @@
-package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit;
+package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.nevertransitiontoolkit;
 
 import java.util.List;
 
@@ -13,11 +13,11 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.ExprEva
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsChecker;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
 
-public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
-	
-	public ThreadStatementsChecker(final List<Statement> statements, final ThreadState state) {
+public class ProgramStatementsChecker extends StatementsChecker<ProgramState> {
+
+	public ProgramStatementsChecker(final List<Statement> statements, final ProgramState state) {
 		mStatements = statements;
-		mState = new ThreadState(state);
+		mState = state;
 	}
 	
 	/**
@@ -39,31 +39,19 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 				if(!checkAssumeStatement((AssumeStatement) stmt)) {
 					return false;
 				}
-			} else if(stmt instanceof AssertStatement) {
-				/**
-				 * We don't check whether the assertion is satisfied or not here.
-				 * Instead, we leave this check in the doTransition function.
-				 * So assert statement will be skipped here.
-				 */
-			} else if(stmt instanceof AssignmentStatement
-					|| stmt instanceof HavocStatement) {
-				assert mState instanceof ThreadState;
-				final StatementsExecutor<ThreadState> stmtsExecutor = new StatementsExecutor<>(stmt, mState);
-				moveToNewState(stmtsExecutor.execute());
-				ThreadStatementsChecker nextStatementsChecker 
-						= new ThreadStatementsChecker(mStatements.subList(i+1, mStatements.size()), mState);
-				return nextStatementsChecker.checkStatementsEnable();
+			} else {
+				throw new UnsupportedOperationException("Suppose the Statement Type: "
+						+ stmt.getClass().getSimpleName() + " should not be in Never Claim"
+								+ " Automata.");
 			}
 		}
 		return true;
 	}
 	
 	protected boolean checkAssumeStatement(final AssumeStatement assumeStmt) {
-		final ExprEvaluator<ThreadState> exprEvaluator = new ExprEvaluator<>(mState);
+		final ExprEvaluator<ProgramState> exprEvaluator = new ExprEvaluator<>(mState);
 		return (boolean) exprEvaluator.evaluate(assumeStmt.getFormula());
 	}
-	
-	private void moveToNewState(final ThreadState newState) {
-		mState = new ThreadState(newState);
-	}
+
+
 }

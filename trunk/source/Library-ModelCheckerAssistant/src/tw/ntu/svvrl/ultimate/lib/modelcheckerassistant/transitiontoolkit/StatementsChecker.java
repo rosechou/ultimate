@@ -22,69 +22,13 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.Stateme
 /**
  * This class check whether the statements is able to execute (enable).
  */
-public class StatementsChecker<S extends ValuationState<S>> {
-	private final List<Statement> mStatements;
+public abstract class StatementsChecker<S extends ValuationState<S>> {
+	protected List<Statement> mStatements;
 	/**
 	 * the state may change due to assignment and havoc statement.
 	 */
-	private S mState;
-
-	public StatementsChecker(final List<Statement> statements, final S state) {
-		mStatements = statements;
-		if(state instanceof ThreadState) {
-			mState = (S) new ThreadState((ThreadState) state);
-		} else if(state instanceof ProgramState) {
-			mState = state;
-		} else {
-			throw new UnsupportedOperationException("Unsupported state type.");
-		}
-	}
+	protected S mState;
 	
-	/**
-	 * Check whether the given statements(from Icfg edge) is enable.
-	 * Assignment and Havoc statements should be considered because these statement will
-	 * make the origin state move to a new program state. Whether an assignment statement
-	 * is enable is equal to asking whether the new state is enable after executing the 
-	 * rest statements. (use recursion) 
-	 * @param stmts
-	 * 		list of statements
-	 * @return
-	 * 		true if no assume statement is violated
-	 */
-	public boolean checkStatementsEnable() {
-		for(int i = 0; i < mStatements.size(); i++) {
-			final Statement stmt = mStatements.get(i);
-			if(stmt instanceof AssumeStatement) {
-				// if the formula assumed is not hold, then not enable. 
-				if(!checkAssumeStatement((AssumeStatement) stmt)) {
-					return false;
-				}
-			} else if(stmt instanceof AssertStatement) {
-				/**
-				 * We don't check whether the assertion is satisfied or not here.
-				 * Instead, we leave this check in the doTransition function.
-				 * So assert statement will be skipped here.
-				 */
-			} else if(stmt instanceof AssignmentStatement
-					|| stmt instanceof HavocStatement) {
-				assert mState instanceof ThreadState;
-				final StatementsExecutor<S> stmtsExecutor = new StatementsExecutor<>(stmt, mState);
-				moveToNewState(stmtsExecutor.execute());
-				StatementsChecker<S> nextStatementsChecker 
-						= new StatementsChecker<>(mStatements.subList(i+1, mStatements.size()), mState);
-				return nextStatementsChecker.checkStatementsEnable();
-			}
-		}
-		return true;
-	}
-	
-	private boolean checkAssumeStatement(final AssumeStatement assumeStmt) {
-		final ExprEvaluator<S> exprEvaluator = new ExprEvaluator<>(mState);
-		return (boolean) exprEvaluator.evaluate(assumeStmt.getFormula());
-	}
-	
-	private void moveToNewState(final S newState) {
-		assert mState instanceof ThreadState;
-		mState = (S) new ThreadState((ThreadState) newState);
-	}
+	protected abstract boolean checkStatementsEnable();
+	protected abstract boolean checkAssumeStatement(final AssumeStatement assumeStmt);
 }

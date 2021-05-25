@@ -9,11 +9,11 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.thread
  *
  */
 public abstract class TransitionToolkit<S extends IState<S>> {
-	protected CodeBlockExecutor<S> mCodeBlockExecutor = null;
+	protected CodeBlockExecutor<S> mCodeBlockExecutor;
 	
-	public boolean checkTransEnable() {
+	protected boolean checkTransEnable() {
 		return mCodeBlockExecutor.checkEnable();
 	}
 	
-	public abstract S doTransition();
+	protected abstract S doTransition();
 }

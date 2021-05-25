@@ -33,6 +33,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.NeverClaimAutExp
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 
 import java.util.HashSet;
@@ -106,8 +107,8 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		
 		
 		ProgramState a = ((ProgramState) pInitialStates.toArray()[0]);
-		List<IcfgEdge> edges = a.getEnableTrans();
-		IcfgEdge edge = edges.get(0);
+		List<ThreadStateTransition> edges = a.getEnableTrans();
+		ThreadStateTransition edge = edges.get(0);
 		ProgramState b = a.doTransition(edge);
 		
 		List<OutgoingInternalTransition<CodeBlock, NeverState>> nedges = n.getEnableTrans(b);

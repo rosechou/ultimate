@@ -7,7 +7,8 @@ Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: tw.ntu.svvrl.ultimate.lib.modelcheckerassistant,
  tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer,
  tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate,
- tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate
+ tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate,
+ tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate
 Require-Bundle: de.uni_freiburg.informatik.ultimate.core,
  de.uni_freiburg.informatik.ultimate.lib.util,
  de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils,

@@ -147,7 +147,11 @@ public class StatementsExecutor<S extends ValuationState<S>> {
 
 
 	private void executeAssertStatement(AssertStatement stmt) {
-		// TODO Auto-generated method stub
+		ExprEvaluator<S> exprEvaluator = new ExprEvaluator<>(mCurrentState);
+		if(!(boolean) exprEvaluator.evaluate(stmt.getFormula())) {
+			throw new UnsupportedOperationException("Assertion is violated during"
+					+ " the statement execution.");
+		}
 	}
 
 	/**

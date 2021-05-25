@@ -70,7 +70,7 @@ public class ThreadStateFactory {
 		
 		
 		return new ThreadState(newValuation, loc, mFuncInitValuationInfo
-				, mProc2InParams, mProc2OutParams);
+				, mProc2InParams, mProc2OutParams, -1);
 	}
 	
 //	public ProgramState createNextProgramState(ProgramState lastProgramState, transition) {

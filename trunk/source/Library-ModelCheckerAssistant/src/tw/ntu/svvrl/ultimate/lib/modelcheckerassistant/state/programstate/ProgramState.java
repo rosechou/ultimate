@@ -28,7 +28,7 @@ public class ProgramState extends ValuationState<ProgramState> {
 	}
 	
 
-	public ProgramState doTransition(final IcfgEdge edge) {
+	public ProgramState doTransition(final ThreadStateTransition edge) {
 		//...
 		return null;
 	}

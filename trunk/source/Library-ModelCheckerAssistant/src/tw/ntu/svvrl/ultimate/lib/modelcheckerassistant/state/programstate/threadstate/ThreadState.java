@@ -50,7 +50,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 	private Stack<String> mProcStack = new Stack<>();
 	
 	
-	private final int mThreadID;
+	private final int mThreadID = 0;
 	
 	
 	/**
@@ -73,7 +73,6 @@ public class ThreadState extends ValuationState<ThreadState>{
 		mProc2InParams = proc2InParams;
 		mProc2OutParams = proc2OutParams;
 		mProcStack.push(mCorrespondingIcfgLoc.getProcedure());
-		mThreadID = threadID;
 	}
 	
 	/**

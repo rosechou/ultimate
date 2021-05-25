@@ -6,6 +6,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WhileStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogiePrimitiveType;
 import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.ValuationState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Valuation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
@@ -37,7 +38,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.Label;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.LeftHandSide;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ReturnStatement;
 
-public class StatementsExecutor<S> {
+public class StatementsExecutor<S extends ValuationState<S>> {
 	private final List<Statement> mStatements;
 	private final Statement mStatement;
 	private S mCurrentState;
@@ -236,7 +237,7 @@ public class StatementsExecutor<S> {
 		for(int i = 0; i < args.length; i++) {
 			updateThreadState(procName, argsName.get(i), exprEvaluator.evaluate(args[i]));
 		}
-		mCurrentThreadState.pushProc(procName);
+		((ThreadState) mCurrentState).pushProc(procName);
 	}
 
 	private void executeForkStatement(ForkStatement stmt) {
@@ -294,12 +295,12 @@ public class StatementsExecutor<S> {
 		if((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
 			StatementsExecutor newStatementsExecutor
 					 = new StatementsExecutor(Arrays.asList(stmt.getThenPart()), mCurrentState);
-			S newState = newStatementsExecutor.execute();
+			ThreadState newState = (ThreadState) newStatementsExecutor.execute();
 			setCurrentState(newState);
 		} else {
 			StatementsExecutor newStatementsExecutor
 			 		= new StatementsExecutor(Arrays.asList(stmt.getElsePart()), mCurrentState);
-			S newState = newStatementsExecutor.execute();
+			ThreadState newState = (ThreadState) newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}
 	}
@@ -329,7 +330,7 @@ public class StatementsExecutor<S> {
 		while((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
 			StatementsExecutor newStatementsExecutor
 	 			= new StatementsExecutor(Arrays.asList(stmt.getBody()), mCurrentState);
-			ThreadState newState = newStatementsExecutor.execute();
+			ThreadState newState = (ThreadState) newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}
 	}
@@ -339,16 +340,16 @@ public class StatementsExecutor<S> {
 		assert(newValuation.containsProcOrFunc(procName));
 		newValuation.setValue(procName, varName, value);
 
-		mCurrentThreadState = new ThreadState(newValuation, mCurrentThreadState);
+		mCurrentState = (S) new ThreadState(newValuation, (ThreadState) mCurrentState);
 	}
 	
 	
 	private void setCurrentState(ThreadState newState) {
-		mCurrentThreadState = new ThreadState(newState);
+		mCurrentState = (S) new ThreadState(newState);
 	}
 	
-	public ThreadState getCurrentState() {
-		return mCurrentThreadState;
+	public S getCurrentState() {
+		return mCurrentState;
 	}
 
 }

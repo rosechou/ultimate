@@ -49,6 +49,9 @@ public class ThreadState implements State<ThreadState, IcfgEdge>{
 	private Stack<String> mProcStack = new Stack<>();
 	
 	
+	private final int mThreadID;
+	
+	
 	/**
 	 * Initial constructor.
 	 * @param v
@@ -61,13 +64,15 @@ public class ThreadState implements State<ThreadState, IcfgEdge>{
 						final BoogieIcfgLocation boogieIcfgLocation,
 						final FuncInitValuationInfo funcInitValuationInfo,
 						final Map<String, List<String>> proc2InParams,
-						final Map<String, List<String>> proc2OutParams) {
+						final Map<String, List<String>> proc2OutParams,
+						final int threadID) {
 		mValuation = v.clone();
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
 		mFuncInitValuationInfo = funcInitValuationInfo;
 		mProc2InParams = proc2InParams;
 		mProc2OutParams = proc2OutParams;
 		mProcStack.push(mCorrespondingIcfgLoc.getProcedure());
+		mThreadID = threadID;
 	}
 	
 	/**
@@ -92,13 +97,13 @@ public class ThreadState implements State<ThreadState, IcfgEdge>{
 	 * copy constructor
 	 * valuation and stack are deep copied.
 	 */
-	public ThreadState(final ThreadState programState) {
-		mValuation = programState.getValuationCopy();
-		mCorrespondingIcfgLoc = programState.getCorrespondingIcfgLoc();
-		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
-		mProc2InParams = programState.getProc2InParams();
-		mProc2OutParams = programState.getProc2OutParams();
-		mProcStack = programState.getProcStackCopy();
+	public ThreadState(final ThreadState threadState) {
+		mValuation = threadState.getValuationCopy();
+		mCorrespondingIcfgLoc = threadState.getCorrespondingIcfgLoc();
+		mFuncInitValuationInfo = threadState.getFuncInitValuationInfo();
+		mProc2InParams = threadState.getProc2InParams();
+		mProc2OutParams = threadState.getProc2OutParams();
+		mProcStack = threadState.getProcStackCopy();
 	}
 
 	public BoogieIcfgLocation getCorrespondingIcfgLoc() {
@@ -135,6 +140,10 @@ public class ThreadState implements State<ThreadState, IcfgEdge>{
 	
 	public String getCurrentProc() {
 		return mProcStack.peek();
+	}
+	
+	public int getThreadID() {
+		return mThreadID;
 	}
 	
 	public String getCallerProc() {

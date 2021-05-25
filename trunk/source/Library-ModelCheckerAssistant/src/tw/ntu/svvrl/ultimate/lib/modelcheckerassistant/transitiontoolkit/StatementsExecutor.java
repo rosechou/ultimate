@@ -6,6 +6,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WhileStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogiePrimitiveType;
 import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Valuation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 
@@ -36,10 +37,10 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.Label;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.LeftHandSide;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ReturnStatement;
 
-public class StatementsExecutor {
+public class StatementsExecutor<S> {
 	private final List<Statement> mStatements;
 	private final Statement mStatement;
-	private ThreadState mCurrentThreadState;
+	private S mCurrentState;
 	
 	/**
 	 * For many statements.
@@ -47,10 +48,16 @@ public class StatementsExecutor {
 	 * 		List of statements
 	 * @param threadState
 	 */
-	public StatementsExecutor(final List<Statement> statements, final ThreadState programState) {
+	public StatementsExecutor(final List<Statement> statements, final S state) {
 		mStatements = statements;
 		mStatement = null;
-		mCurrentThreadState = new ThreadState(programState);
+		if(state instanceof ThreadState) {
+			mCurrentState = (S) new ThreadState((ThreadState) state);
+		} else if(state instanceof ProgramState) {
+			mCurrentState = state;
+		} else {
+			throw new UnsupportedOperationException("Unsupported state type.");
+		}
 	}
 	
 	/**
@@ -58,20 +65,32 @@ public class StatementsExecutor {
 	 * @param statement
 	 * @param threadState
 	 */
-	public StatementsExecutor(final Statement statement, final ThreadState threadState) {
+	public StatementsExecutor(final Statement statement, final S state) {
 		mStatements = null;
 		mStatement = statement;
-		mCurrentThreadState = new ThreadState(threadState);
+		if(state instanceof ThreadState) {
+			mCurrentState = (S) new ThreadState((ThreadState) state);
+		} else if(state instanceof ProgramState) {
+			mCurrentState = state;
+		} else {
+			throw new UnsupportedOperationException("Unsupported state type.");
+		}
 	}
 	
 	/**
 	 * For no statement. ({@link Return} code block)
 	 * @param threadState
 	 */
-	public StatementsExecutor(final ThreadState threadState) {
+	public StatementsExecutor(final S state) {
 		mStatements = null;
 		mStatement = null;
-		mCurrentThreadState = new ThreadState(threadState);
+		if(state instanceof ThreadState) {
+			mCurrentState = (S) new ThreadState((ThreadState) state);
+		} else if(state instanceof ProgramState) {
+			mCurrentState = state;
+		} else {
+			throw new UnsupportedOperationException("Unsupported state type.");
+		}
 	}
 	
 	/**
@@ -79,7 +98,7 @@ public class StatementsExecutor {
 	 * @return
 	 * 		the new state reached after executing
 	 */
-	public ThreadState execute() {
+	public S execute() {
 		if(mStatements != null) {
 			for(final Statement stmt : mStatements) {
 				executeOne(stmt);
@@ -87,7 +106,7 @@ public class StatementsExecutor {
 		} else {
 			executeOne(mStatement);
 		}
-		return mCurrentThreadState;
+		return mCurrentState;
 	}
 	
 	public void executeOne(final Statement stmt) {
@@ -138,7 +157,8 @@ public class StatementsExecutor {
 	 * 		new thread state.
 	 */
 	private void executeAssignmentStatement(final AssignmentStatement stmt) {
-		final ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentThreadState);
+		assert mCurrentState instanceof ThreadState;
+		final ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentState);
 		
 		final LeftHandSide[] lhs = stmt.getLhs();
 		final Expression[] rhs = stmt.getRhs();
@@ -172,7 +192,7 @@ public class StatementsExecutor {
 
 
 	private void executeAssumeStatement(AssumeStatement stmt) {
-		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentThreadState);
+		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentState);
 		assert((boolean) exprEvaluator.evaluate(stmt.getFormula()) == true);
 	}
 
@@ -200,14 +220,15 @@ public class StatementsExecutor {
 	}
 
 	private void executeCallStatement(CallStatement stmt) {
+		assert mCurrentState instanceof ThreadState;
 		/**
 		 * {@link CallStatement#isForall} is not yet implemented.
 		 */
 		String procName = stmt.getMethodName();
 		Expression[] args = stmt.getArguments();
-		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentThreadState);
+		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentState);
 		
-		List<String> argsName = mCurrentThreadState.getProc2InParams().get(procName);
+		List<String> argsName = ((ThreadState) mCurrentState).getProc2InParams().get(procName);
 		assert(args.length == argsName.size());
 		/**
 		 * assign values to in params
@@ -219,6 +240,7 @@ public class StatementsExecutor {
 	}
 
 	private void executeForkStatement(ForkStatement stmt) {
+		assert mCurrentState instanceof ThreadState;
 	}
 
 	private void executeGotoStatement(GotoStatement stmt) {
@@ -232,6 +254,7 @@ public class StatementsExecutor {
 	}
 
 	private void executeHavocStatement(HavocStatement stmt) {
+		assert mCurrentState instanceof ThreadState;
 		VariableLHS[] lhs = stmt.getIdentifiers();
 		for(int i = 0; i < lhs.length; i++) {
 			final String procName = lhs[i].getDeclarationInformation().getProcedure();
@@ -266,21 +289,23 @@ public class StatementsExecutor {
 	}
 
 	private void executeIfStatement(IfStatement stmt) {
-		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentThreadState);
+		assert mCurrentState instanceof ThreadState;
+		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentState);
 		if((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
 			StatementsExecutor newStatementsExecutor
-					 = new StatementsExecutor(Arrays.asList(stmt.getThenPart()), mCurrentThreadState);
-			ThreadState newState = newStatementsExecutor.execute();
+					 = new StatementsExecutor(Arrays.asList(stmt.getThenPart()), mCurrentState);
+			S newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		} else {
 			StatementsExecutor newStatementsExecutor
-			 		= new StatementsExecutor(Arrays.asList(stmt.getElsePart()), mCurrentThreadState);
-			ThreadState newState = newStatementsExecutor.execute();
+			 		= new StatementsExecutor(Arrays.asList(stmt.getElsePart()), mCurrentState);
+			S newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}
 	}
 
 	private void executeJoinStatement(JoinStatement stmt) {
+		assert mCurrentState instanceof ThreadState;
 	}
 
 	private void executeLabel(Label stmt) {
@@ -290,6 +315,7 @@ public class StatementsExecutor {
 	}
 
 	private void executeReturnStatement(ReturnStatement stmt) {
+		assert mCurrentState instanceof ThreadState;
 		/**
 		 * Cannot produce this case
 		 */
@@ -298,17 +324,18 @@ public class StatementsExecutor {
 	}
 
 	private void executeWhileStatement(WhileStatement stmt) {
-		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentThreadState);
+		assert mCurrentState instanceof ThreadState;
+		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentState);
 		while((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
 			StatementsExecutor newStatementsExecutor
-	 			= new StatementsExecutor(Arrays.asList(stmt.getBody()), mCurrentThreadState);
+	 			= new StatementsExecutor(Arrays.asList(stmt.getBody()), mCurrentState);
 			ThreadState newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}
 	}
 	
 	public void updateThreadState(final String procName, final String varName, final Object value) {
-		Valuation newValuation = mCurrentThreadState.getValuationCopy();
+		Valuation newValuation = mCurrentState.getValuationCopy();
 		assert(newValuation.containsProcOrFunc(procName));
 		newValuation.setValue(procName, varName, value);
 

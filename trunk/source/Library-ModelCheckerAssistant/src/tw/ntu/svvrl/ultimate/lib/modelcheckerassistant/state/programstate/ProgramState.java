@@ -10,7 +10,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.thread
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
 
-public class ProgramState implements ValuationState<ProgramState> {
+public class ProgramState extends ValuationState<ProgramState> {
 	final List<ThreadState> mThreadStates = new ArrayList<>();
 	final Valuation mGlobalValuation;
 	

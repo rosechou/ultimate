@@ -25,7 +25,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.Stateme
  *
  */
 
-public class ThreadState implements ValuationState<ThreadState>{
+public class ThreadState extends ValuationState<ThreadState>{
 	/**
 	 * To record the valuation of boogie variables.
 	 * Type: procedure name × identifier × value
@@ -121,10 +121,6 @@ public class ThreadState implements ValuationState<ThreadState>{
 	
 	public Map<String, List<String>> getProc2OutParams() {
 		return mProc2OutParams;
-	}
-	
-	public Valuation getValuationCopy() {
-		return mValuation.clone();
 	}
 	
 	public Stack<String> getProcStackCopy() {

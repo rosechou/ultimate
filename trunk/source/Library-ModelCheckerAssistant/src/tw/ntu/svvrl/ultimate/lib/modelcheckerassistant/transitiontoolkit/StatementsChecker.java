@@ -14,22 +14,29 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.LeftHandSide;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.StructLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
 
 /**
  * This class check whether the statements is able to execute (enable).
  */
-public class StatementsChecker {
+public class StatementsChecker<S> {
 	private final List<Statement> mStatements;
 	/**
-	 * the program state may change due to assignment and havoc statement.
+	 * the state may change due to assignment and havoc statement.
 	 */
-	private ThreadState mThreadState;
+	private S mState;
 
-	public StatementsChecker(final List<Statement> statements, final ThreadState threadState) {
+	public StatementsChecker(final List<Statement> statements, final S state) {
 		mStatements = statements;
-		mThreadState = new ThreadState(threadState);
+		if(state instanceof ThreadState) {
+			mState = (S) new ThreadState((ThreadState) state);
+		} else if(state instanceof ProgramState) {
+			mState = state;
+		} else {
+			throw new UnsupportedOperationException("Unsupported state type.");
+		}
 	}
 	
 	/**

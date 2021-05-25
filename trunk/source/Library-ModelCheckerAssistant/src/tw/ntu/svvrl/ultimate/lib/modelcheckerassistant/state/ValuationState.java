@@ -1,5 +1,11 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state;
 
-public interface ValuationState<S extends ValuationState<S>> extends State<S> {
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Valuation;
 
+public abstract class ValuationState<S extends ValuationState<S>> implements State<S> {
+	private Valuation mValuation;
+	
+	public Valuation getValuationCopy() {
+		return mValuation.clone();
+	}
 }

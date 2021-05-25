@@ -34,7 +34,16 @@ public class VarAndParamAdder {
 	}
 	
 	/**
-	 * For globals, locals, procedures
+	 * For globals
+	 * @param boogie2SmtSymbolTable
+	 */
+	public VarAndParamAdder(Boogie2SmtSymbolTable boogie2SmtSymbolTable) {
+		mBoogie2SmtSymbolTable = boogie2SmtSymbolTable;
+		mProcNames = null;
+	}
+	
+	/**
+	 * For locals, procedures
 	 * @param boogie2SmtSymbolTable
 	 * @param procNames 
 	 * 		all procedure names

@@ -112,7 +112,7 @@ public class TransitionToolkit<T, S> {
 	/**
 	 * For NeverClaim Automata, we need to know the current program valuation.
 	 * @param correspondingThreadState
-	 * 		Current program State which contains the valuation.
+	 * 		Current thread State which contains the valuation.
 	 * @return
 	 * 		A new Never state reached after doing this transition(edge).
 	 */

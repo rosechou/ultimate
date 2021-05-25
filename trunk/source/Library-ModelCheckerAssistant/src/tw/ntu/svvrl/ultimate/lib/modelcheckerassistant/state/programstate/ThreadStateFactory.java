@@ -58,25 +58,15 @@ public class ThreadStateFactory {
 	}
 
 
-
-	/**
-	 * Extend an initial {@link BoogieIcfgLocation} with
-	 * a value table so that it becomes an automaton initial state.
-	 * Only global variables in the value table are handled.
-	 * Local variables will be handled when a call statement occurs. 
-	 * @param loc
-	 * 		a {@link BoogieIcfgLocation}  which is an initial node.
-	 * @return
-	 * 		the result initial state.
-	 */
-	public ThreadState createInitialState(final BoogieIcfgLocation loc) {
-		Valuation valuation = new Valuation();
-		mVarAdder.addGlobalVars2Valuation(valuation);
-		mVarAdder.addOldGlobalVars2Valuation(valuation);
-		mVarAdder.addLocalVars2Valuation(valuation);
-		mVarAdder.addProcInParams2Valuation(valuation);
-		mVarAdder.addProcOutParams2Valuation(valuation);
-		return new ThreadState(valuation, loc, mFuncInitValuationInfo
+	public ThreadState createInitialState(final BoogieIcfgLocation loc
+										, final Valuation globalValuation) {
+		Valuation newValuation = globalValuation;
+		mVarAdder.addLocalVars2Valuation(newValuation);
+		mVarAdder.addProcInParams2Valuation(newValuation);
+		mVarAdder.addProcOutParams2Valuation(newValuation);
+		
+		
+		return new ThreadState(newValuation, loc, mFuncInitValuationInfo
 				, mProc2InParams, mProc2OutParams);
 	}
 	

@@ -67,10 +67,11 @@ public class StatementsChecker<S extends ValuationState<S>> {
 				 */
 			} else if(stmt instanceof AssignmentStatement
 					|| stmt instanceof HavocStatement) {
-				final StatementsExecutor stmtsExecutor = new StatementsExecutor(stmt, mThreadState);
+				assert mState instanceof ThreadState;
+				final StatementsExecutor<S> stmtsExecutor = new StatementsExecutor<>(stmt, mState);
 				moveToNewState(stmtsExecutor.execute());
-				StatementsChecker nextStatementsChecker 
-						= new StatementsChecker(mStatements.subList(i+1, mStatements.size()), mThreadState);
+				StatementsChecker<S> nextStatementsChecker 
+						= new StatementsChecker<>(mStatements.subList(i+1, mStatements.size()), mState);
 				return nextStatementsChecker.checkStatementsEnable();
 			}
 		}
@@ -78,11 +79,12 @@ public class StatementsChecker<S extends ValuationState<S>> {
 	}
 	
 	private boolean checkAssumeStatement(final AssumeStatement assumeStmt) {
-		final ExprEvaluator exprEvaluator = new ExprEvaluator(mThreadState);
+		final ExprEvaluator<S> exprEvaluator = new ExprEvaluator<>(mState);
 		return (boolean) exprEvaluator.evaluate(assumeStmt.getFormula());
 	}
 	
-	private void moveToNewState(final ThreadState newState) {
-		mThreadState = new ThreadState(newState);
+	private void moveToNewState(final S newState) {
+		assert mState instanceof ThreadState;
+		mState = (S) new ThreadState((ThreadState) newState);
 	}
 }

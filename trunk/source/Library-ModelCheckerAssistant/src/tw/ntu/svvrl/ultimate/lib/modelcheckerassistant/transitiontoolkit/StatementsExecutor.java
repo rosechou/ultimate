@@ -159,7 +159,7 @@ public class StatementsExecutor<S extends ValuationState<S>> {
 	 */
 	private void executeAssignmentStatement(final AssignmentStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
-		final ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentState);
+		final ExprEvaluator<S> exprEvaluator = new ExprEvaluator<>(mCurrentState);
 		
 		final LeftHandSide[] lhs = stmt.getLhs();
 		final Expression[] rhs = stmt.getRhs();
@@ -193,7 +193,7 @@ public class StatementsExecutor<S extends ValuationState<S>> {
 
 
 	private void executeAssumeStatement(AssumeStatement stmt) {
-		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentState);
+		ExprEvaluator<S> exprEvaluator = new ExprEvaluator<>(mCurrentState);
 		assert((boolean) exprEvaluator.evaluate(stmt.getFormula()) == true);
 	}
 
@@ -227,7 +227,7 @@ public class StatementsExecutor<S extends ValuationState<S>> {
 		 */
 		String procName = stmt.getMethodName();
 		Expression[] args = stmt.getArguments();
-		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentState);
+		ExprEvaluator<S> exprEvaluator = new ExprEvaluator<>(mCurrentState);
 		
 		List<String> argsName = ((ThreadState) mCurrentState).getProc2InParams().get(procName);
 		assert(args.length == argsName.size());
@@ -291,15 +291,15 @@ public class StatementsExecutor<S extends ValuationState<S>> {
 
 	private void executeIfStatement(IfStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
-		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentState);
+		ExprEvaluator<S> exprEvaluator = new ExprEvaluator<>(mCurrentState);
 		if((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
-			StatementsExecutor newStatementsExecutor
-					 = new StatementsExecutor(Arrays.asList(stmt.getThenPart()), mCurrentState);
+			StatementsExecutor<S> newStatementsExecutor
+					 = new StatementsExecutor<>(Arrays.asList(stmt.getThenPart()), mCurrentState);
 			ThreadState newState = (ThreadState) newStatementsExecutor.execute();
 			setCurrentState(newState);
 		} else {
-			StatementsExecutor newStatementsExecutor
-			 		= new StatementsExecutor(Arrays.asList(stmt.getElsePart()), mCurrentState);
+			StatementsExecutor<S> newStatementsExecutor
+			 		= new StatementsExecutor<>(Arrays.asList(stmt.getElsePart()), mCurrentState);
 			ThreadState newState = (ThreadState) newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}
@@ -326,10 +326,10 @@ public class StatementsExecutor<S extends ValuationState<S>> {
 
 	private void executeWhileStatement(WhileStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
-		ExprEvaluator exprEvaluator = new ExprEvaluator(mCurrentState);
+		ExprEvaluator<S> exprEvaluator = new ExprEvaluator<>(mCurrentState);
 		while((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
-			StatementsExecutor newStatementsExecutor
-	 			= new StatementsExecutor(Arrays.asList(stmt.getBody()), mCurrentState);
+			StatementsExecutor<S> newStatementsExecutor
+	 			= new StatementsExecutor<>(Arrays.asList(stmt.getBody()), mCurrentState);
 			ThreadState newState = (ThreadState) newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}

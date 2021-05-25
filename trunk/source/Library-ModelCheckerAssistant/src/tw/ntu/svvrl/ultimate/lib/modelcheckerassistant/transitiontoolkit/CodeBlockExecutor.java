@@ -24,6 +24,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Seq
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.StatementSequence;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Summary;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.State;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.ValuationState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
@@ -70,10 +71,10 @@ public class CodeBlockExecutor<S extends State<S>> {
 		if(mCodeBlock instanceof StatementSequence) {
 			List<Statement> stmts = ((StatementSequence) mCodeBlock).getStatements();
 			if(mAutType == TransitionToolkit.AutTypes.Program) {
-				final StatementsChecker statementChecker = new StatementsChecker(stmts, (ThreadState) mCurrentState);
+				final StatementsChecker<ThreadState> statementChecker = new StatementsChecker<>(stmts, (ThreadState) mCurrentState);
 				return statementChecker.checkStatementsEnable();
 			} else if(mAutType == TransitionToolkit.AutTypes.NeverClaim) {
-				final StatementsChecker statementChecker = new StatementsChecker(stmts, mCorrespondingProgramState);
+				final StatementsChecker<ProgramState> statementChecker = new StatementsChecker<>(stmts, mCorrespondingProgramState);
 				return statementChecker.checkStatementsEnable();
 			} else {
 				throw new UnsupportedOperationException("Unsupported automata type.");
@@ -184,7 +185,7 @@ public class CodeBlockExecutor<S extends State<S>> {
 		return mCurrentState;
 	}
 	
-	private void moveToNewState(final ThreadState newState) {
+	private void moveToNewState(final S newState) {
 		if(mAutType == TransitionToolkit.AutTypes.Program) {
 			mCurrentState = (S) new ThreadState((ThreadState) newState);
 		} else if(mAutType == TransitionToolkit.AutTypes.NeverClaim) {
@@ -201,11 +202,11 @@ public class CodeBlockExecutor<S extends State<S>> {
 	private void executeStatementSequence(final StatementSequence stmtSeq) {
 		final List<Statement> stmts = stmtSeq.getStatements();
 		if(mAutType == TransitionToolkit.AutTypes.Program) {
-			final StatementsExecutor statementExecutor = new StatementsExecutor(stmts, (ThreadState) mCurrentState);
-			moveToNewState(statementExecutor.execute());
+			final StatementsExecutor<ThreadState> statementExecutor = new StatementsExecutor<>(stmts, (ThreadState) mCurrentState);
+			moveToNewState((S) statementExecutor.execute());
 		} else if(mAutType == TransitionToolkit.AutTypes.NeverClaim) {
-			final StatementsExecutor statementExecutor = new StatementsExecutor(stmts, mCorrespondingProgramState);
-			moveToNewState(statementExecutor.execute());
+			final StatementsExecutor<ProgramState> statementExecutor = new StatementsExecutor<>(stmts, mCorrespondingProgramState);
+			moveToNewState((S) statementExecutor.execute());
 		} else {
 			throw new UnsupportedOperationException("Unsupported automata type.");
 		}
@@ -214,8 +215,8 @@ public class CodeBlockExecutor<S extends State<S>> {
 	private void executeCall(final Call call) {
 		assert mAutType == TransitionToolkit.AutTypes.Program;
 		final CallStatement callStmt = call.getCallStatement();
-		final StatementsExecutor statementExecutor = new StatementsExecutor(callStmt, (ThreadState) mCurrentState);
-		moveToNewState(statementExecutor.execute());
+		final StatementsExecutor<ThreadState> statementExecutor = new StatementsExecutor<>(callStmt, (ThreadState) mCurrentState);
+		moveToNewState((S) statementExecutor.execute());
 	}
 
 	private void executeSummary(final Summary summary) {
@@ -228,7 +229,7 @@ public class CodeBlockExecutor<S extends State<S>> {
 	private void executeReturn(final Return returnn) {
 		assert mAutType == TransitionToolkit.AutTypes.Program;
 		final CallStatement correspondingCallStmt = returnn.getCallStatement();
-		final StatementsExecutor statementExecutor = new StatementsExecutor((ThreadState) mCurrentState);
+		final StatementsExecutor<ThreadState> statementExecutor = new StatementsExecutor<>((ThreadState) mCurrentState);
 		final String currentProcName = ((ThreadState) mCurrentState).getCurrentProc();
 		final String returnProcName = ((ThreadState) mCurrentState).getCallerProc();
 		
@@ -252,7 +253,7 @@ public class CodeBlockExecutor<S extends State<S>> {
 			statementExecutor.updateThreadState(currentProcName, varName, null);
 		}
 		
-		moveToNewState(statementExecutor.getCurrentState());
+		moveToNewState((S) statementExecutor.getCurrentState());
 		((ThreadState) mCurrentState).popProc();
 		
 		

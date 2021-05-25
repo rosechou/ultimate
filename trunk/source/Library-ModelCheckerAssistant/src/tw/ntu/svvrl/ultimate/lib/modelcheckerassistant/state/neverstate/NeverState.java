@@ -13,7 +13,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Progra
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
 
-public class NeverState implements State<NeverState, OutgoingInternalTransition<CodeBlock, NeverState>>{
+public class NeverState implements State<NeverState>{
 	private final String mStateName;
 	private final List<OutgoingInternalTransition<CodeBlock, NeverState>> mTranss = new ArrayList<>();
 	
@@ -60,7 +60,7 @@ public class NeverState implements State<NeverState, OutgoingInternalTransition<
 	}
 
 	public NeverState doTransition(final OutgoingInternalTransition<CodeBlock, NeverState> edge
-			, final ThreadState correspondingProgramState) {
+			, final ProgramState correspondingProgramState) {
 		final TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState> transitionToolkit
 		= new TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState>(edge, this);
 		return (NeverState) transitionToolkit.doTransition(correspondingProgramState);

@@ -22,6 +22,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Sta
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Summary;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.FuncInitValuationInfo;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
 
@@ -77,10 +78,10 @@ public class TransitionToolkit<T, S> {
 	 * @return
 	 * 		True if this trans is enable for correspondingThreadState, false if not.
 	 */
-	public boolean checkTransEnable(ThreadState correspondingThreadState) {
+	public boolean checkTransEnable(ProgramState correspondingProgramState) {
 		if(mAutType == AutTypes.NeverClaim) {
 			if(mCodeBlockExecutor != null) {
-				mCodeBlockExecutor.setCorrespondingThreadState(correspondingThreadState);
+				mCodeBlockExecutor.setCorrespondingProgramState(correspondingProgramState);
 				NeverState targetState = (NeverState) ((OutgoingInternalTransition<?, ?>) mTrans).getSucc();
 				mCodeBlockExecutor.setTargrtState(targetState);
 				return mCodeBlockExecutor.checkEnable();
@@ -120,10 +121,10 @@ public class TransitionToolkit<T, S> {
 	 * @return
 	 * 		A new Never state reached after doing this transition(edge).
 	 */
-	public S doTransition(ThreadState correspondingThreadState) {
+	public S doTransition(ProgramState correspondingProgramState) {
 		if(mAutType == AutTypes.NeverClaim) {
 			if(mCodeBlockExecutor != null) {
-				mCodeBlockExecutor.setCorrespondingThreadState(correspondingThreadState);
+				mCodeBlockExecutor.setCorrespondingProgramState(correspondingProgramState);
 				NeverState targetState = (NeverState) ((OutgoingInternalTransition<?, ?>) mTrans).getSucc();
 				mCodeBlockExecutor.setTargrtState(targetState);
 				S newState = mCodeBlockExecutor.execute();

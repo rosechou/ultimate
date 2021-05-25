@@ -4,10 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.State;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.ValuationState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
 
-public class ProgramState {
+public class ProgramState implements ValuationState<ProgramState> {
 	final List<ThreadState> mThreadStates = new ArrayList<>();
 	final Valuation mGlobalValuation;
 	
@@ -16,8 +19,8 @@ public class ProgramState {
 		mGlobalValuation = globalValuation;
 	}
 	
-	public List<IcfgEdge> getEnableTrans() {
-		List<IcfgEdge> enableTrans = new ArrayList<>();
+	public List<ThreadStateTransition> getEnableTrans() {
+		List<ThreadStateTransition> enableTrans = new ArrayList<>();
 		for(final ThreadState threadState : mThreadStates) {
 			enableTrans.addAll(threadState.getEnableTrans());
 		}
@@ -42,6 +45,7 @@ public class ProgramState {
 		return mGlobalValuation.allNonOldGlobalInitialized();
 	}
 	
+	@Override
 	public boolean equals(final ProgramState anotherProgramState) {
 		if(this.getThreadNumber() != anotherProgramState.getThreadNumber()) {
 			return false;

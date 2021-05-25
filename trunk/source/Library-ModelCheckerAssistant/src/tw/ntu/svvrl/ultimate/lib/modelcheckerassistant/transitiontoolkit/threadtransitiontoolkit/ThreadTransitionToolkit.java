@@ -9,7 +9,6 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.thread
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.CodeBlockExecutor;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit.AutTypes;
 
 public class ThreadTransitionToolkit extends TransitionToolkit<ThreadState> {
 	private final ThreadStateTransition mTrans;
@@ -17,7 +16,7 @@ public class ThreadTransitionToolkit extends TransitionToolkit<ThreadState> {
 	public ThreadTransitionToolkit(final ThreadStateTransition trans, final ThreadState state) {
 		mTrans = trans;
 		CodeBlock codeBlock = (CodeBlock) ((ThreadStateTransition) trans).getIcfgEdge();
-		mCodeBlockExecutor = new CodeBlockExecutor<ThreadState>(codeBlock, state);
+		mCodeBlockExecutor = new ThreadCodeBlockExecutor(codeBlock, state);
 	}
 	
 	/**

@@ -15,9 +15,8 @@ public class NeverTransitionToolkit extends TransitionToolkit<NeverState> {
 	public NeverTransitionToolkit(final OutgoingInternalTransition<CodeBlock, NeverState> trans
 			, final NeverState state, final ProgramState correspondingProgramState) {
 		mTrans = trans;
-		NeverState targetState = mTrans.getSucc();
-		mCodeBlockExecutor = new CodeBlockExecutor<NeverState>(trans.getLetter(), state
-								, correspondingProgramState, targetState);
+		mCodeBlockExecutor = new NeverCodeBlockExecutor(trans.getLetter(), state
+								, correspondingProgramState);
 	}
 	
 
@@ -30,7 +29,6 @@ public class NeverTransitionToolkit extends TransitionToolkit<NeverState> {
 	 */
 	@Override
 	public NeverState doTransition() {
-		NeverState newState = mCodeBlockExecutor.execute();
-		return newState;
+		return mTrans.getSucc();
 	}
 }

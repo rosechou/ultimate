@@ -1,4 +1,4 @@
-package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit;
+package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit;
 
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.transitions.OutgoingInternalTransition;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
@@ -7,16 +7,18 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverSta
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit.AutTypes;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.CodeBlockExecutor;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.ITransitionToolkit;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.ITransitionToolkit.AutTypes;
 
-public class ThreadTransitionToolkit implements TransitionToolkit<ThreadState> {
+public class ThreadTransitionToolkit implements ITransitionToolkit<ThreadState> {
 	private final ThreadStateTransition mTrans;
 	private final CodeBlockExecutor<ThreadState> mCodeBlockExecutor;
 	private final AutTypes mAutType;
 	
 	public ThreadTransitionToolkit(final ThreadStateTransition trans, final ThreadState state) {
 		mTrans = trans;
-		mAutType = TransitionToolkit.AutTypes.Program;
+		mAutType = ITransitionToolkit.AutTypes.Program;
 		CodeBlock codeBlock = (CodeBlock) ((ThreadStateTransition) trans).getIcfgEdge();
 		mCodeBlockExecutor = new CodeBlockExecutor<ThreadState>(codeBlock, state, mAutType);
 	}

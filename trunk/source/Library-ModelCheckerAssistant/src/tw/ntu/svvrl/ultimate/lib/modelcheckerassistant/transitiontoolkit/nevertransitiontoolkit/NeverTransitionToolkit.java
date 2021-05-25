@@ -1,12 +1,14 @@
-package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit;
+package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.nevertransitiontoolkit;
 
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.transitions.OutgoingInternalTransition;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit.AutTypes;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.CodeBlockExecutor;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.ITransitionToolkit;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.ITransitionToolkit.AutTypes;
 
-public class NeverTransitionToolkit implements TransitionToolkit<NeverState> {
+public class NeverTransitionToolkit implements ITransitionToolkit<NeverState> {
 
 	private final OutgoingInternalTransition<CodeBlock, NeverState> mTrans;
 	private final CodeBlockExecutor<NeverState> mCodeBlockExecutor;
@@ -15,7 +17,7 @@ public class NeverTransitionToolkit implements TransitionToolkit<NeverState> {
 	public NeverTransitionToolkit(final OutgoingInternalTransition<CodeBlock, NeverState> trans
 			, final NeverState state, final ProgramState correspondingProgramState) {
 		mTrans = trans;
-		mAutType = TransitionToolkit.AutTypes.NeverClaim;
+		mAutType = ITransitionToolkit.AutTypes.NeverClaim;
 		NeverState targetState = mTrans.getSucc();
 		mCodeBlockExecutor = new CodeBlockExecutor<NeverState>(trans.getLetter(), state, mAutType
 								, correspondingProgramState, targetState);

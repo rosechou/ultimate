@@ -2,7 +2,7 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state;
 
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Valuation;
 
-public abstract class ValuationState<S extends ValuationState<S>> implements State<S> {
+public abstract class ValuationState<S extends ValuationState<S>> implements IState<S> {
 	private Valuation mValuation;
 	
 	public Valuation getValuationCopy() {

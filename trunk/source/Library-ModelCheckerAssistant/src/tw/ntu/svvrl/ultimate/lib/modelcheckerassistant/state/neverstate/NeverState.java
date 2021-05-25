@@ -8,13 +8,13 @@ import java.util.Map;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.transitions.OutgoingInternalTransition;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.State;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.IState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.NeverTransitionToolkit;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.ITransitionToolkit;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.nevertransitiontoolkit.NeverTransitionToolkit;
 
-public class NeverState implements State<NeverState>{
+public class NeverState implements IState<NeverState>{
 	private final String mStateName;
 	private final List<OutgoingInternalTransition<CodeBlock, NeverState>> mTranss = new ArrayList<>();
 	

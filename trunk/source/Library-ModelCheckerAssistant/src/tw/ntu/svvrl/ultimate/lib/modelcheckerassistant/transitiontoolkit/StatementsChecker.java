@@ -14,6 +14,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.LeftHandSide;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.StructLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.ValuationState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
@@ -21,7 +22,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.Stateme
 /**
  * This class check whether the statements is able to execute (enable).
  */
-public class StatementsChecker<S> {
+public class StatementsChecker<S extends ValuationState<S>> {
 	private final List<Statement> mStatements;
 	/**
 	 * the state may change due to assignment and havoc statement.

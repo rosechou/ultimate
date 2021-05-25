@@ -29,7 +29,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Progra
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit.AutTypes;
 
-public class CodeBlockExecutor<S extends State> {
+public class CodeBlockExecutor<S extends State<S>> {
 	private S mCurrentState;
 	private final CodeBlock mCodeBlock;
 	private final AutTypes mAutType;

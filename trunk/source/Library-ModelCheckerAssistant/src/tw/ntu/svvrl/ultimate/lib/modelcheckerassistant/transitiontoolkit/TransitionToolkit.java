@@ -31,7 +31,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.thread
  * This class handle all issues about a transition(edge) and the statements on it.
  *
  */
-public class TransitionToolkit<T, S extends State> {
+public class TransitionToolkit<T, S extends State<S>> {
 	public static enum AutTypes{
 		Program, NeverClaim
 	}

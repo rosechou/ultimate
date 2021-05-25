@@ -20,6 +20,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Roo
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.SequentialComposition;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.StatementSequence;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Summary;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.State;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.FuncInitValuationInfo;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
@@ -30,7 +31,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.thread
  * This class handle all issues about a transition(edge) and the statements on it.
  *
  */
-public class TransitionToolkit<T, S> {
+public class TransitionToolkit<T, S extends State> {
 	public static enum AutTypes{
 		Program, NeverClaim
 	}

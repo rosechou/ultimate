@@ -38,34 +38,45 @@ public class CodeBlockExecutor<S extends State<S>> {
 	/**
 	 * Only for NeverClaim Automata.
 	 */
-	private ProgramState mCorrespondingProgramState = null;
+	private final ProgramState mCorrespondingProgramState;
 	/**
 	 *  Only for NeverClaim Automata.
 	 * If execute successfully, move to this state.
 	 */
-	private NeverState mTargrtState = null;
+	private final NeverState mTargrtState;
 	
-	@SuppressWarnings("unchecked")
+	/**
+	 * For Program Automata.
+	 * @param codeBlock
+	 * @param state
+	 * @param autType
+	 */
 	public CodeBlockExecutor(final CodeBlock codeBlock, final S state, final TransitionToolkit.AutTypes autType) {
 		mCodeBlock = codeBlock;
 		mAutType = autType;
-		
-		if(autType == TransitionToolkit.AutTypes.Program) {
-			mCurrentState = (S) new ThreadState((ThreadState) state);
-		} else if(autType == TransitionToolkit.AutTypes.NeverClaim) {
-			mCurrentState = state;
-		} else {
-			throw new UnsupportedOperationException("Unsupported automata type.");
-		}
+		mCurrentState = (S) new ThreadState((ThreadState) state);
+		mCorrespondingProgramState = null;
+		mTargrtState = null;
 	}
 	
-	public void setCorrespondingProgramState(ProgramState correspondingProgramState) {
+	/**
+	 * For Never Claim Automata.
+	 * @param codeBlock
+	 * @param state
+	 * @param autType
+	 * @param correspondingProgramState
+	 */
+	public CodeBlockExecutor(final CodeBlock codeBlock, final S state
+			, final TransitionToolkit.AutTypes autType, final ProgramState correspondingProgramState
+			, final NeverState targetState) {
+		mCodeBlock = codeBlock;
+		mAutType = autType;
+		mCurrentState = state;
 		mCorrespondingProgramState = correspondingProgramState;
-	}
-	
-	public void setTargrtState(NeverState targetState) {
 		mTargrtState = targetState;
 	}
+	
+
 
 	public boolean checkEnable() {
 		if(mCodeBlock instanceof StatementSequence) {
@@ -255,8 +266,6 @@ public class CodeBlockExecutor<S extends State<S>> {
 		
 		moveToNewState((S) statementExecutor.getCurrentState());
 		((ThreadState) mCurrentState).popProc();
-		
-		
 	}
 
 	private void executeForkThreadCurrent(final ForkThreadCurrent forkThreadCurrent) {

@@ -52,8 +52,8 @@ public class NeverState implements State<NeverState>{
 		
 		for(final OutgoingInternalTransition<CodeBlock, NeverState> edge : mTranss) {
 			final NeverTransitionToolkit transitionToolkit
-			= new NeverTransitionToolkit(edge, this);
-			if (transitionToolkit.checkTransEnable(correspondingProgramState)) {
+			= new NeverTransitionToolkit(edge, this, correspondingProgramState);
+			if (transitionToolkit.checkTransEnable()) {
 				enableTrans.add(edge);
 			}
 		}
@@ -62,9 +62,9 @@ public class NeverState implements State<NeverState>{
 
 	public NeverState doTransition(final OutgoingInternalTransition<CodeBlock, NeverState> edge
 			, final ProgramState correspondingProgramState) {
-		final NeverTransitionToolkit transitionToolkit
-		= new NeverTransitionToolkit(edge, this);
-		return (NeverState) transitionToolkit.doTransition(correspondingProgramState);
+		final NeverTransitionToolkit transitionToolkit 
+			= new NeverTransitionToolkit(edge, this, correspondingProgramState);
+		return (NeverState) transitionToolkit.doTransition();
 	}
 	
 	@Override

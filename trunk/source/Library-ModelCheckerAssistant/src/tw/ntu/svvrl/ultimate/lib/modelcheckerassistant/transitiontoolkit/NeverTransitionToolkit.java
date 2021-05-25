@@ -6,16 +6,19 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverSta
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit.AutTypes;
 
-public class NeverTransitionToolkit {
+public class NeverTransitionToolkit implements TransitionToolkit<NeverState> {
 
 	private final OutgoingInternalTransition<CodeBlock, NeverState> mTrans;
-	private CodeBlockExecutor<NeverState> mCodeBlockExecutor = null;
+	private final CodeBlockExecutor<NeverState> mCodeBlockExecutor;
 	private final AutTypes mAutType;
 	
-	public NeverTransitionToolkit(final OutgoingInternalTransition<CodeBlock, NeverState> trans, final NeverState state) {
+	public NeverTransitionToolkit(final OutgoingInternalTransition<CodeBlock, NeverState> trans
+			, final NeverState state, final ProgramState correspondingProgramState) {
 		mTrans = trans;
 		mAutType = TransitionToolkit.AutTypes.NeverClaim;
-		mCodeBlockExecutor = new CodeBlockExecutor<NeverState>(trans.getLetter(), state, mAutType);
+		NeverState targetState = mTrans.getSucc();
+		mCodeBlockExecutor = new CodeBlockExecutor<NeverState>(trans.getLetter(), state, mAutType
+								, correspondingProgramState, targetState);
 	}
 	
 	/**
@@ -25,10 +28,7 @@ public class NeverTransitionToolkit {
 	 * @return
 	 * 		True if this trans is enable for correspondingThreadState, false if not.
 	 */
-	public boolean checkTransEnable(ProgramState correspondingProgramState) {
-		mCodeBlockExecutor.setCorrespondingProgramState(correspondingProgramState);
-		NeverState targetState = mTrans.getSucc();
-		mCodeBlockExecutor.setTargrtState(targetState);
+	public boolean checkTransEnable() {
 		return mCodeBlockExecutor.checkEnable();
 	}
 	
@@ -40,10 +40,8 @@ public class NeverTransitionToolkit {
 	 * @return
 	 * 		A new Never state reached after doing this transition(edge).
 	 */
-	public NeverState doTransition(ProgramState correspondingProgramState) {
-		mCodeBlockExecutor.setCorrespondingProgramState(correspondingProgramState);
-		NeverState targetState = mTrans.getSucc();
-		mCodeBlockExecutor.setTargrtState(targetState);
+	@Override
+	public NeverState doTransition() {
 		NeverState newState = mCodeBlockExecutor.execute();
 		return newState;
 	}

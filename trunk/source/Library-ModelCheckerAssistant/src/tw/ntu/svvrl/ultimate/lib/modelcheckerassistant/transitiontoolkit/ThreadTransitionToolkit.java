@@ -9,9 +9,9 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.thread
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit.AutTypes;
 
-public class ThreadTransitionToolkit implements TransitionToolkit {
+public class ThreadTransitionToolkit implements TransitionToolkit<ThreadState> {
 	private final ThreadStateTransition mTrans;
-	private CodeBlockExecutor<ThreadState> mCodeBlockExecutor = null;
+	private final CodeBlockExecutor<ThreadState> mCodeBlockExecutor;
 	private final AutTypes mAutType;
 	
 	public ThreadTransitionToolkit(final ThreadStateTransition trans, final ThreadState state) {
@@ -22,11 +22,7 @@ public class ThreadTransitionToolkit implements TransitionToolkit {
 	}
 	
 	public boolean checkTransEnable() {
-		if(mCodeBlockExecutor != null) {
-			return mCodeBlockExecutor.checkEnable();
-		} else {
-			throw new UnsupportedOperationException("No CodeBlockExecutor");
-		}
+		return mCodeBlockExecutor.checkEnable();
 	}
 	
 	/**
@@ -36,18 +32,10 @@ public class ThreadTransitionToolkit implements TransitionToolkit {
 	 * 		A new Thread state reached after doing this transition(edge).
 	 */
 	public ThreadState doTransition() {
-		if(mAutType == AutTypes.Program) {
-			if(mCodeBlockExecutor != null) {
-				final ThreadState newState = mCodeBlockExecutor.execute();
-				final BoogieIcfgLocation correspondingLoc 
-					= (BoogieIcfgLocation) ((ThreadStateTransition) mTrans).getIcfgEdge().getTarget();
-				((ThreadState) newState).setCorrespondingIcfgLoc(correspondingLoc);
-				return newState;
-			} else {
-				throw new UnsupportedOperationException("No CodeBlockExecutor");
-			}
-		} else {
-			throw new UnsupportedOperationException("This doTransition function is for ThreadState");
-		}
+		final ThreadState newState = mCodeBlockExecutor.execute();
+		final BoogieIcfgLocation correspondingLoc 
+					= (BoogieIcfgLocation) mTrans.getIcfgEdge().getTarget();
+		newState.setCorrespondingIcfgLoc(correspondingLoc);
+		return newState;
 	}
 }

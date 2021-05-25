@@ -174,13 +174,15 @@ public class ThreadState implements State<ThreadState, IcfgEdge>{
 	 * @return
 	 * 		a list of enable transitions.
 	 */
-	public List<IcfgEdge> getEnableTrans() {
+	public List<ThreadStateTransition> getEnableTrans() {
 		List<IcfgEdge> edges = mCorrespondingIcfgLoc.getOutgoingEdges();
-		List<IcfgEdge> enableTrans = new ArrayList<>();
+		List<ThreadStateTransition> enableTrans = new ArrayList<>();
 		for(final IcfgEdge edge : edges) {
-			final TransitionToolkit<IcfgEdge, ThreadState> transitionToolkit = new TransitionToolkit<IcfgEdge, ThreadState>(edge, this);
+			ThreadStateTransition trans = new ThreadStateTransition(edge, mThreadID);
+			final TransitionToolkit<ThreadStateTransition, ThreadState> transitionToolkit 
+					= new TransitionToolkit<ThreadStateTransition, ThreadState>(trans, this);
 			if (transitionToolkit.checkTransEnable()) {
-				enableTrans.add(edge);
+				enableTrans.add(trans);
 			}
 		}
 		
@@ -197,8 +199,9 @@ public class ThreadState implements State<ThreadState, IcfgEdge>{
 	 * @return
 	 * 		The next program state.
 	 */
-	public ThreadState doTransition(final IcfgEdge edge) {
-		final TransitionToolkit<IcfgEdge, ThreadState> transitionToolkit = new TransitionToolkit<IcfgEdge, ThreadState>(edge, this);
+	public ThreadState doTransition(final ThreadStateTransition edge) {
+		final TransitionToolkit<ThreadStateTransition, ThreadState> transitionToolkit
+				= new TransitionToolkit<ThreadStateTransition, ThreadState>(edge, this);
 		return (ThreadState) transitionToolkit.doTransition();
 	}
 	

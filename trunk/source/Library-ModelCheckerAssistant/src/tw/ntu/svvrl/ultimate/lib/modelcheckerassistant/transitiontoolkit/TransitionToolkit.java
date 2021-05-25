@@ -23,6 +23,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Sum
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.FuncInitValuationInfo;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
 
 /**
  * This class handle all issues about a transition(edge) and the statements on it.
@@ -39,10 +40,11 @@ public class TransitionToolkit<T, S> {
 	
 	public TransitionToolkit(final T trans, final S state) {
 		mTrans = trans;
-		if(trans instanceof IcfgEdge && state instanceof ThreadState) {
+		if(trans instanceof ThreadStateTransition && state instanceof ThreadState) {
 			mAutType = AutTypes.Program;
+			CodeBlock codeBlock = (CodeBlock) ((ThreadStateTransition) trans).getIcfgEdge();
 			if (mTrans instanceof CodeBlock) {
-				mCodeBlockExecutor = new CodeBlockExecutor<S>((CodeBlock) mTrans, state, mAutType);
+				mCodeBlockExecutor = new CodeBlockExecutor<S>(codeBlock, state, mAutType);
 			}
 		} else if(trans instanceof OutgoingInternalTransition<?, ?> && state instanceof NeverState) {
 			if(((OutgoingInternalTransition<?, ?>) trans).getLetter() instanceof CodeBlock
@@ -98,8 +100,10 @@ public class TransitionToolkit<T, S> {
 	public S doTransition() {
 		if(mAutType == AutTypes.Program) {
 			if(mCodeBlockExecutor != null) {
-				S newState = mCodeBlockExecutor.execute();
-				((ThreadState) newState).setCorrespondingIcfgLoc((BoogieIcfgLocation) ((IcfgEdge) mTrans).getTarget());
+				final S newState = mCodeBlockExecutor.execute();
+				final BoogieIcfgLocation correspondingLoc 
+					= (BoogieIcfgLocation) ((ThreadStateTransition) mTrans).getIcfgEdge().getTarget();
+				((ThreadState) newState).setCorrespondingIcfgLoc(correspondingLoc);
 				return newState;
 			} else {
 				throw new UnsupportedOperationException("No CodeBlockExecutor");

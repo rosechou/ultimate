@@ -9,8 +9,6 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Boo
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramStateFactory;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ThreadState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ThreadStateFactory;
 
 /**
  * This class explores the boogie program states with the help of

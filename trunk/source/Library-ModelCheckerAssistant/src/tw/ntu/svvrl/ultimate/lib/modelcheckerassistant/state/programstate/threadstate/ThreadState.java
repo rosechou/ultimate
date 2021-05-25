@@ -1,4 +1,4 @@
-package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate;
+package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,13 +13,14 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.I
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.State;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.FuncInitValuationInfo;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Valuation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
 
 /**
  * This class represents a boogie state in a specific thread.
  * It differs from {@link BoogieIcfgLocation} in the existence of actual valuation
  * during the program execution.
- * @author Hong-Yang Lin
  *
  */
 
@@ -208,9 +209,6 @@ public class ThreadState implements State<ThreadState, IcfgEdge>{
 		return mValuation.equals(anotherThreadState.getValuationCopy()) ? true : false;
 	}
 
-	public boolean allNonOldGlobalInitialized() {
-		return mValuation.allNonOldGlobalInitialized();
-	}
 
 	@Override
 	public String toString() {

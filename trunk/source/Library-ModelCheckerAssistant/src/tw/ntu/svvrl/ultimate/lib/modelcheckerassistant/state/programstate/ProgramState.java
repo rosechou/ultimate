@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
 
 public class ProgramState {
@@ -35,6 +36,10 @@ public class ProgramState {
 	
 	public List<ThreadState> getThreadStates() {
 		return mThreadStates;
+	}
+	
+	public boolean allNonOldGlobalInitialized() {
+		return mGlobalValuation.allNonOldGlobalInitialized();
 	}
 	
 	public boolean equals(final ProgramState anotherProgramState) {

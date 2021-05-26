@@ -5,6 +5,10 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Valuat
 public abstract class ValuationState<S extends ValuationState<S>> implements IState<S> {
 	protected Valuation mValuation;
 	
+	public Valuation getValuation() {
+		return mValuation;
+	}
+	
 	/**
 	 * Deep copy all variables and their values.
 	 * @return the copy.

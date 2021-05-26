@@ -86,8 +86,9 @@ public class ThreadState extends ValuationState<ThreadState>{
 	}
 	
 	/**
-	 * copy constructor
-	 * valuation and stack are deep copied.
+	 * Copy constructor
+	 * Local valuation and stack are deep copied
+	 * while global valuation is shallow copied.
 	 */
 	public ThreadState(final ThreadState threadState) {
 		mValuation = threadState.getValuationLocalCopy();

@@ -139,8 +139,8 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 		 */
 		for(int i = 0; i < lhs.length; i++) {
 			if(lhs[i] instanceof VariableLHS) {
-				final String procName = ((VariableLHS)lhs[i]).getDeclarationInformation().getProcedure();
-				final String varName = ((VariableLHS)lhs[i]).getIdentifier();
+				final String procName = ((VariableLHS) lhs[i]).getDeclarationInformation().getProcedure();
+				final String varName = ((VariableLHS) lhs[i]).getIdentifier();
 				final Object value = exprEvaluator.evaluate(rhs[i]);
 				
 				updateThreadState(procName, varName, value);
@@ -190,7 +190,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 		Expression[] args = stmt.getArguments();
 		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
 		
-		List<String> argsName = ((ThreadState) mCurrentState).getProc2InParams().get(procName);
+		List<String> argsName = mCurrentState.getProc2InParams().get(procName);
 		assert(args.length == argsName.size());
 		/**
 		 * assign values to in params
@@ -198,7 +198,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 		for(int i = 0; i < args.length; i++) {
 			updateThreadState(procName, argsName.get(i), exprEvaluator.evaluate(args[i]));
 		}
-		((ThreadState) mCurrentState).pushProc(procName);
+		mCurrentState.pushProc(procName);
 	}
 
 	private void executeForkStatement(ForkStatement stmt) {
@@ -256,12 +256,12 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 		if((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
 			ThreadStatementsExecutor newStatementsExecutor
 					 = new ThreadStatementsExecutor(Arrays.asList(stmt.getThenPart()), mCurrentState, mExecType);
-			ThreadState newState = (ThreadState) newStatementsExecutor.execute();
+			ThreadState newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		} else {
 			ThreadStatementsExecutor newStatementsExecutor
 			 		= new ThreadStatementsExecutor(Arrays.asList(stmt.getElsePart()), mCurrentState, mExecType);
-			ThreadState newState = (ThreadState) newStatementsExecutor.execute();
+			ThreadState newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}
 	}
@@ -291,7 +291,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 		while((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
 			ThreadStatementsExecutor newStatementsExecutor
 	 			= new ThreadStatementsExecutor(Arrays.asList(stmt.getBody()), mCurrentState, mExecType);
-			ThreadState newState = (ThreadState) newStatementsExecutor.execute();
+			ThreadState newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}
 	}

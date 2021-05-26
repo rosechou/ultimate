@@ -90,6 +90,12 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		}
 	}
 	
+	/**
+	 * Whether other edges(if exist) contain {@link Call} statement.
+	 * It is used for {@link Summary} enable check.
+	 * @param otherEdges
+	 * @return true if yes, false if no.
+	 */
 	private boolean containsCall(List<IcfgEdge> otherEdges) {
 		for(final IcfgEdge edge : otherEdges) {
 			if(edge instanceof Call) {
@@ -145,7 +151,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	}
 	
 	private void moveToNewState(final ThreadState newState) {
-		mCurrentState = new ThreadState(newState);
+		mCurrentState = newState;
 	}
 
 	private void executeStatementSequence(final StatementSequence stmtSeq) {

@@ -197,7 +197,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 	}
 	
 	/**
-	 * Check whether two automaton states are equivalent.
+	 * Check whether two thread states are equivalent.
 	 * This method is needed in the nested DFS procedure. 
 	 * @param anotherThreadState
 	 * 		the state which is going to be compared to.

@@ -15,7 +15,7 @@ public class Valuation implements Cloneable {
 	}
 	
 	/**
-	 * deep copy
+	 * deep copy all variables.
 	 */
 	@Override
 	public Valuation clone()
@@ -28,6 +28,9 @@ public class Valuation implements Cloneable {
 		return new Valuation(val);
     }
 	
+	/**
+	 * deep copy locals and shallow copy globals.
+	 */
 	public Valuation cloneLocals()
     {
 		Map<String, Map<String, Object>> val = new HashMap<>();
@@ -76,9 +79,13 @@ public class Valuation implements Cloneable {
 		return mValueMap.get(procOrFuncName).get(varName);
 	}
 	
-	public void linkGlobals(final Valuation globalV) {
+	/**
+	 * make globalValuation reference.
+	 * Once the globals change, the linked valuation also changes. 
+	 */
+	public void linkGlobals(final Valuation globalValuation) {
 		mValueMap.remove(null);
-		mValueMap.putAll(globalV.mValueMap);
+		mValueMap.putAll(globalValuation.mValueMap);
 	}
 	
 	public boolean containsProcOrFunc(final String procOrFuncName) {
@@ -89,6 +96,12 @@ public class Valuation implements Cloneable {
 		return mValueMap.equals(anotherValuation.mValueMap);
 	}
 
+	/**
+	 * Check if all non-old global variables have been initialized.
+	 * All non-old global variables should be initialized before doing 
+	 * the transition in the never claim automata.
+	 * @return true if all are initialized, false otherwise.
+	 */
 	public boolean allNonOldGlobalInitialized() {
 		Map<String, Object> globalVarMap = mValueMap.get(null);
 		for(String globalVarName : globalVarMap.keySet()) {
@@ -100,6 +113,11 @@ public class Valuation implements Cloneable {
 		return true;
 	}
 
+	/**
+	 * Check the variable whose name is old or not.
+	 * If it is old variable, then it must begin with "old(" 
+	 * and end with ")".
+	 */
 	private boolean isOld(String s) {
 		if(s.length() <= 5) {
 			return false;

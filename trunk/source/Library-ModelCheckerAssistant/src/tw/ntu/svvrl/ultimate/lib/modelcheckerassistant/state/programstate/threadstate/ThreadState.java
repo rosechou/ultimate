@@ -20,7 +20,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.Stateme
  *
  */
 
-public class ThreadState extends ValuationState<ThreadState, IcfgEdge>{
+public class ThreadState extends ValuationState<ThreadState>{
 
 	/**
 	 * To specify which IcfgLocation this state is generated from.
@@ -181,7 +181,7 @@ public class ThreadState extends ValuationState<ThreadState, IcfgEdge>{
 	 * @param edge
 	 * 		An IcfgEge
 	 * @return
-	 * 		The next program state.
+	 * 		The next thread state.
 	 */
 	public ThreadState doTransition(final ThreadStateTransition edge) {
 		final ThreadTransitionToolkit transitionToolkit

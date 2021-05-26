@@ -10,7 +10,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.ValuationState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
 
-public class ProgramState extends ValuationState<ProgramState, ThreadStateTransition> {
+public class ProgramState extends ValuationState<ProgramState> {
 	/**
 	 * Thread ID to ThreadState
 	 * One thread must contain only one thread state. 
@@ -31,9 +31,13 @@ public class ProgramState extends ValuationState<ProgramState, ThreadStateTransi
 	}
 	
 
-	public ProgramState doTransition(final ThreadStateTransition edge) {
-		//...
-		return null;
+	public ProgramState doTransition(final ThreadStateTransition trans) {
+		ThreadState newState = mThreadStates.get(trans.getThreadID()).doTransition(trans);
+		/**
+		 * update the thread state who did the transition.
+		 */
+		mThreadStates.replace(newState.getThreadID(), newState);
+		return this;
 	}
 	
 	public int getThreadNumber() {

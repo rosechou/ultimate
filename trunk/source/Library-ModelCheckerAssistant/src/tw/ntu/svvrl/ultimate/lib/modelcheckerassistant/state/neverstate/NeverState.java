@@ -14,7 +14,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.thread
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.nevertransitiontoolkit.NeverTransitionToolkit;
 
-public class NeverState implements IState<NeverState>{
+public class NeverState implements IState<NeverState, OutgoingInternalTransition<CodeBlock, NeverState>>{
 	private final String mStateName;
 	private final List<OutgoingInternalTransition<CodeBlock, NeverState>> mTranss = new ArrayList<>();
 	

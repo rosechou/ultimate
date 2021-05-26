@@ -20,12 +20,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.Stateme
  *
  */
 
-public class ThreadState extends ValuationState<ThreadState>{
-	/**
-	 * To record the valuation of boogie variables.
-	 * Type: procedure name × identifier × value
-	 */
-	private final Valuation mValuation;
+public class ThreadState extends ValuationState<ThreadState, IcfgEdge>{
 
 	/**
 	 * To specify which IcfgLocation this state is generated from.
@@ -43,7 +38,6 @@ public class ThreadState extends ValuationState<ThreadState>{
 	 * return: pop
 	 */
 	private Stack<String> mProcStack = new Stack<>();
-	
 	
 	private final int mThreadID = 0;
 	
@@ -203,7 +197,6 @@ public class ThreadState extends ValuationState<ThreadState>{
 	 * @return
 	 * 		true if two states are equivalent, false if not.
 	 */
-	@Override
 	public boolean equals(final ThreadState anotherThreadState) {
 		if(!mCorrespondingIcfgLoc.equals(anotherThreadState.getCorrespondingIcfgLoc())) {
 			return false;

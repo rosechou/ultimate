@@ -7,13 +7,12 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.ValuationState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
 
-public class ProgramState extends ValuationState<ProgramState> {
+public class ProgramState extends ValuationState<ProgramState, ThreadStateTransition> {
 	final List<ThreadState> mThreadStates = new ArrayList<>();
-	final Valuation mGlobalValuation;
 	
 	public ProgramState(ThreadState threadState, Valuation globalValuation) {
 		mThreadStates.add(threadState);
-		mGlobalValuation = globalValuation;
+		mValuation = globalValuation;
 	}
 	
 	public List<ThreadStateTransition> getEnableTrans() {
@@ -39,7 +38,7 @@ public class ProgramState extends ValuationState<ProgramState> {
 	}
 	
 	public boolean allNonOldGlobalInitialized() {
-		return mGlobalValuation.allNonOldGlobalInitialized();
+		return mValuation.allNonOldGlobalInitialized();
 	}
 	
 	@Override

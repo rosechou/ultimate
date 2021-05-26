@@ -77,7 +77,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 	 * @param valuation
 	 */
 	public ThreadState(final Valuation v, final ThreadState oldState) {
-		mValuation = v.clone();
+		mValuation = v;
 		mCorrespondingIcfgLoc = null;
 		mFuncInitValuationInfo = oldState.getFuncInitValuationInfo();
 		mProc2InParams = oldState.getProc2InParams();

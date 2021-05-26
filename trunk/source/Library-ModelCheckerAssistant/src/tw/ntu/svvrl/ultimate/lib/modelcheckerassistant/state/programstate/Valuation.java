@@ -27,6 +27,19 @@ public class Valuation implements Cloneable {
 		}
 		return new Valuation(val);
     }
+	
+	public Valuation cloneLocals()
+    {
+		Map<String, Map<String, Object>> val = new HashMap<>();
+		val.put(null, mValueMap.get(null));
+		for(String procName : mValueMap.keySet()) {
+			if(procName != null) {
+				Map<String, Object> id2v = new HashMap<>(mValueMap.get(procName));
+				val.put(procName, id2v);
+			}
+		}
+		return new Valuation(val);
+    }
 
 	
 	/**

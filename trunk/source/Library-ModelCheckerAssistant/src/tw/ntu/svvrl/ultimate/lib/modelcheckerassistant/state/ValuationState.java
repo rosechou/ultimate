@@ -6,6 +6,6 @@ public abstract class ValuationState<S extends ValuationState<S>> implements ISt
 	protected Valuation mValuation;
 	
 	public Valuation getValuationCopy() {
-		return mValuation.clone();
+		return mValuation.cloneLocals();
 	}
 }

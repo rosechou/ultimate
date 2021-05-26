@@ -39,6 +39,10 @@ public class ThreadState extends ValuationState<ThreadState>{
 	 */
 	private Stack<String> mProcStack = new Stack<>();
 	
+	
+	/**
+	 * Not yet implement.
+	 */
 	private final int mThreadID = 0;
 	
 	
@@ -54,8 +58,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 						final BoogieIcfgLocation boogieIcfgLocation,
 						final FuncInitValuationInfo funcInitValuationInfo,
 						final Map<String, List<String>> proc2InParams,
-						final Map<String, List<String>> proc2OutParams,
-						final int threadID) {
+						final Map<String, List<String>> proc2OutParams) {
 		mValuation = v.clone();
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
 		mFuncInitValuationInfo = funcInitValuationInfo;

@@ -9,6 +9,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.CallStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Call;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
@@ -90,10 +91,16 @@ public class CodeBlockExecutor<S> {
 		} else if(mCodeBlock instanceof Summary) {
 			assert mAutType == TransitionToolkit.AutTypes.Program;
 			/**
-			 * We force the program to execute call and return,
-			 * and never execute Summary.
+			 * If there are {@link Call} and {@link Summary}
+			 * at the same CFG location, then block the {@link Summary}.
+			 * (Force the execution to execute {@link Call} and {@link Return})
+			 * later.)
 			 */
-			return false;
+			List<IcfgEdge> otherEdges = mCodeBlock.getSource().getOutgoingEdges();
+			if(containsCall(otherEdges)) {
+				return false;
+			}
+			return true;
 		} else if(mCodeBlock instanceof ParallelComposition) {
 			assert mAutType == TransitionToolkit.AutTypes.Program;
 			/**
@@ -121,14 +128,22 @@ public class CodeBlockExecutor<S> {
 		}
 	}
 	
+	private boolean containsCall(List<IcfgEdge> otherEdges) {
+		for(final IcfgEdge edge : otherEdges) {
+			if(edge instanceof Call) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public S execute() {
 		if(mCodeBlock instanceof StatementSequence) {
 			executeStatementSequence((StatementSequence) mCodeBlock);
 		} else if(mCodeBlock instanceof Call) {
 			executeCall((Call) mCodeBlock);
 		} else if(mCodeBlock instanceof Summary) {
-			throw new UnsupportedOperationException("Suppose the type " + mCodeBlock.getClass().getSimpleName()
-					+ " is not enable.");
+			executeSummary((Summary) mCodeBlock);
 		} else if(mCodeBlock instanceof Return) {
 			executeReturn((Return) mCodeBlock);
 		} else if(mCodeBlock instanceof ForkThreadCurrent) {
@@ -200,12 +215,10 @@ public class CodeBlockExecutor<S> {
 		final StatementsExecutor statementExecutor = new StatementsExecutor(callStmt, (ProgramState) mCurrentState);
 		moveToNewState(statementExecutor.execute());
 	}
-	
-	/**
-	 * not enable transition, no need to implement.
-	 */
-//	private void executeSummary(final Summary summary) {
-//	}
+
+	private void executeSummary(final Summary summary) {
+		
+	}
 
 	private void executeReturn(final Return returnn) {
 		assert mAutType == TransitionToolkit.AutTypes.Program;

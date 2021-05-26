@@ -80,10 +80,10 @@ public class ProgramState extends ValuationState<ProgramState> {
 			return false;
 		}
 		/**
-		 * The order of thread states should be consistent.
+		 * Thread ID should be consistent?
 		 */
-		for(int i = 0; i < this.getThreadNumber(); i++) {
-			if(!mThreadStates.get(i).equals(anotherProgramState.getThreadStatesMap().get(i))) {
+		for(final ThreadState threadState : anotherProgramState.getThreadStatesMap().values()) {
+			if(!mThreadStates.get(threadState.getThreadID()).equals(threadState)) {
 				return false;
 			}
 		}

@@ -53,7 +53,7 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 	protected Stack<String> mFuncNameStack = new Stack<>();
 	
 	protected ExprEvaluator(final S state) {
-		mValuation = state.getValuationCopy();
+		mValuation = state.getValuationFullCopy();
 	}
 
 	public Object evaluate(Expression expr) {

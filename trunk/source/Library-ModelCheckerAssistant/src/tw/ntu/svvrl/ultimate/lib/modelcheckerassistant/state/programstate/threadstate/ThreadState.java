@@ -59,7 +59,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 						final FuncInitValuationInfo funcInitValuationInfo,
 						final Map<String, List<String>> proc2InParams,
 						final Map<String, List<String>> proc2OutParams) {
-		mValuation = v.clone();
+		mValuation = v;
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
 		mFuncInitValuationInfo = funcInitValuationInfo;
 		mProc2InParams = proc2InParams;
@@ -90,7 +90,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 	 * valuation and stack are deep copied.
 	 */
 	public ThreadState(final ThreadState threadState) {
-		mValuation = threadState.getValuationCopy();
+		mValuation = threadState.getValuationLocalCopy();
 		mCorrespondingIcfgLoc = threadState.getCorrespondingIcfgLoc();
 		mFuncInitValuationInfo = threadState.getFuncInitValuationInfo();
 		mProc2InParams = threadState.getProc2InParams();
@@ -132,6 +132,10 @@ public class ThreadState extends ValuationState<ThreadState>{
 	
 	public int getThreadID() {
 		return mThreadID;
+	}
+	
+	public Valuation getValuation() {
+		return mValuation;
 	}
 	
 	public String getCallerProc() {
@@ -189,7 +193,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 	public ThreadState doTransition(final ThreadStateTransition edge) {
 		final ThreadTransitionToolkit transitionToolkit
 				= new ThreadTransitionToolkit(edge, this);
-		return (ThreadState) transitionToolkit.doTransition();
+		return transitionToolkit.doTransition();
 	}
 	
 	/**
@@ -204,7 +208,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 		if(!mCorrespondingIcfgLoc.equals(anotherThreadState.getCorrespondingIcfgLoc())) {
 			return false;
 		}
-		return mValuation.equals(anotherThreadState.getValuationCopy()) ? true : false;
+		return mValuation.equals(anotherThreadState.getValuationFullCopy()) ? true : false;
 	}
 
 

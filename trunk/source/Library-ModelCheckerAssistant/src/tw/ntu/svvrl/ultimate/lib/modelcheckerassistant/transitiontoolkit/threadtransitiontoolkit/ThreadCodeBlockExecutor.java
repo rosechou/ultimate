@@ -147,20 +147,18 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	private void moveToNewState(final ThreadState newState) {
 		mCurrentState = new ThreadState(newState);
 	}
-	
-	public ThreadState getCurrentState() {
-		return mCurrentState;
-	}
 
 	private void executeStatementSequence(final StatementSequence stmtSeq) {
 		final List<Statement> stmts = stmtSeq.getStatements();
-		final ThreadStatementsExecutor statementExecutor = new ThreadStatementsExecutor(stmts, (ThreadState) mCurrentState);
+		final ThreadStatementsExecutor statementExecutor 
+			= new ThreadStatementsExecutor(stmts, mCurrentState, ThreadStatementsExecutor.execType.realExec);
 		moveToNewState(statementExecutor.execute());
 	}
 
 	private void executeCall(final Call call) {
 		final CallStatement callStmt = call.getCallStatement();
-		final ThreadStatementsExecutor statementExecutor = new ThreadStatementsExecutor(callStmt, (ThreadState) mCurrentState);
+		final ThreadStatementsExecutor statementExecutor 
+			= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.execType.realExec);
 		moveToNewState(statementExecutor.execute());
 	}
 
@@ -173,32 +171,33 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 
 	private void executeReturn(final Return returnn) {
 		final CallStatement correspondingCallStmt = returnn.getCallStatement();
-		final ThreadStatementsExecutor statementExecutor = new ThreadStatementsExecutor((ThreadState) mCurrentState);
-		final String currentProcName = ((ThreadState) mCurrentState).getCurrentProc();
-		final String returnProcName = ((ThreadState) mCurrentState).getCallerProc();
+		final ThreadStatementsExecutor statementExecutor
+			= new ThreadStatementsExecutor(mCurrentState, ThreadStatementsExecutor.execType.realExec);
+		final String currentProcName = mCurrentState.getCurrentProc();
+		final String returnProcName = mCurrentState.getCallerProc();
 		
 		/**
 		 * assign return value to lhs(s).
 		 */
-		final List<String> outParamNames = ((ThreadState) mCurrentState).getProc2OutParams().get(currentProcName);
+		final List<String> outParamNames = mCurrentState.getProc2OutParams().get(currentProcName);
 		final VariableLHS[] lhss = correspondingCallStmt.getLhs();
 		assert(lhss.length == outParamNames.size());
 		for(int i = 0; i < lhss.length; i++) {
 			final String lhsName = lhss[i].getIdentifier();
-			final Object v = ((ThreadState) mCurrentState).getValuationCopy().lookUpValue(currentProcName, outParamNames.get(i));
+			final Object v = mCurrentState.getValuationLocalCopy().lookUpValue(currentProcName, outParamNames.get(i));
 			statementExecutor.updateThreadState(returnProcName, lhsName, v);
 		}
 		
 		/**
 		 * set all <code>currentProcName</code>'s local variables to null.
 		 */
-		final Map<String, Object> id2v = ((ThreadState) mCurrentState).getValuationCopy().getProcOrFuncId2V(currentProcName);
+		final Map<String, Object> id2v = mCurrentState.getValuationLocalCopy().getProcOrFuncId2V(currentProcName);
 		for(final String varName : id2v.keySet()) {
 			statementExecutor.updateThreadState(currentProcName, varName, null);
 		}
 		
 		moveToNewState(statementExecutor.getCurrentState());
-		((ThreadState) mCurrentState).popProc();
+		mCurrentState.popProc();
 	}
 
 	private void executeForkThreadCurrent(final ForkThreadCurrent forkThreadCurrent) {

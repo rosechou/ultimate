@@ -62,7 +62,7 @@ public class ThreadStateFactory {
 
 	public ThreadState createInitialState(final BoogieIcfgLocation loc
 										, final Valuation globalValuation) {
-		Valuation newValuation = globalValuation;
+		Valuation newValuation = globalValuation.clone();
 		mVarAdder.addLocalVars2Valuation(newValuation);
 		mVarAdder.addProcInParams2Valuation(newValuation);
 		mVarAdder.addProcOutParams2Valuation(newValuation);

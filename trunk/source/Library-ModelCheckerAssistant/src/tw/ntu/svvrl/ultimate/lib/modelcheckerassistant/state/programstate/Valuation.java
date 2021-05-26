@@ -5,13 +5,13 @@ import java.util.Map;
 import java.util.Set;
 
 public class Valuation implements Cloneable {
-	private final Map<String, Map<String, Object>> mValueMap = new HashMap<>();
+	private Map<String, Map<String, Object>> mValueMap = new HashMap<>();
 	
 	public Valuation() {
 	}
 	
 	public Valuation(Map<String, Map<String, Object>> valueMap) {
-		mValueMap.putAll(valueMap);
+		mValueMap = valueMap;
 	}
 	
 	/**
@@ -53,7 +53,12 @@ public class Valuation implements Cloneable {
 		id2v.put(varName, value);
 
 		if(mValueMap.containsKey(procOrFuncName)) {
-			mValueMap.get(procOrFuncName).putAll(id2v);
+			if(mValueMap.get(procOrFuncName).containsKey(varName)) {
+				mValueMap.get(procOrFuncName).replace(varName, value);
+			}
+			else {
+				mValueMap.get(procOrFuncName).putAll(id2v);
+			}
 		} else {
 			mValueMap.put(procOrFuncName, id2v);
 		}
@@ -69,6 +74,11 @@ public class Valuation implements Cloneable {
 	
 	public final Object lookUpValue(final String procOrFuncName, String varName) {
 		return mValueMap.get(procOrFuncName).get(varName);
+	}
+	
+	public void linkGlobals(final Valuation globalV) {
+		mValueMap.remove(null);
+		mValueMap.putAll(globalV.mValueMap);
 	}
 	
 	public boolean containsProcOrFunc(final String procOrFuncName) {

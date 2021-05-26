@@ -33,15 +33,23 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.thread
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
 
 public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
+	public static enum execType{
+		check, realExec
+	}
+	
+	private final execType mExecType;
+	
 	/**
 	 * For many statements.
 	 * @param statements
 	 * 		List of statements
 	 * @param threadState
 	 */
-	public ThreadStatementsExecutor(final List<Statement> statements, final ThreadState state) {
+	public ThreadStatementsExecutor(final List<Statement> statements, final ThreadState state
+									, final execType t) {
 		super(statements);
 		mCurrentState = new ThreadState(state);
+		mExecType = t;
 	}
 	
 	/**
@@ -49,18 +57,21 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 	 * @param statement
 	 * @param threadState
 	 */
-	public ThreadStatementsExecutor(final Statement statement, final ThreadState state) {
+	public ThreadStatementsExecutor(final Statement statement, final ThreadState state
+									, final execType t) {
 		super(statement);
 		mCurrentState = new ThreadState(state);
+		mExecType = t;
 	}
 	
 	/**
 	 * For no statement. ({@link Return} code block)
 	 * @param threadState
 	 */
-	public ThreadStatementsExecutor(final ThreadState state) {
+	public ThreadStatementsExecutor(final ThreadState state, final execType t) {
 		super();
 		mCurrentState = new ThreadState(state);
+		mExecType = t;
 	}
 	
 	public void executeOne(final Statement stmt) {
@@ -244,12 +255,12 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
 		if((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
 			ThreadStatementsExecutor newStatementsExecutor
-					 = new ThreadStatementsExecutor(Arrays.asList(stmt.getThenPart()), mCurrentState);
+					 = new ThreadStatementsExecutor(Arrays.asList(stmt.getThenPart()), mCurrentState, mExecType);
 			ThreadState newState = (ThreadState) newStatementsExecutor.execute();
 			setCurrentState(newState);
 		} else {
 			ThreadStatementsExecutor newStatementsExecutor
-			 		= new ThreadStatementsExecutor(Arrays.asList(stmt.getElsePart()), mCurrentState);
+			 		= new ThreadStatementsExecutor(Arrays.asList(stmt.getElsePart()), mCurrentState, mExecType);
 			ThreadState newState = (ThreadState) newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}
@@ -279,14 +290,23 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
 		while((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
 			ThreadStatementsExecutor newStatementsExecutor
-	 			= new ThreadStatementsExecutor(Arrays.asList(stmt.getBody()), mCurrentState);
+	 			= new ThreadStatementsExecutor(Arrays.asList(stmt.getBody()), mCurrentState, mExecType);
 			ThreadState newState = (ThreadState) newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}
 	}
 	
 	public void updateThreadState(final String procName, final String varName, final Object value) {
-		Valuation newValuation = mCurrentState.getValuationCopy();
+		Valuation newValuation;
+		if(mExecType == execType.check) {
+			newValuation = mCurrentState.getValuationFullCopy();
+		} else if(mExecType == execType.realExec) {
+			newValuation = mCurrentState.getValuationLocalCopy();
+		} else {
+			throw new UnsupportedOperationException("Unknown execType: " + 
+					mExecType.getClass().getSimpleName());
+		}
+		
 		assert(newValuation.containsProcOrFunc(procName));
 		newValuation.setValue(procName, varName, value);
 

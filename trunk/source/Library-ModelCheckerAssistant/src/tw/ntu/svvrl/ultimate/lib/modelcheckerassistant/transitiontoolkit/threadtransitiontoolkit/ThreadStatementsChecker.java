@@ -45,7 +45,8 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 			} else if(stmt instanceof AssignmentStatement
 					|| stmt instanceof HavocStatement) {
 				assert mState instanceof ThreadState;
-				final ThreadStatementsExecutor stmtsExecutor = new ThreadStatementsExecutor(stmt, mState);
+				final ThreadStatementsExecutor stmtsExecutor
+					= new ThreadStatementsExecutor(stmt, mState, ThreadStatementsExecutor.execType.check);
 				moveToNewState(stmtsExecutor.execute());
 				ThreadStatementsChecker nextStatementsChecker 
 						= new ThreadStatementsChecker(mStatements.subList(i+1, mStatements.size()), mState);

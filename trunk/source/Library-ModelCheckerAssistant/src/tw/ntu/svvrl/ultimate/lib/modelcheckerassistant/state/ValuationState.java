@@ -5,7 +5,11 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Valuat
 public abstract class ValuationState<S extends ValuationState<S>> implements IState<S> {
 	protected Valuation mValuation;
 	
-	public Valuation getValuationCopy() {
+	public Valuation getValuationFullCopy() {
+		return mValuation.clone();
+	}
+	
+	public Valuation getValuationLocalCopy() {
 		return mValuation.cloneLocals();
 	}
 }

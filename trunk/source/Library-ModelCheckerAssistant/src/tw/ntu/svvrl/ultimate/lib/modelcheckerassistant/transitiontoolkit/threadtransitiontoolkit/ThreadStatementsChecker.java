@@ -7,16 +7,13 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.AssignmentStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssumeStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.HavocStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.ExprEvaluator;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsChecker;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
 
 public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 	
 	public ThreadStatementsChecker(final List<Statement> statements, final ThreadState state) {
-		mStatements = statements;
+		super(statements);
 		mState = new ThreadState(state);
 	}
 	
@@ -59,7 +56,7 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 	}
 	
 	protected boolean checkAssumeStatement(final AssumeStatement assumeStmt) {
-		final ExprEvaluator<ThreadState> exprEvaluator = new ExprEvaluator<>(mState);
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mState);
 		return (boolean) exprEvaluator.evaluate(assumeStmt.getFormula());
 	}
 	

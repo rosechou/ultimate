@@ -3,8 +3,6 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Valuation implements Cloneable {
 	private final Map<String, Map<String, Object>> mValueMap = new HashMap<>();

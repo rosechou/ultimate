@@ -21,13 +21,8 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Ret
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.SequentialComposition;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.StatementSequence;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Summary;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.CodeBlockExecutor;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsChecker;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
 
 public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	/**
@@ -159,13 +154,13 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 
 	private void executeStatementSequence(final StatementSequence stmtSeq) {
 		final List<Statement> stmts = stmtSeq.getStatements();
-		final StatementsExecutor<ThreadState> statementExecutor = new StatementsExecutor<>(stmts, (ThreadState) mCurrentState);
+		final ThreadStatementsExecutor statementExecutor = new ThreadStatementsExecutor(stmts, (ThreadState) mCurrentState);
 		moveToNewState(statementExecutor.execute());
 	}
 
 	private void executeCall(final Call call) {
 		final CallStatement callStmt = call.getCallStatement();
-		final StatementsExecutor<ThreadState> statementExecutor = new StatementsExecutor<>(callStmt, (ThreadState) mCurrentState);
+		final ThreadStatementsExecutor statementExecutor = new ThreadStatementsExecutor(callStmt, (ThreadState) mCurrentState);
 		moveToNewState(statementExecutor.execute());
 	}
 
@@ -178,7 +173,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 
 	private void executeReturn(final Return returnn) {
 		final CallStatement correspondingCallStmt = returnn.getCallStatement();
-		final StatementsExecutor<ThreadState> statementExecutor = new StatementsExecutor<>((ThreadState) mCurrentState);
+		final ThreadStatementsExecutor statementExecutor = new ThreadStatementsExecutor((ThreadState) mCurrentState);
 		final String currentProcName = ((ThreadState) mCurrentState).getCurrentProc();
 		final String returnProcName = ((ThreadState) mCurrentState).getCallerProc();
 		

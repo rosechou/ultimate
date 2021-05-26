@@ -28,10 +28,8 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WhileStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogiePrimitiveType;
 import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Valuation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.ExprEvaluator;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
 
 public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
@@ -42,8 +40,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 	 * @param threadState
 	 */
 	public ThreadStatementsExecutor(final List<Statement> statements, final ThreadState state) {
-		mStatements = statements;
-		mStatement = null;
+		super(statements);
 		mCurrentState = new ThreadState(state);
 	}
 	
@@ -53,8 +50,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 	 * @param threadState
 	 */
 	public ThreadStatementsExecutor(final Statement statement, final ThreadState state) {
-		mStatements = null;
-		mStatement = statement;
+		super(statement);
 		mCurrentState = new ThreadState(state);
 	}
 	
@@ -63,8 +59,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 	 * @param threadState
 	 */
 	public ThreadStatementsExecutor(final ThreadState state) {
-		mStatements = null;
-		mStatement = null;
+		super();
 		mCurrentState = new ThreadState(state);
 	}
 	
@@ -105,7 +100,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 
 
 	private void executeAssertStatement(AssertStatement stmt) {
-		ExprEvaluator<ThreadState> exprEvaluator = new ExprEvaluator<>(mCurrentState);
+		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
 		if(!(boolean) exprEvaluator.evaluate(stmt.getFormula())) {
 			throw new UnsupportedOperationException("Assertion is violated during"
 					+ " the statement execution.");
@@ -120,7 +115,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 	 * 		new thread state.
 	 */
 	private void executeAssignmentStatement(final AssignmentStatement stmt) {
-		final ExprEvaluator<ThreadState> exprEvaluator = new ExprEvaluator<>(mCurrentState);
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
 		
 		final LeftHandSide[] lhs = stmt.getLhs();
 		final Expression[] rhs = stmt.getRhs();
@@ -182,7 +177,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 		 */
 		String procName = stmt.getMethodName();
 		Expression[] args = stmt.getArguments();
-		ExprEvaluator<ThreadState> exprEvaluator = new ExprEvaluator<>(mCurrentState);
+		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
 		
 		List<String> argsName = ((ThreadState) mCurrentState).getProc2InParams().get(procName);
 		assert(args.length == argsName.size());
@@ -246,7 +241,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 
 	private void executeIfStatement(IfStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
-		ExprEvaluator<ThreadState> exprEvaluator = new ExprEvaluator<>(mCurrentState);
+		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
 		if((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
 			ThreadStatementsExecutor newStatementsExecutor
 					 = new ThreadStatementsExecutor(Arrays.asList(stmt.getThenPart()), mCurrentState);
@@ -281,7 +276,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 
 	private void executeWhileStatement(WhileStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
-		ExprEvaluator<ThreadState> exprEvaluator = new ExprEvaluator<>(mCurrentState);
+		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
 		while((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
 			ThreadStatementsExecutor newStatementsExecutor
 	 			= new ThreadStatementsExecutor(Arrays.asList(stmt.getBody()), mCurrentState);

@@ -2,21 +2,15 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.nevert
 
 import java.util.List;
 
-import de.uni_freiburg.informatik.ultimate.boogie.ast.AssertStatement;
-import de.uni_freiburg.informatik.ultimate.boogie.ast.AssignmentStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssumeStatement;
-import de.uni_freiburg.informatik.ultimate.boogie.ast.HavocStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.ExprEvaluator;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsChecker;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
 
 public class ProgramStatementsChecker extends StatementsChecker<ProgramState> {
 
 	public ProgramStatementsChecker(final List<Statement> statements, final ProgramState state) {
-		mStatements = statements;
+		super(statements);
 		mState = state;
 	}
 	
@@ -49,7 +43,7 @@ public class ProgramStatementsChecker extends StatementsChecker<ProgramState> {
 	}
 	
 	protected boolean checkAssumeStatement(final AssumeStatement assumeStmt) {
-		final ExprEvaluator<ProgramState> exprEvaluator = new ExprEvaluator<>(mState);
+		final ProgramExprEvaluator exprEvaluator = new ProgramExprEvaluator(mState);
 		return (boolean) exprEvaluator.evaluate(assumeStmt.getFormula());
 	}
 

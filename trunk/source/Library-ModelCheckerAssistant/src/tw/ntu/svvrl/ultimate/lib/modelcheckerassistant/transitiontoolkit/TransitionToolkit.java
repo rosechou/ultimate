@@ -1,8 +1,6 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit;
 
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.IState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 
 /**
  * This class handle all issues about a transition(edge) and the statements on it.
@@ -11,7 +9,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.thread
 public abstract class TransitionToolkit<S extends IState<S>> {
 	protected CodeBlockExecutor<S> mCodeBlockExecutor;
 	
-	protected boolean checkTransEnable() {
+	public boolean checkTransEnable() {
 		return mCodeBlockExecutor.checkEnable();
 	}
 	

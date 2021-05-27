@@ -141,6 +141,9 @@ public class ThreadState extends ValuationState<ThreadState>{
 		return mValuation;
 	}
 	
+	/**
+	 * @note Only used when procedure {@link Return}.
+	 */
 	public void setValuation(Valuation v) {
 		mValuation = v;
 	}

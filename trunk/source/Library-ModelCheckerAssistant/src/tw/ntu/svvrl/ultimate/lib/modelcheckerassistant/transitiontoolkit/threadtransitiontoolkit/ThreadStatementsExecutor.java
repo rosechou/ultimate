@@ -201,8 +201,8 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 		mCurrentState.getCurrentProc().setValuationRecord(mCurrentState.getValuationFullCopy());
 		
 		/**
-		 * Clear the rest value (recursive procedure).
-		 * Before getting into  the procedure, set all locals to null.
+		 * Clear the rest value (occur in recursive call) of the target procedure.
+		 * Before getting into the procedure, set all locals to null.
 		 */
 		final Map<String, Object> id2v = mCurrentState.getValuation().getProcOrFuncId2V(procName);
 		for(final String varName : id2v.keySet()) {

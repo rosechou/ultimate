@@ -10,6 +10,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Boo
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit.ThreadTransitionToolkit;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.ValuationState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.FuncInitValuationInfo;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProcInfo;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Valuation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
 
@@ -37,7 +38,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 	 * call: push
 	 * return: pop
 	 */
-	private Stack<String> mProcStack = new Stack<>();
+	private Stack<ProcInfo> mProcStack = new Stack<>();
 	
 	
 	/**
@@ -64,7 +65,8 @@ public class ThreadState extends ValuationState<ThreadState>{
 		mFuncInitValuationInfo = funcInitValuationInfo;
 		mProc2InParams = proc2InParams;
 		mProc2OutParams = proc2OutParams;
-		mProcStack.push(mCorrespondingIcfgLoc.getProcedure());
+		mProcStack.push(
+				new ProcInfo(mCorrespondingIcfgLoc.getProcedure()));
 	}
 	
 	/**
@@ -115,19 +117,19 @@ public class ThreadState extends ValuationState<ThreadState>{
 		return mProc2OutParams;
 	}
 	
-	public Stack<String> getProcStackCopy() {
-		return (Stack<String>) mProcStack.clone();
+	public Stack<ProcInfo> getProcStackCopy() {
+		return (Stack<ProcInfo>) mProcStack.clone();
 	}
 	
-	public void pushProc(String procName) {
-		mProcStack.push(procName);
+	public void pushProc(ProcInfo proc) {
+		mProcStack.push(proc);
 	}
 	
 	public void popProc() {
 		mProcStack.pop();
 	}
 	
-	public String getCurrentProc() {
+	public ProcInfo getCurrentProc() {
 		return mProcStack.peek();
 	}
 	
@@ -139,11 +141,15 @@ public class ThreadState extends ValuationState<ThreadState>{
 		return mValuation;
 	}
 	
-	public String getCallerProc() {
+	public void setValuation(Valuation v) {
+		mValuation = v;
+	}
+	
+	public ProcInfo getCallerProc() {
 		if(mProcStack.size() > 1) {
-			String temp = mProcStack.peek();
+			ProcInfo temp = mProcStack.peek();
 			mProcStack.pop();
-			String result = mProcStack.peek();
+			ProcInfo result = mProcStack.peek();
 			mProcStack.push(temp);
 			return result;
 		} else {

@@ -21,6 +21,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Ret
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.SequentialComposition;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.StatementSequence;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Summary;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProcInfo;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.CodeBlockExecutor;
 
@@ -49,7 +50,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 			 * and return destination's procedure should match.
 			 */
 			String TargetProcName = mCodeBlock.getSucceedingProcedure();
-			if(mCurrentState.getCallerProc().equals(TargetProcName)) {
+			if(mCurrentState.getCallerProc().getProcName().equals(TargetProcName)) {
 				return true;
 			} else {
 				return false;
@@ -177,30 +178,51 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 
 	private void executeReturn(final Return returnn) {
 		final CallStatement correspondingCallStmt = returnn.getCallStatement();
-		final ThreadStatementsExecutor statementExecutor
-			= new ThreadStatementsExecutor(mCurrentState, ThreadStatementsExecutor.execType.realExec);
-		final String currentProcName = mCurrentState.getCurrentProc();
-		final String returnProcName = mCurrentState.getCallerProc();
+		
+		final ProcInfo currentProc = mCurrentState.getCurrentProc();
+		final ProcInfo returnProc = mCurrentState.getCallerProc();
+		String currentProcName = currentProc.getProcName();
+		String returnProcName = returnProc.getProcName();
 		
 		/**
-		 * assign return value to lhs(s).
+		 * Retrieve return values
 		 */
 		final List<String> outParamNames = mCurrentState.getProc2OutParams().get(currentProcName);
 		final VariableLHS[] lhss = correspondingCallStmt.getLhs();
+		final Object[] values = new Object[lhss.length];
 		assert(lhss.length == outParamNames.size());
 		for(int i = 0; i < lhss.length; i++) {
-			final String lhsName = lhss[i].getIdentifier();
 			final Object v = mCurrentState.getValuationLocalCopy().lookUpValue(currentProcName, outParamNames.get(i));
-			statementExecutor.updateThreadState(returnProcName, lhsName, v);
+			values[i] = v;
 		}
 		
 		/**
-		 * set all <code>currentProcName</code>'s local variables to null.
+		 * Reset the return procedure valuation.
 		 */
-		final Map<String, Object> id2v = mCurrentState.getValuationLocalCopy().getProcOrFuncId2V(currentProcName);
-		for(final String varName : id2v.keySet()) {
-			statementExecutor.updateThreadState(currentProcName, varName, null);
+		mCurrentState.setValuation(returnProc.getValuationRecord());
+		
+		final ThreadStatementsExecutor statementExecutor
+		= new ThreadStatementsExecutor(mCurrentState, ThreadStatementsExecutor.execType.realExec);
+		
+		/**
+		 * assign return value(s) to lhs(s).
+		 */
+		for(int i = 0; i < lhss.length; i++) {
+			final String lhsName = lhss[i].getIdentifier();
+			statementExecutor.updateThreadState(returnProcName, lhsName, values[i]);
 		}
+		
+		/**
+		 * This will lead to a bug in the context of recursive procedure call.
+		 * Move it to {@link CallStatement}.
+		 */
+//		/**
+//		 * set all <code>currentProcName</code>'s local variables to null.
+//		 */
+//		final Map<String, Object> id2v = mCurrentState.getValuation().getProcOrFuncId2V(currentProcName);
+//		for(final String varName : id2v.keySet()) {
+//			statementExecutor.updateThreadState(currentProcName, varName, null);
+//		}
 		
 		moveToNewState(statementExecutor.getCurrentState());
 		mCurrentState.popProc();

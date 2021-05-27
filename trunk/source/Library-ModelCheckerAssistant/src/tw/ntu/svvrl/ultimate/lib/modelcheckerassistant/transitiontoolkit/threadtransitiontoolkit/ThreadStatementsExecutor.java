@@ -2,6 +2,7 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.thread
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -28,6 +29,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WhileStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogiePrimitiveType;
 import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProcInfo;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Valuation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
@@ -192,13 +194,28 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 		
 		List<String> argsName = mCurrentState.getProc2InParams().get(procName);
 		assert(args.length == argsName.size());
+		
+		/**
+		 * Record current valuation.
+		 */
+		mCurrentState.getCurrentProc().setValuationRecord(mCurrentState.getValuationFullCopy());
+		
+		/**
+		 * Clear the rest value (recursive procedure).
+		 * Before getting into  the procedure, set all locals to null.
+		 */
+		final Map<String, Object> id2v = mCurrentState.getValuation().getProcOrFuncId2V(procName);
+		for(final String varName : id2v.keySet()) {
+			updateThreadState(procName, varName, null);
+		}
+		
 		/**
 		 * assign values to in params
 		 */
 		for(int i = 0; i < args.length; i++) {
 			updateThreadState(procName, argsName.get(i), exprEvaluator.evaluate(args[i]));
 		}
-		mCurrentState.pushProc(procName);
+		mCurrentState.pushProc(new ProcInfo(procName));
 	}
 
 	private void executeForkStatement(ForkStatement stmt) {

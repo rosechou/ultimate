@@ -1,8 +1,6 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -34,7 +32,16 @@ public class VarAndParamAdder {
 	}
 	
 	/**
-	 * For globals, locals, procedures
+	 * For globals
+	 * @param boogie2SmtSymbolTable
+	 */
+	public VarAndParamAdder(Boogie2SmtSymbolTable boogie2SmtSymbolTable) {
+		mBoogie2SmtSymbolTable = boogie2SmtSymbolTable;
+		mProcNames = null;
+	}
+	
+	/**
+	 * For locals, procedures
 	 * @param boogie2SmtSymbolTable
 	 * @param procNames 
 	 * 		all procedure names

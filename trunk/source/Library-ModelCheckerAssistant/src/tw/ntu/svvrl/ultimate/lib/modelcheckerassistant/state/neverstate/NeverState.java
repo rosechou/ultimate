@@ -8,11 +8,13 @@ import java.util.Map;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.transitions.OutgoingInternalTransition;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.State;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.IState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.nevertransitiontoolkit.NeverTransitionToolkit;
 
-public class NeverState implements State<NeverState, OutgoingInternalTransition<CodeBlock, NeverState>>{
+public class NeverState implements IState<NeverState>{
 	private final String mStateName;
 	private final List<OutgoingInternalTransition<CodeBlock, NeverState>> mTranss = new ArrayList<>();
 	
@@ -49,9 +51,9 @@ public class NeverState implements State<NeverState, OutgoingInternalTransition<
 		}
 		
 		for(final OutgoingInternalTransition<CodeBlock, NeverState> edge : mTranss) {
-			final TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState> transitionToolkit
-			= new TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState>(edge, this);
-			if (transitionToolkit.checkTransEnable(correspondingProgramState)) {
+			final NeverTransitionToolkit transitionToolkit
+			= new NeverTransitionToolkit(edge, this, correspondingProgramState);
+			if (transitionToolkit.checkTransEnable()) {
 				enableTrans.add(edge);
 			}
 		}
@@ -60,9 +62,9 @@ public class NeverState implements State<NeverState, OutgoingInternalTransition<
 
 	public NeverState doTransition(final OutgoingInternalTransition<CodeBlock, NeverState> edge
 			, final ProgramState correspondingProgramState) {
-		final TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState> transitionToolkit
-		= new TransitionToolkit<OutgoingInternalTransition<CodeBlock, NeverState>, NeverState>(edge, this);
-		return (NeverState) transitionToolkit.doTransition(correspondingProgramState);
+		final NeverTransitionToolkit transitionToolkit 
+			= new NeverTransitionToolkit(edge, this, correspondingProgramState);
+		return (NeverState) transitionToolkit.doTransition();
 	}
 	
 	@Override

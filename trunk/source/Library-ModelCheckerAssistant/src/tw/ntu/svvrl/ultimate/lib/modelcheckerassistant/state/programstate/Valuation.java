@@ -3,21 +3,19 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Valuation implements Cloneable {
-	private final Map<String, Map<String, Object>> mValueMap = new HashMap<>();
+	private Map<String, Map<String, Object>> mValueMap = new HashMap<>();
 	
 	public Valuation() {
 	}
 	
 	public Valuation(Map<String, Map<String, Object>> valueMap) {
-		mValueMap.putAll(valueMap);
+		mValueMap = valueMap;
 	}
 	
 	/**
-	 * deep copy
+	 * deep copy all variables.
 	 */
 	@Override
 	public Valuation clone()
@@ -26,6 +24,22 @@ public class Valuation implements Cloneable {
 		for(String procName : mValueMap.keySet()) {
 			Map<String, Object> id2v = new HashMap<>(mValueMap.get(procName));
 			val.put(procName, id2v);
+		}
+		return new Valuation(val);
+    }
+	
+	/**
+	 * deep copy locals and shallow copy globals.
+	 */
+	public Valuation cloneLocals()
+    {
+		Map<String, Map<String, Object>> val = new HashMap<>();
+		val.put(null, mValueMap.get(null));
+		for(String procName : mValueMap.keySet()) {
+			if(procName != null) {
+				Map<String, Object> id2v = new HashMap<>(mValueMap.get(procName));
+				val.put(procName, id2v);
+			}
 		}
 		return new Valuation(val);
     }
@@ -42,7 +56,12 @@ public class Valuation implements Cloneable {
 		id2v.put(varName, value);
 
 		if(mValueMap.containsKey(procOrFuncName)) {
-			mValueMap.get(procOrFuncName).putAll(id2v);
+			if(mValueMap.get(procOrFuncName).containsKey(varName)) {
+				mValueMap.get(procOrFuncName).replace(varName, value);
+			}
+			else {
+				mValueMap.get(procOrFuncName).putAll(id2v);
+			}
 		} else {
 			mValueMap.put(procOrFuncName, id2v);
 		}
@@ -60,6 +79,15 @@ public class Valuation implements Cloneable {
 		return mValueMap.get(procOrFuncName).get(varName);
 	}
 	
+	/**
+	 * make globalValuation reference.
+	 * Once the globals change, the linked valuation also changes. 
+	 */
+	public void linkGlobals(final Valuation globalValuation) {
+		mValueMap.remove(null);
+		mValueMap.putAll(globalValuation.mValueMap);
+	}
+	
 	public boolean containsProcOrFunc(final String procOrFuncName) {
 		return mValueMap.containsKey(procOrFuncName);
 	}
@@ -68,6 +96,12 @@ public class Valuation implements Cloneable {
 		return mValueMap.equals(anotherValuation.mValueMap);
 	}
 
+	/**
+	 * Check if all non-old global variables have been initialized.
+	 * All non-old global variables should be initialized before doing 
+	 * the transition in the never claim automata.
+	 * @return true if all are initialized, false otherwise.
+	 */
 	public boolean allNonOldGlobalInitialized() {
 		Map<String, Object> globalVarMap = mValueMap.get(null);
 		for(String globalVarName : globalVarMap.keySet()) {
@@ -79,6 +113,11 @@ public class Valuation implements Cloneable {
 		return true;
 	}
 
+	/**
+	 * Check the variable whose name is old or not.
+	 * If it is old variable, then it must begin with "old(" 
+	 * and end with ")".
+	 */
 	private boolean isOld(String s) {
 		if(s.length() <= 5) {
 			return false;

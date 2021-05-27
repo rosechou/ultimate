@@ -13,7 +13,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Progra
 /**
  * This class explores the boogie program states with the help of
  * the pre-build {@link BoogieIcfgContainer}.
- * The {@link ProgramState}s is generated when a Icfg transition is going to be moved. 
+ * The {@link ThreadState}s is generated when a Icfg transition is going to be moved. 
  * 
  * @author Hong-Yang Lin
  */

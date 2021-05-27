@@ -4,196 +4,89 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 
-import de.uni_freiburg.informatik.ultimate.boogie.ast.AssignmentStatement;
-import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
-import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
-import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgLocation;
-import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.TransitionToolkit;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.State;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.ValuationState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
 
 /**
- * This class represents a boogie program state.
- * It differs from {@link BoogieIcfgLocation} in the existence of actual valuation
- * during the program execution.
- * @author Hong-Yang Lin
- *
+ * ProgramState Consists of one or many {@link ThreadState}s.
+ * The <code> mValuation </code> only keeps global valuation.
+ * All {@link ThreadState}s' (in <code> mThreadStates </code>) global valuations 
+ * are references to this valuation. 
+ * So if one thread changes the global variable, the valuation here also
+ * changes.
  */
-
-public class ProgramState implements State<ProgramState, IcfgEdge>{
+public class ProgramState extends ValuationState<ProgramState> {
 	/**
-	 * To record the valuation of boogie variables.
-	 * Type: procedure name × identifier × value
+	 * Thread ID to ThreadState
+	 * One thread must contain only one thread state. 
 	 */
-	private final Valuation mValuation;
-
-	/**
-	 * To specify which IcfgLocation this state is generated from.
-	 */
-	private BoogieIcfgLocation mCorrespondingIcfgLoc;
-	private final FuncInitValuationInfo mFuncInitValuationInfo;
+	final Map<Integer, ThreadState> mThreadStates = new HashMap<>();
 	
-	private final Map<String, List<String>> mProc2InParams;
-	private final Map<String, List<String>> mProc2OutParams;
-	
-	/**
-	 * The stack that keeps the procedure calls.
-	 * top element is the current procedure name.
-	 * call: push
-	 * return: pop
-	 */
-	private Stack<String> mProcStack = new Stack<>();
-	
-	
-	/**
-	 * Initial constructor.
-	 * @param v
-	 * @param boogieIcfgLocation
-	 * 		Corresponding rcfg location.
-	 * @param funcInitValuationInfo
-	 * 		function info
-	 */
-	public ProgramState(final Valuation v,
-						final BoogieIcfgLocation boogieIcfgLocation,
-						final FuncInitValuationInfo funcInitValuationInfo,
-						final Map<String, List<String>> proc2InParams,
-						final Map<String, List<String>> proc2OutParams) {
-		mValuation = v.clone();
-		mCorrespondingIcfgLoc = boogieIcfgLocation;
-		mFuncInitValuationInfo = funcInitValuationInfo;
-		mProc2InParams = proc2InParams;
-		mProc2OutParams = proc2OutParams;
-		mProcStack.push(mCorrespondingIcfgLoc.getProcedure());
+	public ProgramState(ThreadState threadState, Valuation globalValuation) {
+		mValuation = globalValuation;
+		addThreadState(threadState);
 	}
 	
 	/**
-	 * A program state constructor that updates the valuation.
-	 * Thus the field <code>mCorrespondingIcfgLoc</code> may move
-	 * but we have no idea where it is. This field remains unknown until
-	 * {@link #setCorrespondingIcfgLoc} is called.
-	 * Used in {@link StatementsExecutor#updateProgramState}'s
-	 * Pass the old state to get FuncInitValuationInfo and Proc2InParams.
-	 * @param valuation
+	 * Deep copy a program state and let all the threadStates' global valuation 
+	 * refer to <code> mValuation </code>.
 	 */
-	public ProgramState(final Valuation v, final ProgramState oldState) {
-		mValuation = v.clone();
-		mCorrespondingIcfgLoc = null;
-		mFuncInitValuationInfo = oldState.getFuncInitValuationInfo();
-		mProc2InParams = oldState.getProc2InParams();
-		mProc2OutParams = oldState.getProc2OutParams();
-		mProcStack = oldState.getProcStackCopy();
-	}
-	
-	/**
-	 * copy constructor
-	 * valuation and stack are deep copied.
-	 */
-	public ProgramState(final ProgramState programState) {
-		mValuation = programState.getValuationCopy();
-		mCorrespondingIcfgLoc = programState.getCorrespondingIcfgLoc();
-		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
-		mProc2InParams = programState.getProc2InParams();
-		mProc2OutParams = programState.getProc2OutParams();
-		mProcStack = programState.getProcStackCopy();
-	}
-
-	public BoogieIcfgLocation getCorrespondingIcfgLoc() {
-		return mCorrespondingIcfgLoc;
-	}
-	
-	public FuncInitValuationInfo getFuncInitValuationInfo() {
-		return mFuncInitValuationInfo;
-	}
-	
-	public Map<String, List<String>> getProc2InParams() {
-		return mProc2InParams;
-	}
-	
-	public Map<String, List<String>> getProc2OutParams() {
-		return mProc2OutParams;
-	}
-	
-	public Valuation getValuationCopy() {
-		return mValuation.clone();
-	}
-	
-	public Stack<String> getProcStackCopy() {
-		return (Stack<String>) mProcStack.clone();
-	}
-	
-	public void pushProc(String procName) {
-		mProcStack.push(procName);
-	}
-	
-	public void popProc() {
-		mProcStack.pop();
-	}
-	
-	public String getCurrentProc() {
-		return mProcStack.peek();
-	}
-	
-	public String getCallerProc() {
-		if(mProcStack.size() > 1) {
-			String temp = mProcStack.peek();
-			mProcStack.pop();
-			String result = mProcStack.peek();
-			mProcStack.push(temp);
-			return result;
-		} else {
-			throw new UnsupportedOperationException("No caller proc.");
+	public ProgramState(ProgramState state) {
+		mValuation = state.getValuationFullCopy();
+		for(ThreadState s : state.getThreadStatesMap().values()) {
+			ThreadState t = new ThreadState(s);
+			t.getValuation().linkGlobals(mValuation);
+			mThreadStates.put(s.getThreadID(), t);
 		}
-		
 	}
 	
-	/**
-	 * This method is used for make up the unknown <code>mCorrespondingIcfgLoc</code>.
-	 * see {@link #ProgramState(Map, FuncInitValuationInfo)}.
-	 * @param icfgLocation
-	 */
-	public void setCorrespondingIcfgLoc(final BoogieIcfgLocation icfgLocation) {
-		mCorrespondingIcfgLoc = icfgLocation;
-	}
-	
-	/**
-	 * Get the a list of transitions which is enable from this state.
-	 * A transition is enable if the assume statement is not violated.
-	 * @return
-	 * 		a list of enable transitions.
-	 */
-	public List<IcfgEdge> getEnableTrans() {
-		List<IcfgEdge> edges = mCorrespondingIcfgLoc.getOutgoingEdges();
-		List<IcfgEdge> enableTrans = new ArrayList<>();
-		for(final IcfgEdge edge : edges) {
-			final TransitionToolkit<IcfgEdge, ProgramState> transitionToolkit = new TransitionToolkit<IcfgEdge, ProgramState>(edge, this);
-			if (transitionToolkit.checkTransEnable()) {
-				enableTrans.add(edge);
-			}
+	public List<ThreadStateTransition> getEnableTrans() {
+		List<ThreadStateTransition> enableTrans = new ArrayList<>();
+		for(final ThreadState threadState : mThreadStates.values()) {
+			enableTrans.addAll(threadState.getEnableTrans());
 		}
-		
 		return enableTrans;
 	}
 	
-	
-	
 	/**
-	 * 		Execute the statements on the IcfgEge and move from a this state
-	 * 		to the next state.
-	 * @param edge
-	 * 		An IcfgEge
-	 * @return
-	 * 		The next program state.
+	 * One of thread state do the transition.
+	 * (According to the threadID on the {@link ThreadStateTransition}).
 	 */
-	public ProgramState doTransition(final IcfgEdge edge) {
-		final TransitionToolkit<IcfgEdge, ProgramState> transitionToolkit = new TransitionToolkit<IcfgEdge, ProgramState>(edge, this);
-		return (ProgramState) transitionToolkit.doTransition();
+	public ProgramState doTransition(final ThreadStateTransition trans) {
+		ProgramState newProgramState = new ProgramState(this);
+		ThreadState newState = newProgramState.getThreadStatesMap().get(trans.getThreadID()).doTransition(trans);
+		/**
+		 * update the thread state who did the transition.
+		 */
+		newProgramState.getThreadStatesMap().put(newState.getThreadID(), newState);
+		return newProgramState;
+	}
+
+
+	public int getThreadNumber() {
+		return mThreadStates.size();
+	}
+	
+	private Map<Integer, ThreadState> getThreadStatesMap() {
+		return mThreadStates;
+	}
+	
+	public boolean allNonOldGlobalInitialized() {
+		return mValuation.allNonOldGlobalInitialized();
+	}
+	
+	private void addThreadState(ThreadState s) {
+		if(mThreadStates.containsKey(s.getThreadID())) {
+			throw new UnsupportedOperationException("Thread "
+					+ String.valueOf(s.getThreadID()) + " already exists.");
+		}
+		mThreadStates.put(s.getThreadID(), s);
 	}
 	
 	/**
-	 * Check whether two automaton states are equivalent.
+	 * Check whether two program automaton states are equivalent.
 	 * This method is needed in the nested DFS procedure. 
 	 * @param anotherProgramState
 	 * 		the state which is going to be compared to.
@@ -202,18 +95,17 @@ public class ProgramState implements State<ProgramState, IcfgEdge>{
 	 */
 	@Override
 	public boolean equals(final ProgramState anotherProgramState) {
-		if(!mCorrespondingIcfgLoc.equals(anotherProgramState.getCorrespondingIcfgLoc())) {
+		if(this.getThreadNumber() != anotherProgramState.getThreadNumber()) {
 			return false;
 		}
-		return mValuation.equals(anotherProgramState.getValuationCopy()) ? true : false;
-	}
-
-	public boolean allNonOldGlobalInitialized() {
-		return mValuation.allNonOldGlobalInitialized();
-	}
-
-	@Override
-	public String toString() {
-		return "ProgramState@" + mCorrespondingIcfgLoc.toString();
+		/**
+		 * Thread ID should be consistent?
+		 */
+		for(final ThreadState threadState : anotherProgramState.getThreadStatesMap().values()) {
+			if(!mThreadStates.get(threadState.getThreadID()).equals(threadState)) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

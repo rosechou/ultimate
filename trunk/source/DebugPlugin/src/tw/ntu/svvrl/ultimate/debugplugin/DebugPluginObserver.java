@@ -33,6 +33,8 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.NeverClaimAutExp
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 
 import java.util.HashSet;
 import java.util.List;
@@ -105,8 +107,8 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		
 		
 		ProgramState a = ((ProgramState) pInitialStates.toArray()[0]);
-		List<IcfgEdge> edges = a.getEnableTrans();
-		IcfgEdge edge = edges.get(0);
+		List<ThreadStateTransition> edges = a.getEnableTrans();
+		ThreadStateTransition edge = edges.get(0);
 		ProgramState b = a.doTransition(edge);
 		
 		List<OutgoingInternalTransition<CodeBlock, NeverState>> nedges = n.getEnableTrans(b);
@@ -120,67 +122,225 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		edge = edges.get(0);
 		ProgramState c = b.doTransition(edge);
 		
-		nedges = n.getEnableTrans(c);
-		if(nedges.size() > 0) {
-			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
-			NeverState m = n.doTransition(nedge, c);
-			n = m;
-		}
-		
 		edges = c.getEnableTrans();
 		edge = edges.get(0);
 		ProgramState d = c.doTransition(edge);
-		
-		nedges = n.getEnableTrans(d);
-		if(nedges.size() > 0) {
-			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
-			NeverState m = n.doTransition(nedge, d);
-			n = m;
-		}
 		
 		edges = d.getEnableTrans();
 		edge = edges.get(0);
 		ProgramState e = d.doTransition(edge);
 		
-		nedges = n.getEnableTrans(e);
-		if(nedges.size() > 0) {
-			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
-			NeverState m = n.doTransition(nedge, e);
-			n = m;
-		}
-		
 		edges = e.getEnableTrans();
 		edge = edges.get(0);
 		ProgramState f = e.doTransition(edge);
-		
-		nedges = n.getEnableTrans(f);
-		if(nedges.size() > 0) {
-			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(1);
-			NeverState m = n.doTransition(nedge, f);
-			n = m;
-		}
 		
 		edges = f.getEnableTrans();
 		edge = edges.get(0);
 		ProgramState g = f.doTransition(edge);
 		
-		nedges = n.getEnableTrans(g);
-		if(nedges.size() > 0) {
-			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
-			NeverState m = n.doTransition(nedge, g);
-			n = m;
-		}
-		
 		edges = g.getEnableTrans();
 		edge = edges.get(0);
 		ProgramState h = g.doTransition(edge);
 		
-		nedges = n.getEnableTrans(h);
-		if(nedges.size() > 0) {
-			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
-			NeverState m = n.doTransition(nedge, h);
-			n = m;
-		}
+		edges = h.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState i = h.doTransition(edge);
+		
+		edges = i.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState j = i.doTransition(edge);
+		
+		edges = j.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState k = j.doTransition(edge);
+		
+		edges = k.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState l = k.doTransition(edge);
+		
+		edges = l.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState o = l.doTransition(edge);
+		
+		edges = o.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState p = o.doTransition(edge);
+		
+		edges = p.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState q = p.doTransition(edge);
+		
+		edges = q.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState r = q.doTransition(edge);
+		
+		edges = r.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState s = r.doTransition(edge);
+		
+		edges = s.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState t = s.doTransition(edge);
+		
+		edges = t.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState u = t.doTransition(edge);
+		
+		edges = u.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState v = u.doTransition(edge);
+		
+		edges = v.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState w = v.doTransition(edge);
+		
+		edges = w.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState y = w.doTransition(edge);
+		
+		edges = y.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState z = y.doTransition(edge);
+		
+		edges = z.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState A = z.doTransition(edge);
+		
+		edges = A.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState B = A.doTransition(edge);
+		
+		edges = B.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState C = B.doTransition(edge);
+		
+		edges = C.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState D = C.doTransition(edge);
+		
+		edges = D.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState E = D.doTransition(edge);
+		
+		edges = E.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState F = E.doTransition(edge);
+		
+		edges = F.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState G = F.doTransition(edge);
+		
+		edges = G.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState H = G.doTransition(edge);
+		
+		edges = H.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState I = H.doTransition(edge);
+		
+		edges = I.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState J = I.doTransition(edge);
+		
+		edges = J.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState K = J.doTransition(edge);
+		
+		edges = K.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState L = K.doTransition(edge);
+		
+		edges = L.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState M = L.doTransition(edge);
+		
+		edges = M.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState N = M.doTransition(edge);
+		
+		edges = N.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState O = N.doTransition(edge);
+		
+		edges = O.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState P = O.doTransition(edge);
+		
+		edges = P.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState Q = P.doTransition(edge);
+		
+		edges = Q.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState R = Q.doTransition(edge);
+		
+		edges = R.getEnableTrans();
+		edge = edges.get(0);
+		ProgramState S = R.doTransition(edge);
+		
+		edges = S.getEnableTrans();
+		
+//		nedges = n.getEnableTrans(c);
+//		if(nedges.size() > 0) {
+//			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
+//			NeverState m = n.doTransition(nedge, c);
+//			n = m;
+//		}
+//		
+//		edges = c.getEnableTrans();
+//		edge = edges.get(0);
+//		ProgramState d = c.doTransition(edge);
+//		
+//		nedges = n.getEnableTrans(d);
+//		if(nedges.size() > 0) {
+//			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
+//			NeverState m = n.doTransition(nedge, d);
+//			n = m;
+//		}
+//		
+//		edges = d.getEnableTrans();
+//		edge = edges.get(0);
+//		ProgramState e = d.doTransition(edge);
+//		
+//		nedges = n.getEnableTrans(e);
+//		if(nedges.size() > 0) {
+//			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
+//			NeverState m = n.doTransition(nedge, e);
+//			n = m;
+//		}
+//		
+//		edges = e.getEnableTrans();
+//		edge = edges.get(0);
+//		ProgramState f = e.doTransition(edge);
+//		
+//		nedges = n.getEnableTrans(f);
+//		if(nedges.size() > 0) {
+//			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(1);
+//			NeverState m = n.doTransition(nedge, f);
+//			n = m;
+//		}
+//		
+//		edges = f.getEnableTrans();
+//		edge = edges.get(0);
+//		ProgramState g = f.doTransition(edge);
+//		
+//		nedges = n.getEnableTrans(g);
+//		if(nedges.size() > 0) {
+//			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
+//			NeverState m = n.doTransition(nedge, g);
+//			n = m;
+//		}
+//		
+//		edges = g.getEnableTrans();
+//		edge = edges.get(0);
+//		ProgramState h = g.doTransition(edge);
+//		
+//		nedges = n.getEnableTrans(h);
+//		if(nedges.size() > 0) {
+//			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
+//			NeverState m = n.doTransition(nedge, h);
+//			n = m;
+//		}
 	
 		
 //		for(ProgramState initialState : initialStates) {

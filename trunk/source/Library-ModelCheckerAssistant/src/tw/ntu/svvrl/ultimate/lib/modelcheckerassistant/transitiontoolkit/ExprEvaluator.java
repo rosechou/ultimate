@@ -2,10 +2,8 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
 
@@ -27,16 +25,17 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.StructAccessExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.StructConstructor;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.UnaryExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WildcardExpression;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.ValuationState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.FuncInitValuationInfo;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Valuation;
 
-public class ExprEvaluator {
-	private final Valuation mValuation;
+public class ExprEvaluator<S extends ValuationState<S>> {
+	protected final Valuation mValuation;
+	
 	/**
 	 * Initial function value table and function bodies.
 	 */
-	private final FuncInitValuationInfo mFuncInitValuationInfo;
+	protected FuncInitValuationInfo mFuncInitValuationInfo;
 	
 
 	/**
@@ -44,39 +43,19 @@ public class ExprEvaluator {
 	 * After functionApplicationExpr finished, this table should be
 	 * reset to <code>mFuncInitValuation<code>.
 	 */
-	private Valuation mFuncValuation;
+	protected Valuation mFuncValuation;
 	
 	/**
 	 * To indicate recursive function application.
 	 * If not empty stack, lookup <code>mFuncValuation<code>.
 	 * If empty stack, not in a function, lookup <code>mValuation<code>.
 	 */
-	private Stack<String> mFuncNameStack = new Stack<>();
+	protected Stack<String> mFuncNameStack = new Stack<>();
 	
-	
-	public ExprEvaluator(final ProgramState programState) {
-		mValuation = programState.getValuationCopy();
-		mFuncInitValuationInfo = programState.getFuncInitValuationInfo();
-		createFuncInitValuation(mFuncInitValuationInfo);
+	protected ExprEvaluator(final S state) {
+		mValuation = state.getValuation();
 	}
-	
-	private void createFuncInitValuation(FuncInitValuationInfo funcInitValuationInfo) {
-		mFuncValuation = funcInitValuationInfo.getFuncInitValuation().clone();
-		
-		/**
-		 * Put all global variables to each function for {@link #evaluateFunctionApplication}
-		 * to looking up.
-		 * We can do this because boogie function has no side effects.
-		 * i.e. No variable assignment.
-		 */
-		for(String funcName : mFuncValuation.getProcOrFuncNames()) {
-			final Map<String, Object> globalVarMap = mValuation.getProcOrFuncId2V(null);
-			for(final String globalVarName : globalVarMap.keySet()) {
-				mFuncValuation.setValue(funcName, globalVarName, globalVarMap.get(globalVarName));
-			}
-		}
-	}
-	
+
 	public Object evaluate(Expression expr) {
 		if(expr instanceof ArrayAccessExpression) {
 			return evaluateArrayAccessExpression((ArrayAccessExpression) expr);
@@ -188,6 +167,7 @@ public class ExprEvaluator {
 	 * in the preference of boogie preprocessor.
 	 */
 	private Object evaluateFunctionApplication(final FunctionApplication expr) {
+		assert mFuncInitValuationInfo != null;
 		String funcName = expr.getIdentifier();
 		mFuncNameStack.push(funcName);
 		/**

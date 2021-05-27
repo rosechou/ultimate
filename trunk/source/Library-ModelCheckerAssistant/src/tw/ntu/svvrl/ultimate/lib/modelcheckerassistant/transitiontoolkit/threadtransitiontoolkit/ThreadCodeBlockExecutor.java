@@ -170,10 +170,19 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	}
 
 	private void executeSummary(final Summary summary) {
+		/**
+		 * If called Procedure Has Implementation,
+		 * Force it to execute {@link CallStatement}
+		 * and never reach here.
+		 */
 		if(summary.calledProcedureHasImplementation()) {
 			throw new UnsupportedOperationException("Error: Summary with"
 					+ " implementation is not supported.");
 		}
+		/**
+		 * If called Procedure Has no Implementation,
+		 * Do nothing.
+		 */
 	}
 
 	private void executeReturn(final Return returnn) {

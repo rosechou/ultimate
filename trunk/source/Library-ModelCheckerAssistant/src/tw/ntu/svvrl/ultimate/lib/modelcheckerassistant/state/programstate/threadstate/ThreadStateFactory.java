@@ -67,14 +67,11 @@ public class ThreadStateFactory {
 		mVarAdder.addProcInParams2Valuation(newValuation);
 		mVarAdder.addProcOutParams2Valuation(newValuation);
 		
-		
+		/**
+		 * Main Thread ID: 0
+		 */
 		return new ThreadState(newValuation, loc, mFuncInitValuationInfo
-				, mProc2InParams, mProc2OutParams);
+				, mProc2InParams, mProc2OutParams, 0);
 	}
-	
-//	public ProgramState createNextProgramState(ProgramState lastProgramState, transition) {
-//	}
-	
-	
 	
 }

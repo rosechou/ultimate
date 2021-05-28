@@ -97,7 +97,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	 * @param otherEdges
 	 * @return true if yes, false if no.
 	 */
-	private boolean containsCall(List<IcfgEdge> otherEdges) {
+	private boolean containsCall(final List<IcfgEdge> otherEdges) {
 		for(final IcfgEdge edge : otherEdges) {
 			if(edge instanceof Call) {
 				return true;
@@ -190,8 +190,8 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		
 		final ProcInfo currentProc = mCurrentState.getCurrentProc();
 		final ProcInfo returnProc = mCurrentState.getCallerProc();
-		String currentProcName = currentProc.getProcName();
-		String returnProcName = returnProc.getProcName();
+		final String currentProcName = currentProc.getProcName();
+		final String returnProcName = returnProc.getProcName();
 		
 		/**
 		 * Retrieve return values
@@ -242,7 +242,9 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	}
 
 	private void executeForkThreadOther(final ForkThreadOther forkThreadOther) {
-		// TODO Auto-generated method stub
+		/**
+		 * Cannot produce this case.
+		 */
 	}
 
 	private void executeJoinThreadCurrent(final JoinThreadCurrent joinThreadCurrent) {
@@ -250,7 +252,9 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	}
 
 	private void executeJoinThreadOther(final JoinThreadOther joinThreadOther) {
-		// TODO Auto-generated method stub
+		/**
+		 * Cannot produce this case.
+		 */
 	}
 
 }

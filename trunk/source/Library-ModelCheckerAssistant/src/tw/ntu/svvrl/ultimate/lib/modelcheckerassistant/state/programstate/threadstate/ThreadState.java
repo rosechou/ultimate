@@ -44,7 +44,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 	/**
 	 * Not yet implement.
 	 */
-	private final int mThreadID = 0;
+	private int mThreadID;
 	
 	
 	/**
@@ -59,7 +59,8 @@ public class ThreadState extends ValuationState<ThreadState>{
 						final BoogieIcfgLocation boogieIcfgLocation,
 						final FuncInitValuationInfo funcInitValuationInfo,
 						final Map<String, List<String>> proc2InParams,
-						final Map<String, List<String>> proc2OutParams) {
+						final Map<String, List<String>> proc2OutParams,
+						final int threadID) {
 		mValuation = v;
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
 		mFuncInitValuationInfo = funcInitValuationInfo;
@@ -67,6 +68,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 		mProc2OutParams = proc2OutParams;
 		mProcStack.push(
 				new ProcInfo(mCorrespondingIcfgLoc.getProcedure()));
+		mThreadID = threadID;
 	}
 	
 	/**
@@ -85,6 +87,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 		mProc2InParams = oldState.getProc2InParams();
 		mProc2OutParams = oldState.getProc2OutParams();
 		mProcStack = oldState.getProcStackCopy();
+		mThreadID = oldState.getThreadID();
 	}
 	
 	/**
@@ -99,6 +102,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 		mProc2InParams = threadState.getProc2InParams();
 		mProc2OutParams = threadState.getProc2OutParams();
 		mProcStack = threadState.getProcStackCopy();
+		mThreadID = threadState.getThreadID();
 	}
 
 	public BoogieIcfgLocation getCorrespondingIcfgLoc() {

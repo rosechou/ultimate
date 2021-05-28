@@ -168,6 +168,10 @@ public class StandardFunctionHandler {
 	private final ILogger mLogger;
 
 	private final Set<String> mOverwrittenFunctionNames;
+	
+	/*---------------SimplePthreadTranslation---------------*/
+	private final ThreadIdManager mThreadIdManager;
+	/*------------------------------------------------------*/
 
 	public StandardFunctionHandler(final ILogger logger, final Map<String, IASTNode> functionTable,
 			final AuxVarInfoBuilder auxVarInfoBuilder, final INameHandler nameHandler,
@@ -195,6 +199,14 @@ public class StandardFunctionHandler {
 		mCEpressionTranslator = cEpressionTranslator;
 		mFunctionModels = getFunctionModels();
 		mOverwrittenFunctionNames = getOverwrittenFunctionNames(settings);
+	
+		/*---------------SimplePthreadTranslation---------------*/
+		if(mSettings.useSimplePthreadTranslation()) {
+			mThreadIdManager = new ThreadIdManager();
+		} else {
+			mThreadIdManager = null;
+		}
+		/*------------------------------------------------------*/
 	}
 
 	/**
@@ -1068,6 +1080,32 @@ public class StandardFunctionHandler {
 		final CPrimitive threadIdType = mMemoryHandler.getThreadIdType();
 		// set temporary ID variable to value of global fork count
 		final AuxVarInfo tmpThreadId = mAuxVarInfoBuilder.constructAuxVarInfo(loc, threadIdType, SFO.AUXVAR.PRE_MOD);
+		
+		/*---------------SimplePthreadTranslation---------------*/
+		if(mSettings.useSimplePthreadTranslation()) {
+			if (arguments[0] instanceof CASTUnaryExpression) {
+				final CASTUnaryExpression castUnaryExpr = (CASTUnaryExpression) arguments[0];
+				if (castUnaryExpr.getOperator() == IASTUnaryExpression.op_amper) {
+					if (castUnaryExpr.getOperand() instanceof CASTIdExpression) {
+						final CASTIdExpression castIdExpr = (CASTIdExpression) castUnaryExpr.getOperand();
+						final String threadName = castIdExpr.getName().toString();
+						mThreadIdManager.setThreadIdMapping(threadName, tmpThreadId);
+					} else {
+						throw new UnsupportedOperationException("First argument of pthread_create is: "
+								+ castUnaryExpr.getOperand().getClass().getSimpleName());
+					}
+				} else {
+					throw new UnsupportedOperationException(
+							"First argument of pthread_create is: " + arguments[0].getClass().getSimpleName());
+				}
+			} else {
+				throw new UnsupportedOperationException(
+						"First argument of pthread_create is: " + arguments[0].getClass().getSimpleName());
+			}
+			
+		}
+		/*------------------------------------------------------*/
+		
 		builder.addDeclaration(tmpThreadId.getVarDec());
 		builder.addAuxVar(tmpThreadId);
 		final AssignmentStatement counterStore = new AssignmentStatement(loc,
@@ -1149,6 +1187,7 @@ public class StandardFunctionHandler {
 			final ExpressionResult tmp =
 					mExprResultTransformer.transformDispatchDecaySwitchRexBoolToInt(main, loc, arguments[0]);
 			argThreadId = mExprResultTransformer.performImplicitConversion(tmp, threadIdType, loc);
+			
 		}
 		final ExpressionResult argAddressOfResultPointer;
 		{
@@ -1163,10 +1202,24 @@ public class StandardFunctionHandler {
 		// Object that will build our result
 		final ExpressionResultBuilder builder = new ExpressionResultBuilder();
 		builder.addAllExceptLrValue(argThreadId, argAddressOfResultPointer);
+		
+
 
 		final JoinStatement js;
 		if (argAddressOfResultPointer.getLrValue().isNullPointerConstant()) {
-			js = new JoinStatement(loc, new Expression[] { argThreadId.getLrValue().getValue() }, new VariableLHS[0]);
+			if(mSettings.useSimplePthreadTranslation()) {
+				/*---------------SimplePthreadTranslation---------------*/
+				if(!(arguments[0] instanceof CASTIdExpression)) {
+					throw new UnsupportedOperationException(
+							"First argument of pthread_join is " + arguments[0].getClass().getSimpleName());
+				}
+				final String threadName = ((CASTIdExpression) arguments[0]).getName().toString();
+				final AuxVarInfo tmpThreadId = mThreadIdManager.getThreadId(threadName);
+				js = new JoinStatement(loc, new Expression[] { tmpThreadId.getExp() }, new VariableLHS[0]);
+				/*------------------------------------------------------*/
+			} else {
+				js = new JoinStatement(loc, new Expression[] { argThreadId.getLrValue().getValue() }, new VariableLHS[0]);
+			}
 			builder.addStatement(js);
 		} else {
 			// auxvar for joined procedure's return value
@@ -1174,8 +1227,22 @@ public class StandardFunctionHandler {
 			final AuxVarInfo auxvarinfo = mAuxVarInfoBuilder.constructAuxVarInfo(loc, cType, SFO.AUXVAR.NONDET);
 			builder.addDeclaration(auxvarinfo.getVarDec());
 			builder.addAuxVar(auxvarinfo);
-			js = new JoinStatement(loc, new Expression[] { argThreadId.getLrValue().getValue() },
-					new VariableLHS[] { auxvarinfo.getLhs() });
+			
+			if(mSettings.useSimplePthreadTranslation()) {
+				/*---------------SimplePthreadTranslation---------------*/
+				if(!(arguments[0] instanceof CASTIdExpression)) {
+					throw new UnsupportedOperationException(
+							"First argument of pthread_join is " + arguments[0].getClass().getSimpleName());
+				}
+				String threadName = ((CASTIdExpression) arguments[0]).getName().toString();
+				AuxVarInfo tmpThreadId = mThreadIdManager.getThreadId(threadName);
+				js = new JoinStatement(loc, new Expression[] { tmpThreadId.getExp() }, new VariableLHS[0]);
+				/*------------------------------------------------------*/
+			} else {
+				js = new JoinStatement(loc, new Expression[] { argThreadId.getLrValue().getValue() },
+						new VariableLHS[] { auxvarinfo.getLhs() });
+			}
+			
 			builder.addStatement(js);
 			final HeapLValue heapLValue;
 			if (argAddressOfResultPointer.getLrValue() instanceof HeapLValue) {

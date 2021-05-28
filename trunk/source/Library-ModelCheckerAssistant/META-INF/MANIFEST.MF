@@ -19,6 +19,7 @@ Require-Bundle: de.uni_freiburg.informatik.ultimate.core,
  de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder,
  com.github.jhoenicke.javacup,
  de.uni_freiburg.informatik.ultimate.lib.automata,
- net.sf.javabdd
+ net.sf.javabdd,
+ de.uni_freiburg.informatik.ultimate.plugins.generator.cacsl2boogietranslator
 Import-Package: org.apache.commons.lang3
 Automatic-Module-Name: de.uni.freiburg.informatik.ultimate.lib.modelcheckerassistant

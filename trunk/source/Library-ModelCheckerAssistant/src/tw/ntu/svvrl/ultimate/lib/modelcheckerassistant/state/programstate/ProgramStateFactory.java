@@ -22,6 +22,7 @@ public class ProgramStateFactory {
 		Valuation globalValuation = new Valuation();
 		mVarAdder.addGlobalVars2Valuation(globalValuation);
 		mVarAdder.addOldGlobalVars2Valuation(globalValuation);
+		mVarAdder.addPthreadsForks(globalValuation);
 		
 		ThreadState initialThreadState = mThreadStateFactory.createInitialState(loc, globalValuation);
 		

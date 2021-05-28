@@ -16,6 +16,7 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.I
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramNonOldVar;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramOldVar;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramVar;
+import de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.util.SFO;
 
 public class VarAndParamAdder {
 	/*---------------RCFG fields---------------*/
@@ -236,6 +237,10 @@ public class VarAndParamAdder {
 			throw new UnsupportedOperationException("Unsupported"
 					+ "BoogieType:" + bt.toString());
 		}
+	}
+
+	public void addPthreadsForks(Valuation valuation) {
+		valuation.setValue(null, SFO.ULTIMATE_FORK_COUNT, 1);
 	}
 
 }

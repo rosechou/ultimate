@@ -20,7 +20,7 @@ public class Valuation implements Cloneable {
 	@Override
 	public Valuation clone()
     {
-		Map<String, Map<String, Object>> val = new HashMap<>();
+		final Map<String, Map<String, Object>> val = new HashMap<>();
 		for(String procName : mValueMap.keySet()) {
 			Map<String, Object> id2v = new HashMap<>(mValueMap.get(procName));
 			val.put(procName, id2v);
@@ -33,7 +33,7 @@ public class Valuation implements Cloneable {
 	 */
 	public Valuation cloneLocals()
     {
-		Map<String, Map<String, Object>> val = new HashMap<>();
+		final Map<String, Map<String, Object>> val = new HashMap<>();
 		val.put(null, mValueMap.get(null));
 		for(String procName : mValueMap.keySet()) {
 			if(procName != null) {
@@ -103,8 +103,8 @@ public class Valuation implements Cloneable {
 	 * @return true if all are initialized, false otherwise.
 	 */
 	public boolean allNonOldGlobalInitialized() {
-		Map<String, Object> globalVarMap = mValueMap.get(null);
-		for(String globalVarName : globalVarMap.keySet()) {
+		final Map<String, Object> globalVarMap = mValueMap.get(null);
+		for(final String globalVarName : globalVarMap.keySet()) {
 			boolean isOld = isOld(globalVarName);
 		    if(!isOld && globalVarMap.get(globalVarName) == null) {
 		    	return false;

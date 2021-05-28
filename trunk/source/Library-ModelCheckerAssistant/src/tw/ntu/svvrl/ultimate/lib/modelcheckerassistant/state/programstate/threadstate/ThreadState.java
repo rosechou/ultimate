@@ -150,9 +150,9 @@ public class ThreadState extends ValuationState<ThreadState>{
 	
 	public ProcInfo getCallerProc() {
 		if(mProcStack.size() > 1) {
-			ProcInfo temp = mProcStack.peek();
+			final ProcInfo temp = mProcStack.peek();
 			mProcStack.pop();
-			ProcInfo result = mProcStack.peek();
+			final ProcInfo result = mProcStack.peek();
 			mProcStack.push(temp);
 			return result;
 		} else {
@@ -177,8 +177,8 @@ public class ThreadState extends ValuationState<ThreadState>{
 	 * 		a list of enable transitions.
 	 */
 	public List<ThreadStateTransition> getEnableTrans() {
-		List<IcfgEdge> edges = mCorrespondingIcfgLoc.getOutgoingEdges();
-		List<ThreadStateTransition> enableTrans = new ArrayList<>();
+		final List<IcfgEdge> edges = mCorrespondingIcfgLoc.getOutgoingEdges();
+		final List<ThreadStateTransition> enableTrans = new ArrayList<>();
 		for(final IcfgEdge edge : edges) {
 			ThreadStateTransition trans = new ThreadStateTransition(edge, mThreadID);
 			final ThreadTransitionToolkit transitionToolkit 

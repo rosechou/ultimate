@@ -1,9 +1,11 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import org.apache.commons.lang3.NotImplementedException;
 
@@ -185,6 +187,22 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 
 	private void executeCallStatement(CallStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
+		/**
+		 * Record current value of global variables to old variables.
+		 */
+		final Map<String, Object> globalId2v = mCurrentState.getValuation().getProcOrFuncId2V(null);
+		final Set<String> globalNonOldVarNames = new HashSet<>();
+		for(final String globalVarName : globalId2v.keySet()) {
+			if(!mCurrentState.getValuation().isOld(globalVarName)) {
+				globalNonOldVarNames.add(globalVarName);
+			}
+		}
+		for(final String globalNonOldVarName : globalNonOldVarNames) {
+			final String oldVarName = "old(" + globalNonOldVarName + ")";
+			updateThreadState(null, oldVarName, globalId2v.get(globalNonOldVarName));
+		}
+		
+		
 		/**
 		 * {@link CallStatement#isForall} is not yet implemented.
 		 */

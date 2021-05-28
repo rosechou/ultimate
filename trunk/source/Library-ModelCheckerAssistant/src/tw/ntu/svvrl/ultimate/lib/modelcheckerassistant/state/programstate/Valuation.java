@@ -118,7 +118,7 @@ public class Valuation implements Cloneable {
 	 * If it is old variable, then it must begin with "old(" 
 	 * and end with ")".
 	 */
-	private boolean isOld(String s) {
+	public boolean isOld(String s) {
 		if(s.length() <= 5) {
 			return false;
 		} else {

@@ -1,15 +1,20 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerverifier;
 
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.*;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.INestedWordAutomaton;
 import de.uni_freiburg.informatik.ultimate.core.model.services.ILogger;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.transitions.IncomingInternalTransition;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.transitions.OutgoingInternalTransition;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.NestedWordAutomaton;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.NestedWordAutomatonCache;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
 import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.Pair;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverStateFactory;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.ModelCheckerAssistant;
+
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,190 +27,121 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.*;
 
-/* The needed API
- 
-	public static boolean isInitial(ProgramState node){
-		// TODO
-	}
-	public static boolean isAcc(STATE state){
-		// TODO: return true, if the state is accepting state
-	}
-	public static boolean equals(ProgramState node){
-		// TODO
-	}
-	
-	public static Map<String, Object> getSpecValueMap(){
-		// TODO
-	}
-	public static STATE succState(OutgoingInternalTransition tran){
-		// TODO
-	}
-	
- */
-
 public class ModelCheckerVerifier {
-	private final ModelCheckerAssistant assistant = null;
+	private final ModelCheckerAssistant assistant;
 	//	ProgramState is the node of the Control Flow Graph
-	private final List<ProgramState> levelNodes = new ArrayList<ProgramState>();
+	private List<ProgramState> levelNodes = new ArrayList<ProgramState>();
 	// ProgramState preState = null;
 	ProgramState loc = null;
 	ProgramState seed = null;
 	Stack<ProgramState> firstVisited = new Stack<>();
 	Stack<ProgramState> secondVisited = new Stack<>();
+
 	
-	private final INestedWordAutomaton<CodeBlock, String> mNWA; //<stmt, l0>
-	protected final Set<NeverState> initStates;
-	protected final Set<NeverState> finalStates;
+	protected Set<NeverState> initStates =new HashSet<>();
 	
 	Stack<Pair<ProgramState, NeverState>> bluepath = new Stack<>();
 	Stack<Pair<ProgramState, NeverState>> redpath = new Stack<>();
 	
-	private final ILogger mLogger;
-	
-	private final Map<String, Object> currentTable = new HashMap<>();
-	
-	public ModelCheckerVerifier(final INestedWordAutomaton<CodeBlock, String> nwa)
+	public ModelCheckerVerifier(final ModelCheckerAssistant mca)
 	{	
-		mNWA = nwa;
-		initStates = new HashSet<>();
-		finalStates = new HashSet<>();
-		
+		assistant = mca;
 		// set of initial cfg locations
-		levelNodes = new ArrayList<>();
 		levelNodes.addAll(assistant.getProgramInitialStates());
 		
 		// set of initial states of automaton
-		initStates = mNWA.getInitialStates();
-		finalStates = mNWA.getFinalStates();
-		Iterator initIterator = initStates.iterator();
-		NeverState init = initIterator.next();
+		Set<NeverState> initStates = new HashSet<>();
+		initStates = assistant.getNeverInitialStates();
+		NeverState init = ((NeverState) initStates.toArray()[0]);
+		// Iterator initIterator = initStates.iterator();
+		// NeverState init = (NeverState) initIterator.next();
 		
-		dfsBlue(levelNodes, init);
+		for (int i = 0;i < levelNodes.size();i++) {
+			dfsBlue(levelNodes.get(i), init);
+		}
+		
 	}
 	
-	public static void dfsRed(ProgramState node, NeverState state)
+	public void dfsRed(ProgramState node, NeverState state)
 	{
-		for (final OutgoingInternalTransition<LETTER, NeverState> outTrans : internalSuccessors(state)) {
-			boolean match = true;
+		secondVisited.push(node);
+		List<ThreadStateTransition> programEdges = node.getEnableTrans();
+		
+		List<ProgramState> nProgramNodes = new ArrayList<ProgramState>();
+		for(int j = 0;j < programEdges.size();j++)
+		{
+			nProgramNodes.add(node.doTransition(programEdges.get(j)));
+		}
+		levelNodes = nProgramNodes;
+		
+		for (int i = 0;i < levelNodes.size();i++) {
+			ProgramState nextNode = levelNodes.get(i);
 			
-			// automaton walks one step
-			currentTable = outTrans.getLetter().getSpecValueMap;
+			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = state.getEnableTrans(node);
 			
-			// cfg walks one step
-			loc = node;
-			
-			if(loc.equals(seed))
+			for(int k = 0;k < firstVisited.size();k++)
 			{
-				mLogger.info("report cycle");
-			}
-			secondVisited.push(node);
-			
-			// var, value
-			HashMap<String, Object> NodeStatus = loc.getValuationMap().values();
-			List<IcfgEdge> edge = loc.getEnableTrans();
-			
-			// check program satisfies spec, compare currentTable & NodeStatus
-			Iterator currentEntry = currentTable.entrySet().iterator();
-			while(currentEntry.hasNext())
-			{
-				Map.Entry entry = (Map.Entry)currentEntry.next();
-				if(NodeStatus.containsKey(entry.getKey())
-						&&(!NodeStatus.containsValue(entry.getValue())))
+				if(nextNode.equals(firstVisited.get(k)) && (neverEdges.size()>0))
 				{
-						match = false;
-						break;
+					// assistant.mLogger.info("report cycle");
 				}
 			}
-			if(match)
-			{	
-				Pair p = new(loc, init);
+
+			for (int j = 0;j < neverEdges.size();j++) {
+				OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
+				NeverState nextState = state.doTransition(neverEdge, node);
+				
+				Pair p = new Pair(node, state);
 				redpath.push(p);
 				
-				// automaton move to next state
-				state = state.succState(outTrans);
-				
-				// new a ProgramState
-				// preState = loc;
-				List<ProgramState> nProgramState = new ArrayList<>();
-				for(int j = 0;j < edge.size();j++)
-				{
-					nProgramState.add(doTransition(edge.get(j)));
-				}
-				levelNodes = nProgramState;
-				
-				for(int k = 0;k < levelNodes.size(); k++)
-				{
-					dfsRed(levelNodes.get(k), state);
-				}
-			}			
+				dfsRed(nextNode, nextState);
+			}	
 		}
-		redpath.pop();
+		redpath.pop();	
 	}
 		
-	public static void dfsBlue(List<ProgramState> levelNodes, NeverState init)
+	public void dfsBlue(ProgramState node, NeverState init)
 	{
-		for (final OutgoingInternalTransition<LETTER, NeverState> outTrans : internalSuccessors(init)) {
-		anotherTrans:
-			for (int i = 0;i < levelNodes.size();i++) {
-				boolean match = true;
-				
-				// automaton walks one step
-				currentTable = outTrans.getLetter().getSpecValueMap;
-				
-				// cfg walks one step
-				loc = levelNodes.get(i);
-				for(int k = 0;k < firstVisited.size();k++)
-				{
-					if(loc.equals(firstVisited.get(k)))
-					{
-						break anotherTrans;
-					}
-				}
-				firstVisited.push(loc);
-				
-				// var, value
-				HashMap<String, Object> NodeStatus = loc.getValuationMap().values();
-				List<IcfgEdge> edge = loc.getEnableTrans();
-				
-				// check program satisfies spec, compare currentTable & NodeStatus
-				Iterator currentEntry = currentTable.entrySet().iterator();
-				while(currentEntry.hasNext())
-				{
-					Map.Entry entry = (Map.Entry)currentEntry.next();
-					if(NodeStatus.containsKey(entry.getKey())
-							&&(!NodeStatus.containsValue(entry.getValue())))
-					{
-							match = false;
-							break;
-					}
-				}
-				if(match)
-				{	
-					Pair p = new(loc, init);
-					bluepath.push(p);
-					
-					// automaton move to next state
-					init = init.succState(outTrans);
-					
-					// new a ProgramState
-					// preState = loc;
-					List<ProgramState> nProgramState = new ArrayList<>();
-					for(int j = 0;j < edge.size();j++)
-					{
-						nProgramState.add(doTransition(edge.get(j)));
-					}
-					levelNodes = nProgramState;
-					
-					dfsBlue(levelNodes, init);
-				}			
-			}
+		firstVisited.push(node);
+		List<ThreadStateTransition> programEdges = node.getEnableTrans();
+		
+		List<ProgramState> nProgramNodes = new ArrayList<ProgramState>();
+		for(int j = 0;j < programEdges.size();j++)
+		{
+			nProgramNodes.add(node.doTransition(programEdges.get(j)));
 		}
-		if(bluepath.peek().getSecond().isAcc())
+		levelNodes = nProgramNodes;
+		
+		anotherTrans:
+		for (int i = 0;i < levelNodes.size();i++) {
+			ProgramState nextNode = levelNodes.get(i);
+			
+			for(int k = 0;k < firstVisited.size();k++)
+			{
+				if(nextNode.equals(firstVisited.get(k)))
+				{
+					break anotherTrans;
+				}
+			}
+			
+			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = init.getEnableTrans(node);
+			
+			for (int j = 0;j < neverEdges.size();j++) {
+				OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
+				NeverState nextState = init.doTransition(neverEdge, node);
+				
+				Pair p = new Pair(node, init);
+				bluepath.push(p);
+				
+				dfsBlue(nextNode, nextState);
+			}	
+		}
+		
+		if(bluepath.peek().getSecond().isFinal())
 		{
 			seed = blupath.peek().getFirst();
 			dfsRed(seed, blupath.peek().getSecond());
 		}
 		bluepath.pop();
 	}
-
 }

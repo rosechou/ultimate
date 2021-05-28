@@ -44,15 +44,15 @@ public class ProgramState extends ValuationState<ProgramState> {
 	 */
 	public ProgramState(ProgramState state) {
 		mValuation = state.getValuationFullCopy();
-		for(ThreadState s : state.getThreadStatesMap().values()) {
-			ThreadState t = new ThreadState(s);
+		for(final ThreadState s : state.getThreadStatesMap().values()) {
+			final ThreadState t = new ThreadState(s);
 			t.getValuation().linkGlobals(mValuation);
 			mThreadStates.put(s.getThreadID(), t);
 		}
 	}
 	
 	public List<ThreadStateTransition> getEnableTrans() {
-		List<ThreadStateTransition> enableTrans = new ArrayList<>();
+		final List<ThreadStateTransition> enableTrans = new ArrayList<>();
 		for(final ThreadState threadState : mThreadStates.values()) {
 			enableTrans.addAll(threadState.getEnableTrans());
 		}
@@ -64,8 +64,8 @@ public class ProgramState extends ValuationState<ProgramState> {
 	 * (According to the threadID on the {@link ThreadStateTransition}).
 	 */
 	public ProgramState doTransition(final ThreadStateTransition trans) {
-		ProgramState newProgramState = new ProgramState(this);
-		ThreadState newState = newProgramState.getThreadStatesMap().get(trans.getThreadID()).doTransition(trans);
+		final ProgramState newProgramState = new ProgramState(this);
+		final ThreadState newState = newProgramState.getThreadStatesMap().get(trans.getThreadID()).doTransition(trans);
 		/**
 		 * update the thread state who did the transition.
 		 */

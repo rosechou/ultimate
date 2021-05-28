@@ -239,6 +239,13 @@ public class VarAndParamAdder {
 		}
 	}
 
+	/**
+	 * Because the global variable #pthreadsForks is not initialize
+	 * in the input Boogie program. We initialize it to 1 (main thread).
+	 * Once a thread is ready to be forked, the variable will increase by 1.
+	 * #pthreadsForks records the number of threads created and it never decreases.
+	 * @param valuation
+	 */
 	public void addPthreadsForks(Valuation valuation) {
 		valuation.setValue(null, SFO.ULTIMATE_FORK_COUNT, 1);
 	}

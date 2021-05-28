@@ -332,7 +332,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 	
 	
 	private void setCurrentState(ThreadState newState) {
-		mCurrentState = new ThreadState(newState);
+		mCurrentState = newState;
 	}
 	
 	public ThreadState getCurrentState() {

@@ -29,6 +29,15 @@ public class ProgramState extends ValuationState<ProgramState> {
 		addThreadState(threadState);
 	}
 	
+	public boolean isErrorState() {
+		for(final ThreadState threadState : mThreadStates.values()) {
+			if(threadState.getCorrespondingIcfgLoc().isErrorLocation()) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	/**
 	 * Deep copy a program state and let all the threadStates' global valuation 
 	 * refer to <code> mValuation </code>.

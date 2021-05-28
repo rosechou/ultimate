@@ -989,6 +989,13 @@ public class StandardFunctionHandler {
 	 */
 	private Result handlePthread_create(final IDispatcher main, final IASTFunctionCallExpression node,
 			final ILocation loc, final String name) {
+		if(mSettings.useSimplePthreadTranslation()) {
+			//...
+		}
+		
+		
+		
+		
 		mMemoryHandler.requireMemoryModelFeature(MemoryModelDeclarations.ULTIMATE_PTHREADS_FORK_COUNT);
 
 		final IASTInitializerClause[] arguments = node.getArguments();

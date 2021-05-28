@@ -80,6 +80,11 @@ public final class TranslationSettings {
 	private final boolean mEnableFesetround;
 	private final FloatingPointRoundingMode mInitialRoundingMode;
 	private final boolean mAdaptMemoryModelResolutionOnPointerCasts;
+	
+	/**
+	 * 2021-05-28 by Hong-Yang Lin
+	 */
+	private final boolean mUseSimplePthreadTranslation;
 
 	public TranslationSettings(final IPreferenceProvider ups) {
 		mCheckSignedIntegerBounds = ups.getBoolean(CACSLPreferenceInitializer.LABEL_CHECK_SIGNED_INTEGER_BOUNDS);
@@ -128,6 +133,8 @@ public final class TranslationSettings {
 				ups.getEnum(CACSLPreferenceInitializer.LABEL_FP_ROUNDING_MODE_INITIAL, FloatingPointRoundingMode.class);
 		mAdaptMemoryModelResolutionOnPointerCasts =
 				ups.getBoolean(CACSLPreferenceInitializer.LABEL_ADAPT_MEMORY_MODEL_ON_POINTER_CASTS);
+		
+		mUseSimplePthreadTranslation = ups.getBoolean(CACSLPreferenceInitializer.LABEL_USE_SIMPLE_PTHREAD_TRANSLATION);
 	}
 
 	private TranslationSettings(final PointerCheckMode divisionByZeroOfIntegerTypes,
@@ -144,7 +151,8 @@ public final class TranslationSettings {
 			final boolean checkAllocationPurity, final boolean checkMemoryLeakInMain,
 			final boolean checkSignedIntegerBounds, final boolean useConstantArrays, final boolean useStoreChains,
 			final boolean enableFesetround, final FloatingPointRoundingMode initialRoundingMode,
-			final boolean adaptMemoryModelResolutionOnPointerCasts) {
+			final boolean adaptMemoryModelResolutionOnPointerCasts,
+			final boolean useSimplePthreadTranslation) {
 		super();
 		mDivisionByZeroOfIntegerTypes = divisionByZeroOfIntegerTypes;
 		mDivisionByZeroOfFloatingTypes = divisionByZeroOfFloatingTypes;
@@ -174,6 +182,8 @@ public final class TranslationSettings {
 		mEnableFesetround = enableFesetround;
 		mInitialRoundingMode = initialRoundingMode;
 		mAdaptMemoryModelResolutionOnPointerCasts = adaptMemoryModelResolutionOnPointerCasts;
+		
+		mUseSimplePthreadTranslation = useSimplePthreadTranslation;
 	}
 
 	public PointerIntegerConversion getPointerIntegerCastMode() {
@@ -312,6 +322,10 @@ public final class TranslationSettings {
 	public boolean isAdaptMemoryModelResolutionOnPointerCasts() {
 		return mAdaptMemoryModelResolutionOnPointerCasts;
 	}
+	
+	public boolean useSimplePthreadTranslation() {
+		return mUseSimplePthreadTranslation;
+	}
 
 	public TranslationSettings setMemoryModelPreference(final MemoryModel memoryModel) {
 		return new TranslationSettings(mDivisionByZeroOfIntegerTypes, mDivisionByZeroOfFloatingTypes,
@@ -322,7 +336,7 @@ public final class TranslationSettings {
 				mSmtBoolArraysWorkaround, mEntryMethod, mTranslationMode, mCheckSvcompErrorFunction,
 				mIsSvcompMemtrackCompatibilityMode, mCheckAllocationPurity, mCheckMemoryLeakInMain,
 				mCheckSignedIntegerBounds, mUseConstantArrays, mUseStoreChains, mEnableFesetround, mInitialRoundingMode,
-				mAdaptMemoryModelResolutionOnPointerCasts);
+				mAdaptMemoryModelResolutionOnPointerCasts, mUseSimplePthreadTranslation);
 	}
 
 	/**

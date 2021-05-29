@@ -184,7 +184,10 @@ public class ThreadState extends ValuationState<ThreadState>{
 		final List<IcfgEdge> edges = mCorrespondingIcfgLoc.getOutgoingEdges();
 		final List<ThreadStateTransition> enableTrans = new ArrayList<>();
 		for(final IcfgEdge edge : edges) {
-			ThreadStateTransition trans = new ThreadStateTransition(edge, mThreadID);
+			/**
+			 * Mark outgoing edge using current thread ID.
+			 */
+			final ThreadStateTransition trans = new ThreadStateTransition(edge, mThreadID);
 			final ThreadTransitionToolkit transitionToolkit 
 					= new ThreadTransitionToolkit(trans, this);
 			if (transitionToolkit.checkTransEnable()) {

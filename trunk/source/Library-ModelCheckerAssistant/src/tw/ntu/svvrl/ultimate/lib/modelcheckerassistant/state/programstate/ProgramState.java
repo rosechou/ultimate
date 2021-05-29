@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadCurrent;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.JoinThreadCurrent;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.ValuationState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
@@ -65,11 +68,30 @@ public class ProgramState extends ValuationState<ProgramState> {
 	 */
 	public ProgramState doTransition(final ThreadStateTransition trans) {
 		final ProgramState newProgramState = new ProgramState(this);
-		final ThreadState newState = newProgramState.getThreadStatesMap().get(trans.getThreadID()).doTransition(trans);
+		
 		/**
-		 * update the thread state who did the transition.
+		 * For Fork and Join, we need to pass the whole program state which
+		 * consists of all thread states.
 		 */
-		newProgramState.getThreadStatesMap().put(newState.getThreadID(), newState);
+		if(trans.getIcfgEdge() instanceof ForkThreadCurrent
+				|| trans.getIcfgEdge() instanceof JoinThreadCurrent) {
+			
+			
+			
+		} else {
+			/**
+			 * For others(not Fork and Join), Only one thread state is considered.
+			 * which thread state to be executed is according to the threadID
+			 * in {@link ThreadStateTransition}.
+			 */
+			final ThreadState newState 
+			= newProgramState.getThreadStatesMap().get(trans.getThreadID()).doTransition(trans);
+			/**
+			 * update the thread state who did the transition.
+			 */
+			newProgramState.getThreadStatesMap().put(newState.getThreadID(), newState);
+		}
+		
 		return newProgramState;
 	}
 

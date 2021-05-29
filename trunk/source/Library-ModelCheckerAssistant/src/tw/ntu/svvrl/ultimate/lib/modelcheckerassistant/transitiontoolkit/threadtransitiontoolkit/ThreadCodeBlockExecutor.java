@@ -238,23 +238,29 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	}
 
 	private void executeForkThreadCurrent(final ForkThreadCurrent forkThreadCurrent) {
-		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException(ForkThreadCurrent.class.getSimpleName()
+				+ "is handled at other place.");
 	}
 
 	private void executeForkThreadOther(final ForkThreadOther forkThreadOther) {
 		/**
 		 * Cannot produce this case.
 		 */
+		throw new NotImplementedException(JoinThreadOther.class.getSimpleName()
+				+ "is not yet implemented.");
 	}
 
 	private void executeJoinThreadCurrent(final JoinThreadCurrent joinThreadCurrent) {
-		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException(JoinThreadCurrent.class.getSimpleName()
+				+ "is handled at other place.");
 	}
 
 	private void executeJoinThreadOther(final JoinThreadOther joinThreadOther) {
 		/**
 		 * Cannot produce this case.
 		 */
+		throw new NotImplementedException(JoinThreadOther.class.getSimpleName()
+				+ "is not yet implemented.");
 	}
 
 }

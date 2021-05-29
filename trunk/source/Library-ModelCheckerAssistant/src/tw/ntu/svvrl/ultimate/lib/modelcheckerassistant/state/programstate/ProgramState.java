@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadCurrent;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.JoinThreadCurrent;
@@ -21,15 +22,22 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.thread
  * changes.
  */
 public class ProgramState extends ValuationState<ProgramState> {
+	private final Map<String, BoogieIcfgLocation> mEntryNodes;
+	private final Map<String, BoogieIcfgLocation> mExitNodes;
+	
 	/**
 	 * Thread ID to ThreadState
 	 * One thread must contain only one thread state. 
 	 */
 	final private Map<Integer, ThreadState> mThreadStates = new HashMap<>();
 	
-	public ProgramState(ThreadState threadState, Valuation globalValuation) {
+	public ProgramState(ThreadState threadState, Valuation globalValuation,
+			final Map<String, BoogieIcfgLocation> entryNodes,
+			final Map<String, BoogieIcfgLocation> exitNodes) {
 		mValuation = globalValuation;
 		addThreadState(threadState);
+		mEntryNodes = entryNodes;
+		mExitNodes = exitNodes;
 	}
 	
 	public boolean isErrorState() {
@@ -45,13 +53,15 @@ public class ProgramState extends ValuationState<ProgramState> {
 	 * Deep copy a program state and let all the threadStates' global valuation 
 	 * refer to <code> mValuation </code>.
 	 */
-	public ProgramState(ProgramState state) {
+	public ProgramState(final ProgramState state) {
 		mValuation = state.getValuationFullCopy();
 		for(final ThreadState s : state.getThreadStatesMap().values()) {
 			final ThreadState t = new ThreadState(s);
 			t.getValuation().linkGlobals(mValuation);
 			mThreadStates.put(s.getThreadID(), t);
 		}
+		mEntryNodes = state.getEntryNodesMap();
+		mExitNodes = state.getExitNodesMap();
 	}
 	
 	public List<ThreadStateTransition> getEnableTrans() {
@@ -95,7 +105,22 @@ public class ProgramState extends ValuationState<ProgramState> {
 		
 		return newProgramState;
 	}
-
+	
+	private Map<String, BoogieIcfgLocation> getEntryNodesMap(){
+		return mEntryNodes;
+	}
+	
+	private Map<String, BoogieIcfgLocation> getExitNodesMap(){
+		return mExitNodes;
+	}
+	
+	public BoogieIcfgLocation getEntryNode(final String procName) {
+		return mEntryNodes.get(procName);
+	}
+	
+	public BoogieIcfgLocation getExitNode(final String procName) {
+		return mExitNodes.get(procName);
+	}
 
 	public int getThreadNumber() {
 		return mThreadStates.size();

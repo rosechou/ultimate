@@ -37,6 +37,9 @@ public class ForkHandler {
 		currentNextState.setCorrespondingIcfgLoc((BoogieIcfgLocation) mTrans.getIcfgEdge().getTarget());
 		
 		
+		/**
+		 * Next state in the new thread.
+		 */
 		
 		
 		return null;

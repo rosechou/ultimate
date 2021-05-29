@@ -20,7 +20,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Progra
 public class ProgramStateExplorer {
 	/*---------------RCFG fields---------------*/
 	private final Map<String, BoogieIcfgLocation> mEntryNodes;
-	private final Map<String, BoogieIcfgLocation> mExitNode;
+	private final Map<String, BoogieIcfgLocation> mExitNodes;
 	private final Set<BoogieIcfgLocation> mLoopLocations;
 	private final Map<String, Set<BoogieIcfgLocation>> mErrorNodes;
 	private final Map<String, Map<DebugIdentifier, BoogieIcfgLocation>> mLocNodes;
@@ -32,7 +32,7 @@ public class ProgramStateExplorer {
 	public ProgramStateExplorer(final BoogieIcfgContainer rcfg) {
 		/*---------------RCFG fields---------------*/
 		mEntryNodes = rcfg.getProcedureEntryNodes();
-		mExitNode = rcfg.getProcedureExitNodes();
+		mExitNodes = rcfg.getProcedureExitNodes();
 		mLoopLocations = rcfg.getLoopLocations();
 		mErrorNodes = rcfg.getProcedureErrorNodes();
 		mLocNodes = rcfg.getProgramPoints();
@@ -40,7 +40,7 @@ public class ProgramStateExplorer {
 		/*------------End of RCFG fields-----------*/
 		
 		mProgramStateFactory = new ProgramStateFactory(rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable()
-				, rcfg.getCfgSmtToolkit());
+				, rcfg.getCfgSmtToolkit(), mEntryNodes, mExitNodes);
 	}
 	
 	

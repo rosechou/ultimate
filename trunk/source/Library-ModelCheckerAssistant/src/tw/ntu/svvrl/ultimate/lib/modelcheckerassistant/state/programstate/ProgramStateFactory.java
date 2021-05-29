@@ -1,6 +1,8 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate;
 
 
+import java.util.Map;
+
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.Boogie2SmtSymbolTable;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.CfgSmtToolkit;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
@@ -10,11 +12,18 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.thread
 public class ProgramStateFactory {
 	private final VarAndParamAdder mVarAdder;
 	private final ThreadStateFactory mThreadStateFactory;
+
+	private final Map<String, BoogieIcfgLocation> mEntryNodes;
+	private final Map<String, BoogieIcfgLocation> mExitNodes;
 	
 	public ProgramStateFactory(final Boogie2SmtSymbolTable boogie2SmtSymbolTable
-			, final CfgSmtToolkit cfgSmtToolkit) {
+			, final CfgSmtToolkit cfgSmtToolkit
+			, final Map<String, BoogieIcfgLocation> entryNodes
+			, final Map<String, BoogieIcfgLocation> exitNodes) {
 		mVarAdder = new VarAndParamAdder(boogie2SmtSymbolTable);
 		mThreadStateFactory = new ThreadStateFactory(boogie2SmtSymbolTable, cfgSmtToolkit);
+		mEntryNodes = entryNodes;
+		mExitNodes = exitNodes;
 	}
 
 
@@ -26,7 +35,7 @@ public class ProgramStateFactory {
 		
 		final ThreadState initialThreadState = mThreadStateFactory.createInitialState(loc, globalValuation);
 		
-		return new ProgramState(initialThreadState, globalValuation);
+		return new ProgramState(initialThreadState, globalValuation, mEntryNodes, mExitNodes);
 	}
 	
 }

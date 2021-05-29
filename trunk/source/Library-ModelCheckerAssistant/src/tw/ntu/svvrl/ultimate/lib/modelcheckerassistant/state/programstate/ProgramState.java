@@ -25,7 +25,7 @@ public class ProgramState extends ValuationState<ProgramState> {
 	 * Thread ID to ThreadState
 	 * One thread must contain only one thread state. 
 	 */
-	final Map<Integer, ThreadState> mThreadStates = new HashMap<>();
+	final private Map<Integer, ThreadState> mThreadStates = new HashMap<>();
 	
 	public ProgramState(ThreadState threadState, Valuation globalValuation) {
 		mValuation = globalValuation;
@@ -73,10 +73,11 @@ public class ProgramState extends ValuationState<ProgramState> {
 		 * For Fork and Join, we need to pass the whole program state which
 		 * consists of all thread states.
 		 */
-		if(trans.getIcfgEdge() instanceof ForkThreadCurrent
-				|| trans.getIcfgEdge() instanceof JoinThreadCurrent) {
+		if(trans.getIcfgEdge() instanceof ForkThreadCurrent) {
+			final ForkHandler forkHandler = new ForkHandler(this, trans);
 			
 			
+		} else if(trans.getIcfgEdge() instanceof JoinThreadCurrent) {
 			
 		} else {
 			/**
@@ -85,11 +86,11 @@ public class ProgramState extends ValuationState<ProgramState> {
 			 * in {@link ThreadStateTransition}.
 			 */
 			final ThreadState newState 
-			= newProgramState.getThreadStatesMap().get(trans.getThreadID()).doTransition(trans);
+			= newProgramState.getThreadStateByID(trans.getThreadID()).doTransition(trans);
 			/**
 			 * update the thread state who did the transition.
 			 */
-			newProgramState.getThreadStatesMap().put(newState.getThreadID(), newState);
+			newProgramState.updateThreadState(newState.getThreadID(), newState);
 		}
 		
 		return newProgramState;
@@ -100,8 +101,16 @@ public class ProgramState extends ValuationState<ProgramState> {
 		return mThreadStates.size();
 	}
 	
+	public ThreadState getThreadStateByID(final int threadID) {
+		return mThreadStates.get(threadID);
+	}
+	
 	private Map<Integer, ThreadState> getThreadStatesMap() {
 		return mThreadStates;
+	}
+	
+	public void updateThreadState(final int threadID, final ThreadState newState) {
+		mThreadStates.put(threadID, newState);
 	}
 	
 	public boolean allNonOldGlobalInitialized() {

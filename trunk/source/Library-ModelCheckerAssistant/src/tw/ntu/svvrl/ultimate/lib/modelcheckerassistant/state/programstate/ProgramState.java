@@ -77,7 +77,7 @@ public class ProgramState extends ValuationState<ProgramState> {
 	 * (According to the threadID on the {@link ThreadStateTransition}).
 	 */
 	public ProgramState doTransition(final ThreadStateTransition trans) {
-		final ProgramState newProgramState = new ProgramState(this);
+		ProgramState newProgramState = new ProgramState(this);
 		
 		/**
 		 * For Fork and Join, we need to pass the whole program state which
@@ -85,7 +85,7 @@ public class ProgramState extends ValuationState<ProgramState> {
 		 */
 		if(trans.getIcfgEdge() instanceof ForkThreadCurrent) {
 			final ForkHandler forkHandler = new ForkHandler(this, trans);
-			
+			newProgramState = forkHandler.doFork();
 			
 		} else if(trans.getIcfgEdge() instanceof JoinThreadCurrent) {
 			

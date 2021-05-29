@@ -5,13 +5,14 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Boo
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadCurrent;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit.ThreadStatementsExecutor;
 
 public class ForkHandler {
 	final ProgramState mProgramState;
 	final ThreadStateTransition mTrans;
 	
 	public ForkHandler(final ProgramState programState, final ThreadStateTransition trans) {
-		mProgramState = programState;
+		mProgramState = new ProgramState(programState);
 		mTrans = trans;
 	}
 	
@@ -26,6 +27,7 @@ public class ForkHandler {
 		final int currentThreadID = mTrans.getThreadID();
 		final ThreadState currentThreadState = mProgramState.getThreadStateByID(currentThreadID);
 		final ForkStatement forkStmt = ((ForkThreadCurrent) mTrans.getIcfgEdge()).getForkStatement();
+		final String forkProcName = forkStmt.getProcedureName();
 		
 		/**
 		 * Next state in the original thread.
@@ -39,9 +41,26 @@ public class ForkHandler {
 		
 		/**
 		 * Next state in the new thread.
+		 * Generate it by using {@link ThreadStatementsExecutor}.
+		 * After that, set the resulting state's Icfg location to the
+		 * new thread's entry node.
 		 */
+		final ThreadStatementsExecutor stmtExecutor = new ThreadStatementsExecutor(
+				forkStmt, currentThreadState, ThreadStatementsExecutor.execType.realExec);
+		final ThreadState otherNextState =  stmtExecutor.execute();
+		BoogieIcfgLocation threadEntryNode = mProgramState.getEntryNode(forkProcName);
+		otherNextState.setCorrespondingIcfgLoc(threadEntryNode);
 		
 		
-		return null;
+		/**
+		 * update the original thread state
+		 */
+		mProgramState.updateThreadState(currentNextState.getThreadID(), currentNextState);
+		/**
+		 * add a new (forked) thread state
+		 */
+		mProgramState.updateThreadState(otherNextState.getThreadID(), otherNextState);
+		
+		return mProgramState;
 	}
 }

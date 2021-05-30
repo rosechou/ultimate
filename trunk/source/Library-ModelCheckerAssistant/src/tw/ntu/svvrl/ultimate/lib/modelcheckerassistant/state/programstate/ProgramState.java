@@ -29,7 +29,7 @@ public class ProgramState extends ValuationState<ProgramState> {
 	 * Thread ID to ThreadState
 	 * One thread must contain only one thread state. 
 	 */
-	final private Map<Integer, ThreadState> mThreadStates = new HashMap<>();
+	final private Map<Long, ThreadState> mThreadStates = new HashMap<>();
 	
 	public ProgramState(ThreadState threadState, Valuation globalValuation,
 			final Map<String, BoogieIcfgLocation> entryNodes,
@@ -126,15 +126,15 @@ public class ProgramState extends ValuationState<ProgramState> {
 		return mThreadStates.size();
 	}
 	
-	public ThreadState getThreadStateByID(final int threadID) {
+	public ThreadState getThreadStateByID(final long threadID) {
 		return mThreadStates.get(threadID);
 	}
 	
-	private Map<Integer, ThreadState> getThreadStatesMap() {
+	private Map<Long, ThreadState> getThreadStatesMap() {
 		return mThreadStates;
 	}
 	
-	public void updateThreadState(final int threadID, final ThreadState newState) {
+	public void updateThreadState(final long threadID, final ThreadState newState) {
 		mThreadStates.put(threadID, newState);
 	}
 	

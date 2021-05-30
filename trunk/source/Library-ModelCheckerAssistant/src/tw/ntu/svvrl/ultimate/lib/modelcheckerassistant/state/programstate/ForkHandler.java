@@ -24,7 +24,7 @@ public class ForkHandler {
 	 * 		and update the original thread state.)
 	 */
 	public ProgramState doFork() {
-		final int currentThreadID = mTrans.getThreadID();
+		final long currentThreadID = mTrans.getThreadID();
 		final ThreadState currentThreadState = mProgramState.getThreadStateByID(currentThreadID);
 		final ForkStatement forkStmt = ((ForkThreadCurrent) mTrans.getIcfgEdge()).getForkStatement();
 		final String forkProcName = forkStmt.getProcedureName();

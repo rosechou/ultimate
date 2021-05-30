@@ -44,7 +44,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 	/**
 	 * Not yet implement.
 	 */
-	private int mThreadID;
+	private long mThreadID;
 	
 	
 	/**
@@ -137,11 +137,11 @@ public class ThreadState extends ValuationState<ThreadState>{
 		return mProcStack.peek();
 	}
 	
-	public int getThreadID() {
+	public long getThreadID() {
 		return mThreadID;
 	}
 	
-	public void assignNewThreadID(final int newThreadID) {
+	public void assignNewThreadID(final long newThreadID) {
 		mThreadID = newThreadID;
 	}
 	

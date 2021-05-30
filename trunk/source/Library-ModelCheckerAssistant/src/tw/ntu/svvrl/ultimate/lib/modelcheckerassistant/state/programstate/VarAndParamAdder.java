@@ -247,7 +247,8 @@ public class VarAndParamAdder {
 	 * @param valuation
 	 */
 	public void addPthreadsForks(Valuation valuation) {
-		valuation.setValue(null, SFO.ULTIMATE_FORK_COUNT, 1);
+		long initialCount = 1;
+		valuation.setValue(null, SFO.ULTIMATE_FORK_COUNT, initialCount);
 	}
 
 }

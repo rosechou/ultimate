@@ -4,18 +4,18 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.I
 
 public class ThreadStateTransition {
 	private final IcfgEdge mIcfgEdge;
-	private final int mThreadID;
+	private final long mThreadID;
 	
-	public ThreadStateTransition(IcfgEdge edge, int threadID) {
+	public ThreadStateTransition(IcfgEdge edge, long mThreadID2) {
 		mIcfgEdge = edge;
-		mThreadID = threadID;
+		mThreadID = mThreadID2;
 	}
 	
 	public IcfgEdge getIcfgEdge() {
 		return mIcfgEdge;
 	}
 	
-	public int getThreadID() {
+	public long getThreadID() {
 		return mThreadID;
 	}
 }

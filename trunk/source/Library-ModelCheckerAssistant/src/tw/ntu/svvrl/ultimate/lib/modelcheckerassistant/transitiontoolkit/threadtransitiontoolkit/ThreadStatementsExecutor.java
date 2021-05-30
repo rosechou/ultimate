@@ -208,7 +208,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 		doCallRoutines(procName, args);
 		
 		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
-		int newThreadID = (int) exprEvaluator.evaluate(stmt.getThreadID()[0]);
+		long newThreadID = (long) exprEvaluator.evaluate(stmt.getThreadID()[0]);
 		mCurrentState.assignNewThreadID(newThreadID);
 	}
 

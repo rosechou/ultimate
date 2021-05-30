@@ -116,7 +116,7 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 			case LOGICNEG:
 				return !(Boolean) rv;
 			case ARITHNEGATIVE:
-				return -(Integer) rv;
+				return -(Long) rv;
 			case OLD:
 				if(rv instanceof IdentifierExpression) {
 					String oldId = "old(" + ((IdentifierExpression) rv).getIdentifier() + ")";
@@ -133,7 +133,7 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 	}
 
 	private Object evaluateIntegerLiteral(final IntegerLiteral expr) {
-		return Integer.valueOf(expr.getValue());
+		return Long.valueOf(expr.getValue());
 	}
 
 	private Object evaluateIfThenElseExpression(final IfThenElseExpression expr) {
@@ -208,18 +208,18 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 			case LOGICOR:
 				return (Boolean) lv || (Boolean) rv;
 			case COMPLT:
-				return (Integer) lv < (Integer) rv;
+				return (Long) lv < (Long) rv;
 			case COMPGT:
-				return (Integer) lv > (Integer) rv;
+				return (Long) lv > (Long) rv;
 			case COMPLEQ:
-				return (Integer) lv <= (Integer) rv;
+				return (Long) lv <= (Long) rv;
 			case COMPGEQ:
-				return (Integer) lv >= (Integer) rv;
+				return (Long) lv >= (Long) rv;
 			case COMPEQ:
 				if(lv instanceof Boolean && rv instanceof Boolean) {
 					return (Boolean) lv == (Boolean) rv;
 				} else if(lv instanceof Integer && rv instanceof Integer) {
-					return (Integer) lv == (Integer) rv;
+					return (Long) lv == (Long) rv;
 				} else {
 					throw new UnsupportedOperationException("Binary operation type error.");
 				}
@@ -227,7 +227,7 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 				if(lv instanceof Boolean && rv instanceof Boolean) {
 					return (Boolean) lv != (Boolean) rv;
 				} else if(lv instanceof Integer && rv instanceof Integer) {
-					return (Integer) lv != (Integer) rv;
+					return (Long) lv != (Long) rv;
 				} else {
 					throw new UnsupportedOperationException("Binary operation type error.");
 				}
@@ -238,15 +238,15 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 				throw new UnsupportedOperationException("Binary operation \"BITVECCONCAT\""
 						+ "is not yet supported.");
 			case ARITHPLUS:
-				return (Integer) lv + (Integer) rv;
+				return (Long) lv + (Long) rv;
 			case ARITHMINUS:
-				return (Integer) lv - (Integer) rv;
+				return (Long) lv - (Long) rv;
 			case ARITHMUL:
-				return (Integer) lv * (Integer) rv;
+				return (Long) lv * (Long) rv;
 			case ARITHDIV:
-				return (Integer) lv / (Integer) rv;
+				return (Long) lv / (Long) rv;
 			case ARITHMOD:
-				return (Integer) lv % (Integer) rv;
+				return (Long) lv % (Long) rv;
 			default:
 				throw new UnsupportedOperationException("Unknown Binary Operator: "
 						+ operator.getClass().getSimpleName());
@@ -268,7 +268,7 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 			 * in the preference of cacsl2boogietranslator.)
 			 */
 			final Expression indexExpr = it.next();
-			final int index = (int) evaluate(indexExpr);
+			final int index = Math.toIntExact((long) evaluate(indexExpr));
 			
 			assert(newArray.size() > 0);
 			newArray = growArraySize(newArray, index + 1);
@@ -289,7 +289,7 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 		final Iterator<Expression> it = indexExprs.iterator();
 		while(it.hasNext()) {
 			Expression indexExpr = it.next();
-			final int index = (int) evaluate(indexExpr);
+			final int index = Math.toIntExact((long) evaluate(indexExpr));
 			
 			assert(arrayToAccess.size() > 0);
 			arrayToAccess = growArraySize(arrayToAccess, index + 1);

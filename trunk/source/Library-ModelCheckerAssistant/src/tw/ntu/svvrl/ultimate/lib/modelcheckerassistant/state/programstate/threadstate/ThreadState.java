@@ -42,10 +42,16 @@ public class ThreadState extends ValuationState<ThreadState>{
 	
 	
 	/**
-	 * Not yet implement.
+	 * From 0 to total number of threads - 1.
 	 */
 	private long mThreadID;
 	
+	/**
+	 * If this state encounter {@link JoinStatement} and
+	 * is waiting for other thread's termination, then
+	 * this flag is true.
+	 */
+	private boolean mIsBlocked = false;
 	
 	/**
 	 * Initial constructor.
@@ -143,6 +149,14 @@ public class ThreadState extends ValuationState<ThreadState>{
 	
 	public void assignNewThreadID(final long newThreadID) {
 		mThreadID = newThreadID;
+	}
+	
+	public void block() {
+		mIsBlocked = true;
+	}
+	
+	public boolean isBlocked() {
+		return mIsBlocked;
 	}
 	
 	public Valuation getValuation() {

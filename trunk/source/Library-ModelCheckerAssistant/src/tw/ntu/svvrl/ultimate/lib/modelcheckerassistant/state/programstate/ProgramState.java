@@ -86,9 +86,9 @@ public class ProgramState extends ValuationState<ProgramState> {
 		if(trans.getIcfgEdge() instanceof ForkThreadCurrent) {
 			final ForkHandler forkHandler = new ForkHandler(this, trans);
 			newProgramState = forkHandler.doFork();
-			
 		} else if(trans.getIcfgEdge() instanceof JoinThreadCurrent) {
-			
+			final JoinHandler JoinHandler = new JoinHandler(this, trans);
+			newProgramState = JoinHandler.doJoin();
 		} else {
 			/**
 			 * For others(not Fork and Join), Only one thread state is considered.

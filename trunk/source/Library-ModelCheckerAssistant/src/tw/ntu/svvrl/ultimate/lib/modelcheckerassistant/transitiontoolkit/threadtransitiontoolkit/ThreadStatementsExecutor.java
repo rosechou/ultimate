@@ -187,57 +187,29 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 
 	private void executeCallStatement(CallStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
-		/**
-		 * Record current value of global variables to old variables.
-		 */
-		final Map<String, Object> globalId2v = mCurrentState.getValuation().getProcOrFuncId2V(null);
-		final Set<String> globalNonOldVarNames = new HashSet<>();
-		for(final String globalVarName : globalId2v.keySet()) {
-			if(!mCurrentState.getValuation().isOld(globalVarName)) {
-				globalNonOldVarNames.add(globalVarName);
-			}
-		}
-		for(final String globalNonOldVarName : globalNonOldVarNames) {
-			final String oldVarName = "old(" + globalNonOldVarName + ")";
-			updateThreadState(null, oldVarName, globalId2v.get(globalNonOldVarName));
-		}
 		
-		
+		recordOlds();
 		/**
 		 * {@link CallStatement#isForall} is not yet implemented.
 		 */
 		String procName = stmt.getMethodName();
 		Expression[] args = stmt.getArguments();
-		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
 		
-		List<String> argsName = mCurrentState.getProc2InParams().get(procName);
-		assert(args.length == argsName.size());
-		
-		/**
-		 * Record current valuation.
-		 */
-		mCurrentState.getCurrentProc().setValuationRecord(mCurrentState.getValuationFullCopy());
-		
-		/**
-		 * Clear the rest value (occur in recursive call) of the target procedure.
-		 * Before getting into the procedure, set all locals to null.
-		 */
-		final Map<String, Object> id2v = mCurrentState.getValuation().getProcOrFuncId2V(procName);
-		for(final String varName : id2v.keySet()) {
-			updateThreadState(procName, varName, null);
-		}
-		
-		/**
-		 * assign values to in params
-		 */
-		for(int i = 0; i < args.length; i++) {
-			updateThreadState(procName, argsName.get(i), exprEvaluator.evaluate(args[i]));
-		}
-		mCurrentState.pushProc(new ProcInfo(procName));
+		doCallRoutines(procName, args);
 	}
 
 	private void executeForkStatement(ForkStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
+		
+		recordOlds();
+		String procName = stmt.getProcedureName();
+		Expression[] args = stmt.getArguments();
+		
+		doCallRoutines(procName, args);
+		
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
+		int newThreadID = (int) exprEvaluator.evaluate(stmt.getThreadID()[0]);
+		mCurrentState.assignNewThreadID(newThreadID);
 	}
 
 	private void executeGotoStatement(GotoStatement stmt) {
@@ -355,6 +327,53 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 	
 	public ThreadState getCurrentState() {
 		return mCurrentState;
+	}
+	
+	private void recordOlds() {
+		/**
+		 * Record current value of global variables to old variables.
+		 */
+		final Map<String, Object> globalId2v = mCurrentState.getValuation().getProcOrFuncId2V(null);
+		final Set<String> globalNonOldVarNames = new HashSet<>();
+		for(final String globalVarName : globalId2v.keySet()) {
+			if(!mCurrentState.getValuation().isOld(globalVarName)) {
+				globalNonOldVarNames.add(globalVarName);
+			}
+		}
+		for(final String globalNonOldVarName : globalNonOldVarNames) {
+			final String oldVarName = "old(" + globalNonOldVarName + ")";
+			updateThreadState(null, oldVarName, globalId2v.get(globalNonOldVarName));
+		}
+	}
+	
+	private void doCallRoutines(String procName, Expression[] args) {
+		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
+		
+		List<String> argsName = mCurrentState.getProc2InParams().get(procName);
+		assert(args.length == argsName.size());
+		
+		/**
+		 * Record current valuation.
+		 */
+		mCurrentState.getCurrentProc().setValuationRecord(mCurrentState.getValuationFullCopy());
+		
+		/**
+		 * Clear the rest value (occur in recursive call) of the target procedure.
+		 * Before getting into the procedure, set all locals to null.
+		 */
+		final Map<String, Object> id2v = mCurrentState.getValuation().getProcOrFuncId2V(procName);
+		for(final String varName : id2v.keySet()) {
+			updateThreadState(procName, varName, null);
+		}
+		
+		/**
+		 * assign values to in params
+		 */
+		for(int i = 0; i < args.length; i++) {
+			updateThreadState(procName, argsName.get(i), exprEvaluator.evaluate(args[i]));
+		}
+		mCurrentState.pushProc(new ProcInfo(procName));
+		
 	}
 
 }

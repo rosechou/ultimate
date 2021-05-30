@@ -829,7 +829,8 @@ public class PostProcessor {
 														mExpressionTranslation.getCTypeOfPointerComponents(),
 														BigInteger.ZERO) }) }));
 			}
-			{
+			// 2021-05-30 by Hong-Yang Lin
+			if(!mSettings.useSimplePthreadTranslation()) {
 				// Add assume(0 < #StackHeapBarrier) to ensure that the null
 				// pointer is on the heap.
 				final Expression zero = mTypeSize.constructLiteralForIntegerType(translationUnitLoc,

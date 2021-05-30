@@ -141,6 +141,10 @@ public class ThreadState extends ValuationState<ThreadState>{
 		return mThreadID;
 	}
 	
+	public void assignNewThreadID(final int newThreadID) {
+		mThreadID = newThreadID;
+	}
+	
 	public Valuation getValuation() {
 		return mValuation;
 	}

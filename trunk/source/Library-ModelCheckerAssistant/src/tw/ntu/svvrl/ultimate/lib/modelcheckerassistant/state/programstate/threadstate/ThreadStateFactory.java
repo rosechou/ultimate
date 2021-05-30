@@ -71,7 +71,7 @@ public class ThreadStateFactory {
 		 * Main Thread ID: 0
 		 */
 		return new ThreadState(newValuation, loc, mFuncInitValuationInfo
-				, mProc2InParams, mProc2OutParams, 0);
+				, mProc2InParams, mProc2OutParams, 0, -1);
 	}
 	
 }

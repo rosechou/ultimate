@@ -194,54 +194,10 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 
 	private void executeReturn(final Return returnn) {
 		final CallStatement correspondingCallStmt = returnn.getCallStatement();
+		final ProcInfo returnDestinationProc = mCurrentState.getCallerProc();
 		
-		final ProcInfo currentProc = mCurrentState.getCurrentProc();
-		final ProcInfo returnProc = mCurrentState.getCallerProc();
-		final String currentProcName = currentProc.getProcName();
-		final String returnProcName = returnProc.getProcName();
-		
-		/**
-		 * Retrieve return values
-		 */
-		final List<String> outParamNames = mCurrentState.getProc2OutParams().get(currentProcName);
-		final VariableLHS[] lhss = correspondingCallStmt.getLhs();
-		final Object[] values = new Object[lhss.length];
-		assert(lhss.length == outParamNames.size());
-		for(int i = 0; i < lhss.length; i++) {
-			final Object v = mCurrentState.getValuationLocalCopy().lookUpValue(currentProcName, outParamNames.get(i));
-			values[i] = v;
-		}
-		
-		/**
-		 * Reset the return procedure valuation.
-		 */
-		mCurrentState.setValuation(returnProc.getValuationRecord());
-		
-		final ThreadStatementsExecutor statementExecutor
-		= new ThreadStatementsExecutor(mCurrentState, ThreadStatementsExecutor.execType.realExec);
-		
-		/**
-		 * assign return value(s) to lhs(s).
-		 */
-		for(int i = 0; i < lhss.length; i++) {
-			final String lhsName = lhss[i].getIdentifier();
-			statementExecutor.updateThreadState(returnProcName, lhsName, values[i]);
-		}
-		
-		/**
-		 * This will lead to a bug in the context of recursive procedure call.
-		 * Move it to {@link CallStatement}.
-		 */
-//		/**
-//		 * set all <code>currentProcName</code>'s local variables to null.
-//		 */
-//		final Map<String, Object> id2v = mCurrentState.getValuation().getProcOrFuncId2V(currentProcName);
-//		for(final String varName : id2v.keySet()) {
-//			statementExecutor.updateThreadState(currentProcName, varName, null);
-//		}
-		
-		moveToNewState(statementExecutor.getCurrentState());
-		mCurrentState.popProc();
+		moveToNewState(doReturnRoutines(mCurrentState, returnDestinationProc
+				, correspondingCallStmt.getLhs()));
 	}
 
 	private void executeForkThreadCurrent(final ForkThreadCurrent forkThreadCurrent) {
@@ -270,4 +226,54 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 				+ "is not yet implemented.");
 	}
 
+	public static ThreadState doReturnRoutines(final ThreadState fromState, final ProcInfo toInfo
+			, final VariableLHS[] stmtLhss) {
+
+		final ProcInfo fromProc = fromState.getCurrentProc();
+		final String fromProcName = fromProc.getProcName();
+		final String toProcName = toInfo.getProcName();
+		
+		/**
+		 * Retrieve return values
+		 */
+		final List<String> outParamNames = fromState.getProc2OutParams().get(fromProcName);
+		final VariableLHS[] lhss = stmtLhss;
+		final Object[] values = new Object[lhss.length];
+		assert(lhss.length == outParamNames.size());
+		for(int i = 0; i < lhss.length; i++) {
+			final Object v = fromState.getValuationLocalCopy().lookUpValue(fromProcName, outParamNames.get(i));
+			values[i] = v;
+		}
+		
+		/**
+		 * Reset the return procedure valuation.
+		 */
+		fromState.setValuation(toInfo.getValuationRecord());
+		
+		final ThreadStatementsExecutor statementExecutor
+		= new ThreadStatementsExecutor(fromState, ThreadStatementsExecutor.execType.realExec);
+		
+		/**
+		 * assign return value(s) to lhs(s).
+		 */
+		for(int i = 0; i < lhss.length; i++) {
+			final String lhsName = lhss[i].getIdentifier();
+			statementExecutor.updateThreadState(toProcName, lhsName, values[i]);
+		}
+		
+		/**
+		 * This will lead to a bug in the context of recursive procedure call.
+		 * Move it to {@link CallStatement}.
+		 */
+//		/**
+//		 * set all <code>currentProcName</code>'s local variables to null.
+//		 */
+//		final Map<String, Object> id2v = mCurrentState.getValuation().getProcOrFuncId2V(currentProcName);
+//		for(final String varName : id2v.keySet()) {
+//			statementExecutor.updateThreadState(currentProcName, varName, null);
+//		}
+		
+		statementExecutor.getCurrentState().popProc();
+		return statementExecutor.getCurrentState();
+	}
 }

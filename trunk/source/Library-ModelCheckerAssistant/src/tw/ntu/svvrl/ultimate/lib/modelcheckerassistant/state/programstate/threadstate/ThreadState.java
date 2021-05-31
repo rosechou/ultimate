@@ -172,6 +172,10 @@ public class ThreadState extends ValuationState<ThreadState>{
 		mIsBlocked = true;
 	}
 	
+	public void unlock() {
+		mIsBlocked = false;
+	}
+	
 	public boolean isBlocked() {
 		return mIsBlocked;
 	}
@@ -258,6 +262,9 @@ public class ThreadState extends ValuationState<ThreadState>{
 	 */
 	public boolean equals(final ThreadState anotherThreadState) {
 		if(!mCorrespondingIcfgLoc.equals(anotherThreadState.getCorrespondingIcfgLoc())) {
+			return false;
+		}
+		if(mIsBlocked != anotherThreadState.isBlocked()) {
 			return false;
 		}
 		return mValuation.equals(anotherThreadState.getValuationFullCopy()) ? true : false;

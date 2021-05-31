@@ -154,10 +154,10 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 				 * It seems no chance to occur. (?)
 				 */
 				throw new UnsupportedOperationException(StructLHS.class.getSimpleName() 
-						+ "is not yet supported.");
+						+ " is not yet supported.");
 			} else if(lhs[i] instanceof StructLHS) {
 				throw new UnsupportedOperationException(StructLHS.class.getSimpleName() 
-						+ "is not yet supported.");
+						+ " is not yet supported.");
 			}
 		}
 	}
@@ -252,7 +252,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 				
 			} else {
 				throw new UnsupportedOperationException("Unsupported"
-						+ "BoogieType:" + bt.toString() + "in havoc statement");
+						+ "BoogieType:" + bt.toString() + " in havoc statement");
 			}
 		}
 	}
@@ -274,7 +274,12 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 	}
 
 	private void executeJoinStatement(JoinStatement stmt) {
-		assert mCurrentState instanceof ThreadState;
+		/**
+		 * Join statement is implemented in the {@link JoinHandler}
+		 * because we need other thread state's information.
+		 */
+		throw new UnsupportedOperationException(stmt.getClass().getSimpleName()
+				+ " is not implemented in the statement executor.");
 	}
 
 	private void executeLabel(Label stmt) {

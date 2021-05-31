@@ -218,7 +218,7 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 			case COMPEQ:
 				if(lv instanceof Boolean && rv instanceof Boolean) {
 					return (Boolean) lv == (Boolean) rv;
-				} else if(lv instanceof Integer && rv instanceof Integer) {
+				} else if(lv instanceof Long && rv instanceof Long) {
 					return (Long) lv == (Long) rv;
 				} else {
 					throw new UnsupportedOperationException("Binary operation type error.");
@@ -226,7 +226,7 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 			case COMPNEQ:
 				if(lv instanceof Boolean && rv instanceof Boolean) {
 					return (Boolean) lv != (Boolean) rv;
-				} else if(lv instanceof Integer && rv instanceof Integer) {
+				} else if(lv instanceof Long && rv instanceof Long) {
 					return (Long) lv != (Long) rv;
 				} else {
 					throw new UnsupportedOperationException("Binary operation type error.");

@@ -65,6 +65,20 @@ public class ProgramState extends ValuationState<ProgramState> {
 	}
 	
 	public List<ThreadStateTransition> getEnableTrans() {
+		/**
+		 * Check if there are thread being in the exit node.
+		 * If so, unlock the block of the thread where current thread
+		 * was forked from.
+		 */
+		for(final ThreadState threadState : mThreadStates.values()) {
+			final String threadProcName = threadState.getCurrentProc().getProcName();
+			if(threadState.getForkedFrom() != -1
+					&& getExitNode(threadProcName).equals(threadState.getCorrespondingIcfgLoc())) {
+				getThreadStateByID(threadState.getForkedFrom()).unlock();
+			}
+		}
+		
+		
 		final List<ThreadStateTransition> enableTrans = new ArrayList<>();
 		for(final ThreadState threadState : mThreadStates.values()) {
 			enableTrans.addAll(threadState.getEnableTrans());
@@ -136,6 +150,10 @@ public class ProgramState extends ValuationState<ProgramState> {
 	
 	public void updateThreadState(final long threadID, final ThreadState newState) {
 		mThreadStates.put(threadID, newState);
+	}
+	
+	public void removeThreadState(final long threadID) {
+		mThreadStates.remove(threadID);
 	}
 	
 	public boolean allNonOldGlobalInitialized() {

@@ -55,10 +55,10 @@ public class ProgramState extends ValuationState<ProgramState> {
 	 */
 	public ProgramState(final ProgramState state) {
 		mValuation = state.getValuationFullCopy();
-		for(final ThreadState s : state.getThreadStatesMap().values()) {
+		for(final ThreadState s : state.mThreadStates.values()) {
 			final ThreadState t = new ThreadState(s);
 			t.getValuation().linkGlobals(mValuation);
-			mThreadStates.put(s.getThreadID(), t);
+			this.mThreadStates.put(s.getThreadID(), t);
 		}
 		mEntryNodes = state.getEntryNodesMap();
 		mExitNodes = state.getExitNodesMap();
@@ -160,10 +160,6 @@ public class ProgramState extends ValuationState<ProgramState> {
 		return mThreadStates.get(threadID);
 	}
 	
-	private Map<Long, ThreadState> getThreadStatesMap() {
-		return mThreadStates;
-	}
-	
 	public void updateThreadState(final long threadID, final ThreadState newState) {
 		mThreadStates.put(threadID, newState);
 	}
@@ -200,7 +196,7 @@ public class ProgramState extends ValuationState<ProgramState> {
 		/**
 		 * Thread ID should be consistent?
 		 */
-		for(final ThreadState threadState : anotherProgramState.getThreadStatesMap().values()) {
+		for(final ThreadState threadState : anotherProgramState.mThreadStates.values()) {
 			if(!mThreadStates.get(threadState.getThreadID()).equals(threadState)) {
 				return false;
 			}

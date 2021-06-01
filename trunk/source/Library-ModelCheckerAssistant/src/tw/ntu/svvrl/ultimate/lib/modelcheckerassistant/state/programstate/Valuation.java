@@ -88,6 +88,12 @@ public class Valuation implements Cloneable {
 		mValueMap.putAll(globalValuation.mValueMap);
 	}
 	
+	public void resetLocals(final Valuation v) {
+		Map<String, Object> globalId2v = mValueMap.get(null);
+		mValueMap.putAll(v.mValueMap);
+		mValueMap.put(null, globalId2v);
+	}
+	
 	public boolean containsProcOrFunc(final String procOrFuncName) {
 		return mValueMap.containsKey(procOrFuncName);
 	}

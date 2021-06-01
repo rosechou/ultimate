@@ -187,8 +187,8 @@ public class ThreadState extends ValuationState<ThreadState>{
 	/**
 	 * @note Only used when procedure {@link Return}.
 	 */
-	public void setValuation(Valuation v) {
-		mValuation = v;
+	public void resetLocalValuation(Valuation v) {
+		mValuation.resetLocals(v);
 	}
 	
 	public ProcInfo getCallerProc() {

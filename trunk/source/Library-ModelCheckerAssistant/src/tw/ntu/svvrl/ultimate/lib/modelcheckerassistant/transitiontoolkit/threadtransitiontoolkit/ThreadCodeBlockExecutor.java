@@ -248,7 +248,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		/**
 		 * Reset the return procedure valuation.
 		 */
-		fromState.setValuation(toInfo.getValuationRecord());
+		fromState.resetLocalValuation(toInfo.getValuationRecord());
 		
 		final ThreadStatementsExecutor statementExecutor
 		= new ThreadStatementsExecutor(fromState, ThreadStatementsExecutor.execType.realExec);

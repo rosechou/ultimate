@@ -23,6 +23,24 @@ public class JoinHandler {
 		mTrans = trans;
 	}
 	
+	/**
+	 * Check whether the target thread is terminate.
+	 * If the target thread is not at the exit node,the current thread is blocked.
+	 * @return
+	 * 		true if this join is blocked
+	 * 		false if the target thread terminates
+	 */
+	public boolean isJoinBlocked() {
+		final long currentThreadID = mTrans.getThreadID();
+		final ThreadState currentThreadState = mProgramState.getThreadStateByID(currentThreadID);
+		final JoinStatement joinStmt = ((JoinThreadCurrent) mTrans.getIcfgEdge()).getJoinStatement();
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(currentThreadState);
+		final long targetThreadID = (long) exprEvaluator.evaluate(joinStmt.getThreadID()[0]);
+		final ThreadState targetState = mProgramState.getThreadStateByID(targetThreadID);
+		final String targetProcName = targetState.getCurrentProc().getProcName();
+		
+		return !mProgramState.getExitNode(targetProcName).equals(targetState.getCorrespondingIcfgLoc());
+	}
 
 	public ProgramState doJoin() {
 		final long currentThreadID = mTrans.getThreadID();
@@ -31,33 +49,27 @@ public class JoinHandler {
 		final JoinStatement joinStmt = ((JoinThreadCurrent) mTrans.getIcfgEdge()).getJoinStatement();
 		
 		
-		/**
-		 * Check whether the target thread is terminate.
-		 */
 		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(currentThreadState);
 		final long targetThreadID = (long) exprEvaluator.evaluate(joinStmt.getThreadID()[0]);
 		final ThreadState targetState = mProgramState.getThreadStateByID(targetThreadID);
-		final String targetProcName = targetState.getCurrentProc().getProcName();
-		/**
-		 * If the target thread is not at the exit node, block current thread.
-		 */
-		if(!mProgramState.getExitNode(targetProcName).equals(targetState.getCorrespondingIcfgLoc())) {
-			currentThreadState.block();
-		} else {
+		
 
-			final ThreadState currentNextState
-				= ThreadCodeBlockExecutor.doReturnRoutines(targetState, currentProcInfo, joinStmt.getLhs());
-			currentNextState.setCorrespondingIcfgLoc((BoogieIcfgLocation) mTrans.getIcfgEdge().getTarget());
-			
-			/**
-			 * update the original thread state
-			 */
-			mProgramState.updateThreadState(currentNextState.getThreadID(), currentNextState);
-			/**
-			 * remove the forked thread state
-			 */
-			mProgramState.removeThreadState(targetThreadID);
-		}
+		assert !isJoinBlocked() : "Cannot do join because the target thread "
+			+ "does not terminate !";
+		
+		final ThreadState currentNextState
+			= ThreadCodeBlockExecutor.doReturnRoutines(targetState, currentProcInfo, joinStmt.getLhs());
+		currentNextState.setCorrespondingIcfgLoc((BoogieIcfgLocation) mTrans.getIcfgEdge().getTarget());
+		currentNextState.assignNewThreadID(currentThreadID);
+		
+		/**
+		 * update the original thread state
+		 */
+		mProgramState.updateThreadState(currentThreadID, currentNextState);
+		/**
+		 * remove the forked thread state
+		 */
+		mProgramState.removeThreadState(targetThreadID);
 		
 		return mProgramState;
 	}

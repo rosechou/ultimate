@@ -1236,7 +1236,7 @@ public class StandardFunctionHandler {
 				}
 				String threadName = ((CASTIdExpression) arguments[0]).getName().toString();
 				AuxVarInfo tmpThreadId = mThreadIdManager.getThreadId(threadName);
-				js = new JoinStatement(loc, new Expression[] { tmpThreadId.getExp() }, new VariableLHS[0]);
+				js = new JoinStatement(loc, new Expression[] { tmpThreadId.getExp() }, new VariableLHS[] { auxvarinfo.getLhs() });
 				/*------------------------------------------------------*/
 			} else {
 				js = new JoinStatement(loc, new Expression[] { argThreadId.getLrValue().getValue() },

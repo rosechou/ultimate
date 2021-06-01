@@ -65,24 +65,40 @@ public class ProgramState extends ValuationState<ProgramState> {
 	}
 	
 	public List<ThreadStateTransition> getEnableTrans() {
-		/**
-		 * Check if there are thread being in the exit node.
-		 * If so, unlock the block of the thread where current thread
-		 * was forked from.
-		 */
-		for(final ThreadState threadState : mThreadStates.values()) {
-			final String threadProcName = threadState.getCurrentProc().getProcName();
-			if(threadState.getForkedFrom() != -1
-					&& getExitNode(threadProcName).equals(threadState.getCorrespondingIcfgLoc())) {
-				getThreadStateByID(threadState.getForkedFrom()).unlock();
-			}
-		}
+//		/**
+//		 * Check if there are threads being in the exit node.
+//		 * If so, unlock the block of the thread where current thread
+//		 * was forked from.
+//		 */
+//		for(final ThreadState threadState : mThreadStates.values()) {
+//			final String threadProcName = threadState.getCurrentProc().getProcName();
+//			if(threadState.getForkedFrom() != -1
+//					&& getExitNode(threadProcName).equals(threadState.getCorrespondingIcfgLoc())) {
+//				getThreadStateByID(threadState.getForkedFrom()).unlock();
+//			}
+//		}
 		
 		
 		final List<ThreadStateTransition> enableTrans = new ArrayList<>();
 		for(final ThreadState threadState : mThreadStates.values()) {
 			enableTrans.addAll(threadState.getEnableTrans());
 		}
+		
+		/**
+		 * If there is a join in <code>enableTrans</code> and
+		 * it is blocked, remove it from <code>enableTrans</code>.
+		 */
+		final List<ThreadStateTransition> blockedTrans = new ArrayList<>();
+		for(final ThreadStateTransition trans : enableTrans) {
+			if(trans.getIcfgEdge() instanceof JoinThreadCurrent) {
+				final JoinHandler joinHandler = new JoinHandler(this, trans);
+				if(joinHandler.isJoinBlocked()) {
+					blockedTrans.add(trans);
+				}
+			}
+		}
+		enableTrans.removeAll(blockedTrans);
+		
 		return enableTrans;
 	}
 	
@@ -101,8 +117,8 @@ public class ProgramState extends ValuationState<ProgramState> {
 			final ForkHandler forkHandler = new ForkHandler(this, trans);
 			newProgramState = forkHandler.doFork();
 		} else if(trans.getIcfgEdge() instanceof JoinThreadCurrent) {
-			final JoinHandler JoinHandler = new JoinHandler(this, trans);
-			newProgramState = JoinHandler.doJoin();
+			final JoinHandler joinHandler = new JoinHandler(this, trans);
+			newProgramState = joinHandler.doJoin();
 		} else {
 			/**
 			 * For others(not Fork and Join), Only one thread state is considered.

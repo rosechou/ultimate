@@ -47,13 +47,6 @@ public class ThreadState extends ValuationState<ThreadState>{
 	private long mThreadID;
 	
 	/**
-	 * If this state encounter {@link JoinStatement} and
-	 * is waiting for other thread's termination, then
-	 * this flag is true.
-	 */
-	private boolean mIsBlocked = false;
-	
-	/**
 	 * Initial constructor.
 	 * @param v
 	 * @param boogieIcfgLocation
@@ -151,18 +144,6 @@ public class ThreadState extends ValuationState<ThreadState>{
 		mThreadID = newThreadID;
 	}
 	
-	public void block() {
-		mIsBlocked = true;
-	}
-	
-	public void unlock() {
-		mIsBlocked = false;
-	}
-	
-	public boolean isBlocked() {
-		return mIsBlocked;
-	}
-	
 	public Valuation getValuation() {
 		return mValuation;
 	}
@@ -245,9 +226,6 @@ public class ThreadState extends ValuationState<ThreadState>{
 	 */
 	public boolean equals(final ThreadState anotherThreadState) {
 		if(!mCorrespondingIcfgLoc.equals(anotherThreadState.getCorrespondingIcfgLoc())) {
-			return false;
-		}
-		if(mIsBlocked != anotherThreadState.isBlocked()) {
 			return false;
 		}
 		return mValuation.equals(anotherThreadState.getValuationFullCopy()) ? true : false;

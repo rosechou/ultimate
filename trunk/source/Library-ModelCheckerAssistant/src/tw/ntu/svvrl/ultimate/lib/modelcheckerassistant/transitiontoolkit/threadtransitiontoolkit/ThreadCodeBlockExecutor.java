@@ -40,13 +40,6 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 
 
 	public boolean checkEnable() {
-		/**
-		 * Waiting for other thread's termination.
-		 */
-		if(mCurrentState.isBlocked()) {
-			return false;
-		}
-		
 		if(mCodeBlock instanceof StatementSequence) {
 			List<Statement> stmts = ((StatementSequence) mCodeBlock).getStatements();
 			final ThreadStatementsChecker statementChecker = new ThreadStatementsChecker(stmts, mCurrentState);

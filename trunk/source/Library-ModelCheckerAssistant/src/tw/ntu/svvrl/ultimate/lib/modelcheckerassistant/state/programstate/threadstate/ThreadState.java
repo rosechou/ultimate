@@ -47,12 +47,6 @@ public class ThreadState extends ValuationState<ThreadState>{
 	private long mThreadID;
 	
 	/**
-	 * The ThreadID from which this state is forked.
-	 * If none, set it to -1.
-	 */
-	private long mForkedFrom;
-	
-	/**
 	 * If this state encounter {@link JoinStatement} and
 	 * is waiting for other thread's termination, then
 	 * this flag is true.
@@ -81,7 +75,6 @@ public class ThreadState extends ValuationState<ThreadState>{
 		mProcStack.push(
 				new ProcInfo(mCorrespondingIcfgLoc.getProcedure()));
 		mThreadID = threadID;
-		mForkedFrom = forkedFrom;
 	}
 	
 	/**
@@ -101,7 +94,6 @@ public class ThreadState extends ValuationState<ThreadState>{
 		mProc2OutParams = oldState.getProc2OutParams();
 		mProcStack = oldState.getProcStackCopy();
 		mThreadID = oldState.getThreadID();
-		mForkedFrom = oldState.getForkedFrom();
 	}
 	
 	/**
@@ -117,7 +109,6 @@ public class ThreadState extends ValuationState<ThreadState>{
 		mProc2OutParams = threadState.getProc2OutParams();
 		mProcStack = threadState.getProcStackCopy();
 		mThreadID = threadState.getThreadID();
-		mForkedFrom = threadState.getForkedFrom();
 	}
 
 	public BoogieIcfgLocation getCorrespondingIcfgLoc() {
@@ -158,14 +149,6 @@ public class ThreadState extends ValuationState<ThreadState>{
 	
 	public void assignNewThreadID(final long newThreadID) {
 		mThreadID = newThreadID;
-	}
-	
-	public long getForkedFrom() {
-		return mForkedFrom;
-	}
-	
-	public void setForkedFrom(final long forkedFrom) {
-		mForkedFrom = forkedFrom;
 	}
 	
 	public void block() {

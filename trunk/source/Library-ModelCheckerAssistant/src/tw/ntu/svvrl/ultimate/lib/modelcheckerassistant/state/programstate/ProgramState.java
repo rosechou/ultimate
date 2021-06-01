@@ -193,14 +193,16 @@ public class ProgramState extends ValuationState<ProgramState> {
 		if(this.getThreadNumber() != anotherProgramState.getThreadNumber()) {
 			return false;
 		}
-		/**
-		 * Thread ID should be consistent?
-		 */
-		for(final ThreadState threadState : anotherProgramState.mThreadStates.values()) {
-			if(!mThreadStates.get(threadState.getThreadID()).equals(threadState)) {
-				return false;
+		
+		int equalCount = 0;
+		for(final ThreadState anotherThreadState : anotherProgramState.mThreadStates.values()) {
+			for(final ThreadState thisThreadState : mThreadStates.values()) {
+				if(anotherThreadState.equals(thisThreadState)) {
+					equalCount++;
+					break;
+				}
 			}
 		}
-		return true;
+		return equalCount == this.getThreadNumber() ? true : false;
 	}
 }

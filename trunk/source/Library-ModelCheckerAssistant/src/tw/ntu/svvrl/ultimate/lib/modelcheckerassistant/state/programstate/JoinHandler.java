@@ -58,7 +58,7 @@ public class JoinHandler {
 			+ "does not terminate !";
 		
 		final ThreadState currentNextState
-			= ThreadCodeBlockExecutor.doReturnRoutines(targetState, currentProcInfo, joinStmt.getLhs());
+			= doJoinRoutines(targetState, currentProcInfo, joinStmt.getLhs(), currentThreadState);
 		currentNextState.setCorrespondingIcfgLoc((BoogieIcfgLocation) mTrans.getIcfgEdge().getTarget());
 		currentNextState.assignNewThreadID(currentThreadID);
 		
@@ -72,6 +72,40 @@ public class JoinHandler {
 		mProgramState.removeThreadState(targetThreadID);
 		
 		return mProgramState;
+	}
+	
+	private ThreadState doJoinRoutines(final ThreadState fromState, final ProcInfo toInfo
+			, final VariableLHS[] stmtLhss, final ThreadState toState) {
+
+		final ProcInfo fromProc = fromState.getCurrentProc();
+		final String fromProcName = fromProc.getProcName();
+		final String toProcName = toInfo.getProcName();
+		
+		/**
+		 * Retrieve return values
+		 */
+		final List<String> outParamNames = fromState.getProc2OutParams().get(fromProcName);
+		final VariableLHS[] lhss = stmtLhss;
+		final Object[] values = new Object[lhss.length];
+		assert(lhss.length == outParamNames.size());
+		for(int i = 0; i < lhss.length; i++) {
+			final Object v = fromState.getValuationLocalCopy().lookUpValue(fromProcName, outParamNames.get(i));
+			values[i] = v;
+		}
+		
+		
+		final ThreadStatementsExecutor statementExecutor
+		= new ThreadStatementsExecutor(toState, ThreadStatementsExecutor.execType.realExec);
+		
+		/**
+		 * assign return value(s) to lhs(s).
+		 */
+		for(int i = 0; i < lhss.length; i++) {
+			final String lhsName = lhss[i].getIdentifier();
+			statementExecutor.updateThreadState(toProcName, lhsName, values[i]);
+		}
+		
+		return statementExecutor.getCurrentState();
 	}
 }
 

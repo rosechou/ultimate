@@ -30,7 +30,6 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	 * For Program Automata.
 	 * @param codeBlock
 	 * @param state
-	 * @param autType
 	 */
 	public ThreadCodeBlockExecutor(final CodeBlock codeBlock, final ThreadState state) {
 		mCodeBlock = codeBlock;
@@ -269,4 +268,5 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		statementExecutor.getCurrentState().popProc();
 		return statementExecutor.getCurrentState();
 	}
+	
 }

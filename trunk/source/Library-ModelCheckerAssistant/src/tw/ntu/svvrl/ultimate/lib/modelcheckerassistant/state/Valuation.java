@@ -1,4 +1,4 @@
-package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate;
+package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state;
 
 import java.util.HashMap;
 import java.util.Map;

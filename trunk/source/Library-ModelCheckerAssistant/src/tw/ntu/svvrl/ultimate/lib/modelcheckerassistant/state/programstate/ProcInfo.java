@@ -1,5 +1,7 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate;
 
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.Valuation;
+
 /**
  * Keep the needed information on the procedure stack.
  * Including procedure names and their valuation copy when 

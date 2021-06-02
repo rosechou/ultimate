@@ -115,7 +115,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 
 
 	private void executeAssertStatement(AssertStatement stmt) {
-		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
 		if(!(boolean) exprEvaluator.evaluate(stmt.getFormula())) {
 			throw new UnsupportedOperationException("Assertion is violated during"
 					+ " the statement execution.");
@@ -192,8 +192,8 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 		/**
 		 * {@link CallStatement#isForall} is not yet implemented.
 		 */
-		String procName = stmt.getMethodName();
-		Expression[] args = stmt.getArguments();
+		final String procName = stmt.getMethodName();
+		final Expression[] args = stmt.getArguments();
 		
 		doCallRoutines(procName, args);
 	}
@@ -202,8 +202,8 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 		assert mCurrentState instanceof ThreadState;
 		
 		recordOlds();
-		String procName = stmt.getProcedureName();
-		Expression[] args = stmt.getArguments();
+		final String procName = stmt.getProcedureName();
+		final Expression[] args = stmt.getArguments();
 		
 		doCallRoutines(procName, args);
 		
@@ -228,17 +228,18 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 		for(int i = 0; i < lhs.length; i++) {
 			final String procName = lhs[i].getDeclarationInformation().getProcedure();
 			final String varName = lhs[i].getIdentifier();
-			IBoogieType bt = lhs[i].getType();
+			final IBoogieType bt = lhs[i].getType();
 			if (bt instanceof BoogiePrimitiveType) {
-				final Random r = new Random();
-				Object value;
+				// final Random r = new Random();
+				// Object value;
+				final Object value = null;
 				switch(((BoogiePrimitiveType) bt).getTypeCode()) {
 					case BoogiePrimitiveType.BOOL:
-						value = r.nextBoolean();
+						//value = r.nextBoolean();
 						updateThreadState(procName, varName, value);
 						break;
 					case BoogiePrimitiveType.INT:
-						value = r.nextInt();
+						//value = r.nextInt();
 						updateThreadState(procName, varName, value);
 						break;
 					case BoogiePrimitiveType.REAL:
@@ -259,16 +260,16 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 
 	private void executeIfStatement(IfStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
-		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
 		if((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
-			ThreadStatementsExecutor newStatementsExecutor
+			final ThreadStatementsExecutor newStatementsExecutor
 					 = new ThreadStatementsExecutor(Arrays.asList(stmt.getThenPart()), mCurrentState, mExecType);
-			ThreadState newState = newStatementsExecutor.execute();
+			final ThreadState newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		} else {
-			ThreadStatementsExecutor newStatementsExecutor
+			final ThreadStatementsExecutor newStatementsExecutor
 			 		= new ThreadStatementsExecutor(Arrays.asList(stmt.getElsePart()), mCurrentState, mExecType);
-			ThreadState newState = newStatementsExecutor.execute();
+			final ThreadState newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}
 	}
@@ -299,11 +300,11 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 
 	private void executeWhileStatement(WhileStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
-		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
 		while((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
-			ThreadStatementsExecutor newStatementsExecutor
+			final ThreadStatementsExecutor newStatementsExecutor
 	 			= new ThreadStatementsExecutor(Arrays.asList(stmt.getBody()), mCurrentState, mExecType);
-			ThreadState newState = newStatementsExecutor.execute();
+			final ThreadState newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}
 	}

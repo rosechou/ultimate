@@ -59,7 +59,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 						final FuncInitValuationInfo funcInitValuationInfo,
 						final Map<String, List<String>> proc2InParams,
 						final Map<String, List<String>> proc2OutParams,
-						final long threadID, final long forkedFrom) {
+						final long threadID) {
 		mValuation = v;
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
 		mFuncInitValuationInfo = funcInitValuationInfo;

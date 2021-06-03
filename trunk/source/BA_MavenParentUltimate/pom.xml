@@ -509,6 +509,7 @@
 		<module>../Library-LassoRanker</module>
 		<module>../Library-MCR</module>
 		<module>../Library-ModelCheckerAssistant</module>
+		<module>../Library-ModelCheckerVerifier</module>
 		<module>../Library-ModelCheckerUtils</module>
 		<module>../Library-MSOD</module>
 		<module>../Library-ojAlgo</module>

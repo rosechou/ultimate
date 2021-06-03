@@ -29,6 +29,7 @@ import java.util.*;
 
 public class ModelCheckerVerifier {
 	private final ModelCheckerAssistant assistant;
+	private final ILogger mLogger;
 	//	ProgramState is the node of the Control Flow Graph
 	private List<ProgramState> levelNodes = new ArrayList<ProgramState>();
 	// ProgramState preState = null;
@@ -43,8 +44,9 @@ public class ModelCheckerVerifier {
 	Stack<Pair<ProgramState, NeverState>> bluepath = new Stack<>();
 	Stack<Pair<ProgramState, NeverState>> redpath = new Stack<>();
 	
-	public ModelCheckerVerifier(final ModelCheckerAssistant mca)
+	public ModelCheckerVerifier(final ILogger logger, final ModelCheckerAssistant mca)
 	{	
+		mLogger = logger;
 		assistant = mca;
 		// set of initial cfg locations
 		levelNodes.addAll(assistant.getProgramInitialStates());
@@ -77,19 +79,19 @@ public class ModelCheckerVerifier {
 		for (int i = 0;i < levelNodes.size();i++) {
 			ProgramState nextNode = levelNodes.get(i);
 			
-			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = state.getEnableTrans(node);
+			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = state.getEnableTrans(nextNode);
 			
 			for(int k = 0;k < firstVisited.size();k++)
 			{
 				if(nextNode.equals(firstVisited.get(k)) && (neverEdges.size()>0))
 				{
-					// assistant.mLogger.info("report cycle");
+					mLogger.info("report cycle");
 				}
 			}
 
 			for (int j = 0;j < neverEdges.size();j++) {
 				OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
-				NeverState nextState = state.doTransition(neverEdge, node);
+				NeverState nextState = state.doTransition(neverEdge, nextNode);
 				
 				Pair p = new Pair(node, state);
 				redpath.push(p);
@@ -97,7 +99,10 @@ public class ModelCheckerVerifier {
 				dfsRed(nextNode, nextState);
 			}	
 		}
-		redpath.pop();	
+		if(!redpath.empty())
+		{
+			redpath.pop();
+		}
 	}
 		
 	public void dfsBlue(ProgramState node, NeverState init)
@@ -124,11 +129,11 @@ public class ModelCheckerVerifier {
 				}
 			}
 			
-			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = init.getEnableTrans(node);
+			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = init.getEnableTrans(nextNode);
 			
 			for (int j = 0;j < neverEdges.size();j++) {
 				OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
-				NeverState nextState = init.doTransition(neverEdge, node);
+				NeverState nextState = init.doTransition(neverEdge, nextNode);
 				
 				Pair p = new Pair(node, init);
 				bluepath.push(p);
@@ -137,11 +142,17 @@ public class ModelCheckerVerifier {
 			}	
 		}
 		
-		if(bluepath.peek().getSecond().isFinal())
+		if(!bluepath.empty())
 		{
-			seed = blupath.peek().getFirst();
-			dfsRed(seed, blupath.peek().getSecond());
+			if(bluepath.peek().getSecond().isFinal())
+			{
+				seed = bluepath.peek().getFirst();
+				dfsRed(seed, bluepath.peek().getSecond());
+			}
 		}
-		bluepath.pop();
+		if(!bluepath.empty())
+		{
+			bluepath.pop();
+		}
 	}
 }

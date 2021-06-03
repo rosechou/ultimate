@@ -35,6 +35,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverSta
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerverifier.ModelCheckerVerifier;
 
 import java.util.HashSet;
 import java.util.List;
@@ -68,13 +69,16 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 	private final IUltimateServiceProvider mServices;
 	
 	private ModelCheckerAssistant mModelCheckerAssistant;
-
+	
+	private ModelCheckerVerifier mModelCheckerVerifier;
+	
 	public DebugPluginObserver(final ILogger logger, final IUltimateServiceProvider services) {
 		mLogger = logger;
 		mServices = services;
 		mRcfg = null;
 		mNeverClaimNWAContainer = null;
 		mModelCheckerAssistant = null;
+		mModelCheckerVerifier = null;
 	}
 
 	@Override
@@ -96,6 +100,9 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		// new crawler here. 
 		mModelCheckerAssistant = new ModelCheckerAssistant(mNeverClaimNWAContainer.getValue(), mRcfg, mLogger, mServices);
 		// mModelCheckerAssistant = new ModelCheckerAssistant(mRcfg, mLogger, mServices);
+		
+		mModelCheckerVerifier = new ModelCheckerVerifier(mLogger, mModelCheckerAssistant);
+		mLogger.info("Finished Verifier setup");
 		
 		/*-----------debugging-----------*/
 		Set<ProgramState> pInitialStates = new HashSet<>();

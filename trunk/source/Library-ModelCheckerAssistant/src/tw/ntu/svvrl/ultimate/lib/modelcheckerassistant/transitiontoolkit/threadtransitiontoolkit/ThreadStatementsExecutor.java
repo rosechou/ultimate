@@ -230,16 +230,15 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 			final String varName = lhs[i].getIdentifier();
 			final IBoogieType bt = lhs[i].getType();
 			if (bt instanceof BoogiePrimitiveType) {
-				// final Random r = new Random();
-				// Object value;
-				final Object value = null;
+				final Random r = new Random();
+				Object value;
 				switch(((BoogiePrimitiveType) bt).getTypeCode()) {
 					case BoogiePrimitiveType.BOOL:
-						//value = r.nextBoolean();
+						value = r.nextBoolean();
 						updateThreadState(procName, varName, value);
 						break;
 					case BoogiePrimitiveType.INT:
-						//value = r.nextInt();
+						value = r.nextInt();
 						updateThreadState(procName, varName, value);
 						break;
 					case BoogiePrimitiveType.REAL:

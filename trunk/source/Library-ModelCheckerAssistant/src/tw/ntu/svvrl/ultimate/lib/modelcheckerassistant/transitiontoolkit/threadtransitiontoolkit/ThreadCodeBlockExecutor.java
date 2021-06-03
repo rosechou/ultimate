@@ -30,7 +30,6 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	 * For Program Automata.
 	 * @param codeBlock
 	 * @param state
-	 * @param autType
 	 */
 	public ThreadCodeBlockExecutor(final CodeBlock codeBlock, final ThreadState state) {
 		mCodeBlock = codeBlock;
@@ -97,7 +96,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	 * @param otherEdges
 	 * @return true if yes, false if no.
 	 */
-	private boolean containsCall(List<IcfgEdge> otherEdges) {
+	private boolean containsCall(final List<IcfgEdge> otherEdges) {
 		for(final IcfgEdge edge : otherEdges) {
 			if(edge instanceof Call) {
 				return true;
@@ -170,46 +169,88 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	}
 
 	private void executeSummary(final Summary summary) {
+		/**
+		 * If called Procedure Has Implementation,
+		 * Force it to execute {@link CallStatement}
+		 * and never reach here.
+		 */
 		if(summary.calledProcedureHasImplementation()) {
 			throw new UnsupportedOperationException("Error: Summary with"
 					+ " implementation is not supported.");
 		}
+		/**
+		 * If called Procedure Has no Implementation,
+		 * Do nothing.
+		 */
 	}
 
 	private void executeReturn(final Return returnn) {
 		final CallStatement correspondingCallStmt = returnn.getCallStatement();
+		final ProcInfo returnDestinationProc = mCurrentState.getCallerProc();
 		
-		final ProcInfo currentProc = mCurrentState.getCurrentProc();
-		final ProcInfo returnProc = mCurrentState.getCallerProc();
-		String currentProcName = currentProc.getProcName();
-		String returnProcName = returnProc.getProcName();
+		moveToNewState(doReturnRoutines(mCurrentState, returnDestinationProc
+				, correspondingCallStmt.getLhs()));
+	}
+
+	private void executeForkThreadCurrent(final ForkThreadCurrent forkThreadCurrent) {
+		throw new UnsupportedOperationException(ForkThreadCurrent.class.getSimpleName()
+				+ "is handled at other place.");
+	}
+
+	private void executeForkThreadOther(final ForkThreadOther forkThreadOther) {
+		/**
+		 * Cannot produce this case.
+		 */
+		throw new NotImplementedException(JoinThreadOther.class.getSimpleName()
+				+ "is not yet implemented.");
+	}
+
+	private void executeJoinThreadCurrent(final JoinThreadCurrent joinThreadCurrent) {
+		throw new UnsupportedOperationException(JoinThreadCurrent.class.getSimpleName()
+				+ "is handled at other place.");
+	}
+
+	private void executeJoinThreadOther(final JoinThreadOther joinThreadOther) {
+		/**
+		 * Cannot produce this case.
+		 */
+		throw new NotImplementedException(JoinThreadOther.class.getSimpleName()
+				+ "is not yet implemented.");
+	}
+
+	public static ThreadState doReturnRoutines(final ThreadState fromState, final ProcInfo toInfo
+			, final VariableLHS[] stmtLhss) {
+
+		final ProcInfo fromProc = fromState.getCurrentProc();
+		final String fromProcName = fromProc.getProcName();
+		final String toProcName = toInfo.getProcName();
 		
 		/**
 		 * Retrieve return values
 		 */
-		final List<String> outParamNames = mCurrentState.getProc2OutParams().get(currentProcName);
-		final VariableLHS[] lhss = correspondingCallStmt.getLhs();
+		final List<String> outParamNames = fromState.getProc2OutParams().get(fromProcName);
+		final VariableLHS[] lhss = stmtLhss;
 		final Object[] values = new Object[lhss.length];
 		assert(lhss.length == outParamNames.size());
 		for(int i = 0; i < lhss.length; i++) {
-			final Object v = mCurrentState.getValuationLocalCopy().lookUpValue(currentProcName, outParamNames.get(i));
+			final Object v = fromState.getValuationLocalCopy().lookUpValue(fromProcName, outParamNames.get(i));
 			values[i] = v;
 		}
 		
 		/**
 		 * Reset the return procedure valuation.
 		 */
-		mCurrentState.setValuation(returnProc.getValuationRecord());
+		fromState.resetLocalValuation(toInfo.getValuationRecord());
 		
 		final ThreadStatementsExecutor statementExecutor
-		= new ThreadStatementsExecutor(mCurrentState, ThreadStatementsExecutor.execType.realExec);
+		= new ThreadStatementsExecutor(fromState, ThreadStatementsExecutor.execType.realExec);
 		
 		/**
 		 * assign return value(s) to lhs(s).
 		 */
 		for(int i = 0; i < lhss.length; i++) {
 			final String lhsName = lhss[i].getIdentifier();
-			statementExecutor.updateThreadState(returnProcName, lhsName, values[i]);
+			statementExecutor.updateThreadState(toProcName, lhsName, values[i]);
 		}
 		
 		/**
@@ -224,24 +265,8 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 //			statementExecutor.updateThreadState(currentProcName, varName, null);
 //		}
 		
-		moveToNewState(statementExecutor.getCurrentState());
-		mCurrentState.popProc();
+		statementExecutor.getCurrentState().popProc();
+		return statementExecutor.getCurrentState();
 	}
-
-	private void executeForkThreadCurrent(final ForkThreadCurrent forkThreadCurrent) {
-		// TODO Auto-generated method stub
-	}
-
-	private void executeForkThreadOther(final ForkThreadOther forkThreadOther) {
-		// TODO Auto-generated method stub
-	}
-
-	private void executeJoinThreadCurrent(final JoinThreadCurrent joinThreadCurrent) {
-		// TODO Auto-generated method stub
-	}
-
-	private void executeJoinThreadOther(final JoinThreadOther joinThreadOther) {
-		// TODO Auto-generated method stub
-	}
-
+	
 }

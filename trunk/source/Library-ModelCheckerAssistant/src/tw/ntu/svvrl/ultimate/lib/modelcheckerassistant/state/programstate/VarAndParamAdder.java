@@ -16,6 +16,8 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.I
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramNonOldVar;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramOldVar;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.IProgramVar;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.Valuation;
+import de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.util.SFO;
 
 public class VarAndParamAdder {
 	/*---------------RCFG fields---------------*/
@@ -236,6 +238,18 @@ public class VarAndParamAdder {
 			throw new UnsupportedOperationException("Unsupported"
 					+ "BoogieType:" + bt.toString());
 		}
+	}
+
+	/**
+	 * Because the global variable #pthreadsForks is not initialize
+	 * in the input Boogie program. We initialize it to 1 (main thread).
+	 * Once a thread is ready to be forked, the variable will increase by 1.
+	 * #pthreadsForks records the number of threads created and it never decreases.
+	 * @param valuation
+	 */
+	public void addPthreadsForks(Valuation valuation) {
+		long initialCount = 1;
+		valuation.setValue(null, SFO.ULTIMATE_FORK_COUNT, initialCount);
 	}
 
 }

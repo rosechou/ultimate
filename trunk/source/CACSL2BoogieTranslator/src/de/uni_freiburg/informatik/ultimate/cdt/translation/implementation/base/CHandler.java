@@ -1364,7 +1364,11 @@ public class CHandler {
 			final ArrayList<Declaration> decl = new ArrayList<>(rExp.getDeclarations());
 			final List<Overapprox> overappr = new ArrayList<>();
 
-			stmt.addAll(CTranslationUtil.createHavocsForAuxVars(rExp.getAuxVars()));
+			/*---------------SimplePthreadTranslation---------------*/
+			if(!mSettings.useSimplePthreadTranslation()) {
+				stmt.addAll(CTranslationUtil.createHavocsForAuxVars(rExp.getAuxVars()));
+			}
+			/*------------------------------------------------------*/
 			overappr.addAll(rExp.getOverapprs());
 			return new ExpressionResult(stmt, rExp.getLrValue(), decl, Collections.emptySet(), overappr);
 		} else if (r instanceof ExpressionListResult) {
@@ -3141,9 +3145,10 @@ public class CHandler {
 					if (acslResult instanceof ExpressionResult) {
 						resultBuilder.addDeclarations(((ExpressionResult) acslResult).getDeclarations());
 						resultBuilder.addStatements(((ExpressionResult) acslResult).getStatements());
-						resultBuilder.addStatements(
-								CTranslationUtil.createHavocsForAuxVars(((ExpressionResult) acslResult).getAuxVars()));
-
+						if(!mSettings.useSimplePthreadTranslation()) {
+							resultBuilder.addStatements(
+									CTranslationUtil.createHavocsForAuxVars(((ExpressionResult) acslResult).getAuxVars()));
+						}
 					} else {
 						final String msg = "Unexpected ACSL comment: " + acslResult.getNode().getClass();
 						final ILocation loc = mLocationFactory.createCLocation(parent);

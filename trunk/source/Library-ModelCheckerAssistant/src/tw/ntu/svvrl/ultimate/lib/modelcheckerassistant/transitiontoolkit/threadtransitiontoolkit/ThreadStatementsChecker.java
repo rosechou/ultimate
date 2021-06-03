@@ -14,7 +14,7 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 	
 	public ThreadStatementsChecker(final List<Statement> statements, final ThreadState state) {
 		super(statements);
-		mState = new ThreadState(state);
+		mState = state;
 	}
 	
 	/**
@@ -62,6 +62,6 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 	}
 	
 	private void moveToNewState(final ThreadState newState) {
-		mState = new ThreadState(newState);
+		mState = newState;
 	}
 }

@@ -1,5 +1,6 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit;
 
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
@@ -11,8 +12,13 @@ public class ThreadTransitionToolkit extends TransitionToolkit<ThreadState> {
 	
 	public ThreadTransitionToolkit(final ThreadStateTransition trans, final ThreadState state) {
 		mTrans = trans;
-		CodeBlock codeBlock = (CodeBlock) trans.getIcfgEdge();
-		mCodeBlockExecutor = new ThreadCodeBlockExecutor(codeBlock, state);
+		IcfgEdge edge = trans.getIcfgEdge();
+		if(edge instanceof CodeBlock) {
+			final CodeBlock codeBlock = (CodeBlock) edge;
+			mCodeBlockExecutor = new ThreadCodeBlockExecutor(codeBlock, state);
+		} else {
+			throw new UnsupportedOperationException("RCFG edge is not in type CodeBlock.");
+		}
 	}
 	
 	/**

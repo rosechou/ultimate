@@ -126,6 +126,12 @@ public class CACSLPreferenceInitializer extends UltimatePreferenceInitializer {
 			+ "the values's pointed to type size (for char: 1 Byte), the memory model is unsound. When this setting is "
 			+ "on we attempt to detect this case, and automatically set the memory model to a higher resolution.";
 
+	/**
+	 * By Hong-Yang Lin, to remove complicated memory operation which cause the difficulty
+	 * in fork and join execution.
+	 */
+	public static final String LABEL_USE_SIMPLE_PTHREAD_TRANSLATION = "Use simple pthread translation";
+	
 	public enum PointerCheckMode {
 		IGNORE, ASSUME, ASSERTandASSUME
 	}
@@ -284,6 +290,11 @@ public class CACSLPreferenceInitializer extends UltimatePreferenceInitializer {
 
 				new UltimatePreferenceItem<>(LABEL_SMT_BOOL_ARRAYS_WORKAROUND, true, PreferenceType.Boolean),
 
+				/**
+				 * 2021-05-28 by Hong-Yang Lin
+				 */
+				new UltimatePreferenceItem<>(LABEL_USE_SIMPLE_PTHREAD_TRANSLATION, false, PreferenceType.Boolean),
+				
 				// typesize stuff
 				new UltimatePreferenceItem<>(LABEL_USE_EXPLICIT_TYPESIZES, true, PreferenceType.Boolean),
 				new UltimatePreferenceItem<>(LABEL_EXPLICIT_TYPESIZE_BOOL, 1, PreferenceType.Integer),

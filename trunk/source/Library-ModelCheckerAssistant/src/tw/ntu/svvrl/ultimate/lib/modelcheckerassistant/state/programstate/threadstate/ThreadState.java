@@ -8,10 +8,10 @@ import java.util.Stack;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit.ThreadTransitionToolkit;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.Valuation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.ValuationState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.FuncInitValuationInfo;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProcInfo;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Valuation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
 
 /**
@@ -42,10 +42,9 @@ public class ThreadState extends ValuationState<ThreadState>{
 	
 	
 	/**
-	 * Not yet implement.
+	 * From 0 to total number of threads - 1.
 	 */
-	private final int mThreadID = 0;
-	
+	private long mThreadID;
 	
 	/**
 	 * Initial constructor.
@@ -59,7 +58,8 @@ public class ThreadState extends ValuationState<ThreadState>{
 						final BoogieIcfgLocation boogieIcfgLocation,
 						final FuncInitValuationInfo funcInitValuationInfo,
 						final Map<String, List<String>> proc2InParams,
-						final Map<String, List<String>> proc2OutParams) {
+						final Map<String, List<String>> proc2OutParams,
+						final long threadID, final long forkedFrom) {
 		mValuation = v;
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
 		mFuncInitValuationInfo = funcInitValuationInfo;
@@ -67,6 +67,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 		mProc2OutParams = proc2OutParams;
 		mProcStack.push(
 				new ProcInfo(mCorrespondingIcfgLoc.getProcedure()));
+		mThreadID = threadID;
 	}
 	
 	/**
@@ -85,6 +86,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 		mProc2InParams = oldState.getProc2InParams();
 		mProc2OutParams = oldState.getProc2OutParams();
 		mProcStack = oldState.getProcStackCopy();
+		mThreadID = oldState.getThreadID();
 	}
 	
 	/**
@@ -99,6 +101,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 		mProc2InParams = threadState.getProc2InParams();
 		mProc2OutParams = threadState.getProc2OutParams();
 		mProcStack = threadState.getProcStackCopy();
+		mThreadID = threadState.getThreadID();
 	}
 
 	public BoogieIcfgLocation getCorrespondingIcfgLoc() {
@@ -133,8 +136,12 @@ public class ThreadState extends ValuationState<ThreadState>{
 		return mProcStack.peek();
 	}
 	
-	public int getThreadID() {
+	public long getThreadID() {
 		return mThreadID;
+	}
+	
+	public void assignNewThreadID(final long newThreadID) {
+		mThreadID = newThreadID;
 	}
 	
 	public Valuation getValuation() {
@@ -144,15 +151,15 @@ public class ThreadState extends ValuationState<ThreadState>{
 	/**
 	 * @note Only used when procedure {@link Return}.
 	 */
-	public void setValuation(Valuation v) {
-		mValuation = v;
+	public void resetLocalValuation(Valuation v) {
+		mValuation.resetLocals(v);
 	}
 	
 	public ProcInfo getCallerProc() {
 		if(mProcStack.size() > 1) {
-			ProcInfo temp = mProcStack.peek();
+			final ProcInfo temp = mProcStack.peek();
 			mProcStack.pop();
-			ProcInfo result = mProcStack.peek();
+			final ProcInfo result = mProcStack.peek();
 			mProcStack.push(temp);
 			return result;
 		} else {
@@ -177,10 +184,13 @@ public class ThreadState extends ValuationState<ThreadState>{
 	 * 		a list of enable transitions.
 	 */
 	public List<ThreadStateTransition> getEnableTrans() {
-		List<IcfgEdge> edges = mCorrespondingIcfgLoc.getOutgoingEdges();
-		List<ThreadStateTransition> enableTrans = new ArrayList<>();
+		final List<IcfgEdge> edges = mCorrespondingIcfgLoc.getOutgoingEdges();
+		final List<ThreadStateTransition> enableTrans = new ArrayList<>();
 		for(final IcfgEdge edge : edges) {
-			ThreadStateTransition trans = new ThreadStateTransition(edge, mThreadID);
+			/**
+			 * Mark outgoing edge using current thread ID.
+			 */
+			final ThreadStateTransition trans = new ThreadStateTransition(edge, mThreadID);
 			final ThreadTransitionToolkit transitionToolkit 
 					= new ThreadTransitionToolkit(trans, this);
 			if (transitionToolkit.checkTransEnable()) {

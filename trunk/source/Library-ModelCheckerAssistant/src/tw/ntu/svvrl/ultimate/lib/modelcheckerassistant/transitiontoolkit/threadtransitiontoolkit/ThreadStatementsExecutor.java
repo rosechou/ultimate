@@ -1,9 +1,11 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import org.apache.commons.lang3.NotImplementedException;
 
@@ -29,8 +31,8 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WhileStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogiePrimitiveType;
 import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.Valuation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProcInfo;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Valuation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
 
@@ -113,7 +115,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 
 
 	private void executeAssertStatement(AssertStatement stmt) {
-		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
 		if(!(boolean) exprEvaluator.evaluate(stmt.getFormula())) {
 			throw new UnsupportedOperationException("Assertion is violated during"
 					+ " the statement execution.");
@@ -152,10 +154,10 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 				 * It seems no chance to occur. (?)
 				 */
 				throw new UnsupportedOperationException(StructLHS.class.getSimpleName() 
-						+ "is not yet supported.");
+						+ " is not yet supported.");
 			} else if(lhs[i] instanceof StructLHS) {
 				throw new UnsupportedOperationException(StructLHS.class.getSimpleName() 
-						+ "is not yet supported.");
+						+ " is not yet supported.");
 			}
 		}
 	}
@@ -185,11 +187,171 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 
 	private void executeCallStatement(CallStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
+		
+		recordOlds();
 		/**
 		 * {@link CallStatement#isForall} is not yet implemented.
 		 */
-		String procName = stmt.getMethodName();
-		Expression[] args = stmt.getArguments();
+		final String procName = stmt.getMethodName();
+		final Expression[] args = stmt.getArguments();
+		
+		doCallRoutines(procName, args);
+	}
+
+	private void executeForkStatement(ForkStatement stmt) {
+		assert mCurrentState instanceof ThreadState;
+		
+		recordOlds();
+		final String procName = stmt.getProcedureName();
+		final Expression[] args = stmt.getArguments();
+		
+		doCallRoutines(procName, args);
+		
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
+		long newThreadID = (long) exprEvaluator.evaluate(stmt.getThreadID()[0]);
+		mCurrentState.assignNewThreadID(newThreadID);
+	}
+
+	private void executeGotoStatement(GotoStatement stmt) {
+		/**
+		 * Suppose this statement would not occur here because
+		 * this statement is translated to {@link GotoEdge} during the
+		 * preprocessing of Boogie and the building of RCFG.
+		 */
+		throw new UnsupportedOperationException(stmt.getClass().getSimpleName()
+				+ "should not appear.");
+	}
+
+	private void executeHavocStatement(HavocStatement stmt) {
+		assert mCurrentState instanceof ThreadState;
+		VariableLHS[] lhs = stmt.getIdentifiers();
+		for(int i = 0; i < lhs.length; i++) {
+			final String procName = lhs[i].getDeclarationInformation().getProcedure();
+			final String varName = lhs[i].getIdentifier();
+			final IBoogieType bt = lhs[i].getType();
+			if (bt instanceof BoogiePrimitiveType) {
+				final Random r = new Random();
+				Object value;
+				switch(((BoogiePrimitiveType) bt).getTypeCode()) {
+					case BoogiePrimitiveType.BOOL:
+						value = r.nextBoolean();
+						updateThreadState(procName, varName, value);
+						break;
+					case BoogiePrimitiveType.INT:
+						value = r.nextInt();
+						updateThreadState(procName, varName, value);
+						break;
+					case BoogiePrimitiveType.REAL:
+						throw new NotImplementedException("Boogie variable with type"
+								+ ((BoogiePrimitiveType) bt).toString() + " is not yet implemented.");
+					case BoogiePrimitiveType.ERROR:
+					default:
+						throw new UnsupportedOperationException("Boogie variable with"
+								+ " error or unknown type.");
+				}
+				
+			} else {
+				throw new UnsupportedOperationException("Unsupported"
+						+ "BoogieType:" + bt.toString() + " in havoc statement");
+			}
+		}
+	}
+
+	private void executeIfStatement(IfStatement stmt) {
+		assert mCurrentState instanceof ThreadState;
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
+		if((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
+			final ThreadStatementsExecutor newStatementsExecutor
+					 = new ThreadStatementsExecutor(Arrays.asList(stmt.getThenPart()), mCurrentState, mExecType);
+			final ThreadState newState = newStatementsExecutor.execute();
+			setCurrentState(newState);
+		} else {
+			final ThreadStatementsExecutor newStatementsExecutor
+			 		= new ThreadStatementsExecutor(Arrays.asList(stmt.getElsePart()), mCurrentState, mExecType);
+			final ThreadState newState = newStatementsExecutor.execute();
+			setCurrentState(newState);
+		}
+	}
+
+	private void executeJoinStatement(JoinStatement stmt) {
+		/**
+		 * Join statement is implemented in the {@link JoinHandler}
+		 * because we need other thread state's information.
+		 */
+		throw new UnsupportedOperationException(stmt.getClass().getSimpleName()
+				+ " is not implemented in the statement executor.");
+	}
+
+	private void executeLabel(Label stmt) {
+		/**
+		 * Do nothing.
+		 */
+	}
+
+	private void executeReturnStatement(ReturnStatement stmt) {
+		assert mCurrentState instanceof ThreadState;
+		/**
+		 * Cannot produce this case
+		 */
+		throw new NotImplementedException(stmt.getClass().getSimpleName()
+				+ "is not yet implemented.");
+	}
+
+	private void executeWhileStatement(WhileStatement stmt) {
+		assert mCurrentState instanceof ThreadState;
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
+		while((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
+			final ThreadStatementsExecutor newStatementsExecutor
+	 			= new ThreadStatementsExecutor(Arrays.asList(stmt.getBody()), mCurrentState, mExecType);
+			final ThreadState newState = newStatementsExecutor.execute();
+			setCurrentState(newState);
+		}
+	}
+	
+	public void updateThreadState(final String procName, final String varName, final Object value) {
+		Valuation newValuation;
+		if(mExecType == execType.check) {
+			newValuation = mCurrentState.getValuationFullCopy();
+		} else if(mExecType == execType.realExec) {
+			newValuation = mCurrentState.getValuationLocalCopy();
+		} else {
+			throw new UnsupportedOperationException("Unknown execType: " + 
+					mExecType.getClass().getSimpleName());
+		}
+		
+		assert(newValuation.containsProcOrFunc(procName));
+		newValuation.setValue(procName, varName, value);
+
+		mCurrentState = new ThreadState(newValuation, mCurrentState);
+	}
+	
+	
+	private void setCurrentState(ThreadState newState) {
+		mCurrentState = newState;
+	}
+	
+	public ThreadState getCurrentState() {
+		return mCurrentState;
+	}
+	
+	private void recordOlds() {
+		/**
+		 * Record current value of global variables to old variables.
+		 */
+		final Map<String, Object> globalId2v = mCurrentState.getValuation().getProcOrFuncId2V(null);
+		final Set<String> globalNonOldVarNames = new HashSet<>();
+		for(final String globalVarName : globalId2v.keySet()) {
+			if(!mCurrentState.getValuation().isOld(globalVarName)) {
+				globalNonOldVarNames.add(globalVarName);
+			}
+		}
+		for(final String globalNonOldVarName : globalNonOldVarNames) {
+			final String oldVarName = "old(" + globalNonOldVarName + ")";
+			updateThreadState(null, oldVarName, globalId2v.get(globalNonOldVarName));
+		}
+	}
+	
+	private void doCallRoutines(String procName, Expression[] args) {
 		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
 		
 		List<String> argsName = mCurrentState.getProc2InParams().get(procName);
@@ -216,127 +378,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 			updateThreadState(procName, argsName.get(i), exprEvaluator.evaluate(args[i]));
 		}
 		mCurrentState.pushProc(new ProcInfo(procName));
-	}
-
-	private void executeForkStatement(ForkStatement stmt) {
-		assert mCurrentState instanceof ThreadState;
-	}
-
-	private void executeGotoStatement(GotoStatement stmt) {
-		/**
-		 * Suppose this statement would not occur here because
-		 * this statement is translated to {@link GotoEdge} during the
-		 * preprocessing of Boogie and the building of RCFG.
-		 */
-		throw new UnsupportedOperationException(stmt.getClass().getSimpleName()
-				+ "should not appear.");
-	}
-
-	private void executeHavocStatement(HavocStatement stmt) {
-		assert mCurrentState instanceof ThreadState;
-		VariableLHS[] lhs = stmt.getIdentifiers();
-		for(int i = 0; i < lhs.length; i++) {
-			final String procName = lhs[i].getDeclarationInformation().getProcedure();
-			final String varName = lhs[i].getIdentifier();
-			IBoogieType bt = lhs[i].getType();
-			if (bt instanceof BoogiePrimitiveType) {
-				final Random r = new Random();
-				Object value;
-				switch(((BoogiePrimitiveType) bt).getTypeCode()) {
-					case BoogiePrimitiveType.BOOL:
-						value = r.nextBoolean();
-						updateThreadState(procName, varName, value);
-						break;
-					case BoogiePrimitiveType.INT:
-						value = r.nextInt();
-						updateThreadState(procName, varName, value);
-						break;
-					case BoogiePrimitiveType.REAL:
-						throw new NotImplementedException("Boogie variable with type"
-								+ ((BoogiePrimitiveType) bt).toString() + " is not yet implemented.");
-					case BoogiePrimitiveType.ERROR:
-					default:
-						throw new UnsupportedOperationException("Boogie variable with"
-								+ " error or unknown type.");
-				}
-				
-			} else {
-				throw new UnsupportedOperationException("Unsupported"
-						+ "BoogieType:" + bt.toString() + "in havoc statement");
-			}
-		}
-	}
-
-	private void executeIfStatement(IfStatement stmt) {
-		assert mCurrentState instanceof ThreadState;
-		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
-		if((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
-			ThreadStatementsExecutor newStatementsExecutor
-					 = new ThreadStatementsExecutor(Arrays.asList(stmt.getThenPart()), mCurrentState, mExecType);
-			ThreadState newState = newStatementsExecutor.execute();
-			setCurrentState(newState);
-		} else {
-			ThreadStatementsExecutor newStatementsExecutor
-			 		= new ThreadStatementsExecutor(Arrays.asList(stmt.getElsePart()), mCurrentState, mExecType);
-			ThreadState newState = newStatementsExecutor.execute();
-			setCurrentState(newState);
-		}
-	}
-
-	private void executeJoinStatement(JoinStatement stmt) {
-		assert mCurrentState instanceof ThreadState;
-	}
-
-	private void executeLabel(Label stmt) {
-		/**
-		 * Do nothing.
-		 */
-	}
-
-	private void executeReturnStatement(ReturnStatement stmt) {
-		assert mCurrentState instanceof ThreadState;
-		/**
-		 * Cannot produce this case
-		 */
-		throw new NotImplementedException(stmt.getClass().getSimpleName()
-				+ "is not yet implemented.");
-	}
-
-	private void executeWhileStatement(WhileStatement stmt) {
-		assert mCurrentState instanceof ThreadState;
-		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
-		while((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
-			ThreadStatementsExecutor newStatementsExecutor
-	 			= new ThreadStatementsExecutor(Arrays.asList(stmt.getBody()), mCurrentState, mExecType);
-			ThreadState newState = newStatementsExecutor.execute();
-			setCurrentState(newState);
-		}
-	}
-	
-	public void updateThreadState(final String procName, final String varName, final Object value) {
-		Valuation newValuation;
-		if(mExecType == execType.check) {
-			newValuation = mCurrentState.getValuationFullCopy();
-		} else if(mExecType == execType.realExec) {
-			newValuation = mCurrentState.getValuationLocalCopy();
-		} else {
-			throw new UnsupportedOperationException("Unknown execType: " + 
-					mExecType.getClass().getSimpleName());
-		}
 		
-		assert(newValuation.containsProcOrFunc(procName));
-		newValuation.setValue(procName, varName, value);
-
-		mCurrentState = new ThreadState(newValuation, mCurrentState);
-	}
-	
-	
-	private void setCurrentState(ThreadState newState) {
-		mCurrentState = new ThreadState(newState);
-	}
-	
-	public ThreadState getCurrentState() {
-		return mCurrentState;
 	}
 
 }

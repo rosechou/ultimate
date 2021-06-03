@@ -7,6 +7,7 @@ import java.util.Map;
 
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Expression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.FunctionDeclaration;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.Valuation;
 
 public class FuncInitValuationInfo {
 	/**

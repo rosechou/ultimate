@@ -30,6 +30,7 @@ import java.util.*;
 public class ModelCheckerVerifier {
 	private final ModelCheckerAssistant assistant;
 	private final ILogger mLogger;
+	private boolean match = false;
 	//	ProgramState is the node of the Control Flow Graph
 	private List<ProgramState> levelNodes = new ArrayList<ProgramState>();
 	// ProgramState preState = null;
@@ -59,6 +60,7 @@ public class ModelCheckerVerifier {
 		// NeverState init = (NeverState) initIterator.next();
 		
 		for (int i = 0;i < levelNodes.size();i++) {
+			if(match) {return;}
 			dfsBlue(levelNodes.get(i), init);
 		}
 		
@@ -85,7 +87,9 @@ public class ModelCheckerVerifier {
 			{
 				if(nextNode.equals(firstVisited.get(k)) && (neverEdges.size()>0))
 				{
+					match = true;
 					mLogger.info("report cycle");
+					return;
 				}
 			}
 
@@ -119,12 +123,14 @@ public class ModelCheckerVerifier {
 		
 		anotherTrans:
 		for (int i = 0;i < levelNodes.size();i++) {
+			if(match) {return;}
 			ProgramState nextNode = levelNodes.get(i);
 			
 			for(int k = 0;k < firstVisited.size();k++)
 			{
 				if(nextNode.equals(firstVisited.get(k)))
 				{
+					levelNodes.remove(i);
 					break anotherTrans;
 				}
 			}
@@ -132,6 +138,7 @@ public class ModelCheckerVerifier {
 			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = init.getEnableTrans(nextNode);
 			
 			for (int j = 0;j < neverEdges.size();j++) {
+				if(match) {return;}
 				OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
 				NeverState nextState = init.doTransition(neverEdge, nextNode);
 				
@@ -144,6 +151,7 @@ public class ModelCheckerVerifier {
 		
 		if(!bluepath.empty())
 		{
+			if(match) {return;}
 			if(bluepath.peek().getSecond().isFinal())
 			{
 				seed = bluepath.peek().getFirst();
@@ -152,6 +160,7 @@ public class ModelCheckerVerifier {
 		}
 		if(!bluepath.empty())
 		{
+			if(match) {return;}
 			bluepath.pop();
 		}
 	}

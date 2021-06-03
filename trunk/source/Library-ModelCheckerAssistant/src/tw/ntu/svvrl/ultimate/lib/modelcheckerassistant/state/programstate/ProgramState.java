@@ -1,6 +1,7 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -186,7 +187,7 @@ public class ProgramState extends ValuationState<ProgramState> {
 	 * Check whether two program automaton states are equivalent.
 	 * This method is needed in the nested DFS procedure. 
 	 * @param anotherProgramState
-	 * 		the state which is going to be compared to.
+	 * 		the state which is going to compared with.
 	 * @return
 	 * 		true if two states are equivalent, false if not.
 	 */
@@ -196,15 +197,30 @@ public class ProgramState extends ValuationState<ProgramState> {
 			return false;
 		}
 		
-		int equalCount = 0;
-		for(final ThreadState anotherThreadState : anotherProgramState.mThreadStates.values()) {
-			for(final ThreadState thisThreadState : mThreadStates.values()) {
-				if(anotherThreadState.equals(thisThreadState)) {
-					equalCount++;
+		List<Boolean> match = new ArrayList<>();
+		for(int i = 0; i < this.getThreadNumber(); i++) {
+			match.add(false);
+		}
+		
+		/**
+		 * If two program state are equivalent, thread states must have
+		 * one-to-one mapping.
+		 */
+		ThreadState[] thisThreadStates = (ThreadState[]) this.mThreadStates.values().toArray();
+		ThreadState[] anotherThreadStates = (ThreadState[]) anotherProgramState.mThreadStates.values().toArray();
+		for(int i = 0; i < this.getThreadNumber(); i++) {
+			for(int j = 0; j < this.getThreadNumber(); j++) {
+				if(!match.get(j) && thisThreadStates[i].equals(anotherThreadStates[j])) {
+					match.set(j, true);
 					break;
 				}
 			}
 		}
-		return equalCount == this.getThreadNumber() ? true : false;
+		
+		/**
+		 * If there's any thread state that doesn't match, the two program states
+		 * are not equivelent.
+		 */
+		return !match.contains(false);
 	}
 }

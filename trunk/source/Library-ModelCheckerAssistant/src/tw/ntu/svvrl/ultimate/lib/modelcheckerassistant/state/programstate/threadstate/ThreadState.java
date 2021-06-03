@@ -34,7 +34,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 	
 	/**
 	 * The stack that keeps the procedure calls.
-	 * top element is the current procedure name.
+	 * top element is the current procedure.
 	 * call: push
 	 * return: pop
 	 */

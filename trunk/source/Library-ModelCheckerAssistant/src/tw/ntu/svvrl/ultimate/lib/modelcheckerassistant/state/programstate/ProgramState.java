@@ -41,14 +41,6 @@ public class ProgramState extends ValuationState<ProgramState> {
 		mExitNodes = exitNodes;
 	}
 	
-	public boolean isErrorState() {
-		for(final ThreadState threadState : mThreadStates.values()) {
-			if(threadState.getCorrespondingIcfgLoc().isErrorLocation()) {
-				return true;
-			}
-		}
-		return false;
-	}
 	
 	/**
 	 * Deep copy a program state and let all the threadStates' global valuation 
@@ -63,6 +55,15 @@ public class ProgramState extends ValuationState<ProgramState> {
 		}
 		mEntryNodes = state.getEntryNodesMap();
 		mExitNodes = state.getExitNodesMap();
+	}
+	
+	public boolean isErrorState() {
+		for(final ThreadState threadState : mThreadStates.values()) {
+			if(threadState.getCorrespondingIcfgLoc().isErrorLocation()) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public List<ThreadStateTransition> getEnableTrans() {

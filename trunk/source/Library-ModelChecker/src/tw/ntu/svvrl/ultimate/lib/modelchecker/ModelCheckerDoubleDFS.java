@@ -1,4 +1,4 @@
-package tw.ntu.svvrl.ultimate.lib.modelcheckerverifier;
+package tw.ntu.svvrl.ultimate.lib.modelchecker;
 
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.*;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
@@ -15,7 +15,6 @@ import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.Pair;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverStateFactory;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.ModelCheckerAssistant;
 
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,7 +26,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.*;
 
-public class ModelCheckerVerifier {
+public class ModelCheckerDoubleDFS{
 	private final ModelCheckerAssistant assistant;
 	private final ILogger mLogger;
 	private boolean match = false;
@@ -36,6 +35,7 @@ public class ModelCheckerVerifier {
 	// ProgramState preState = null;
 	ProgramState loc = null;
 	ProgramState seed = null;
+	NeverState Neverseed = null;
 	Stack<ProgramState> firstVisited = new Stack<>();
 	Stack<ProgramState> secondVisited = new Stack<>();
 
@@ -45,7 +45,7 @@ public class ModelCheckerVerifier {
 	Stack<Pair<ProgramState, NeverState>> bluepath = new Stack<>();
 	Stack<Pair<ProgramState, NeverState>> redpath = new Stack<>();
 	
-	public ModelCheckerVerifier(final ILogger logger, final ModelCheckerAssistant mca)
+	public ModelCheckerDoubleDFS(final ILogger logger, final ModelCheckerAssistant mca)
 	{	
 		mLogger = logger;
 		assistant = mca;
@@ -55,13 +55,17 @@ public class ModelCheckerVerifier {
 		// set of initial states of automaton
 		Set<NeverState> initStates = new HashSet<>();
 		initStates = assistant.getNeverInitialStates();
-		NeverState init = ((NeverState) initStates.toArray()[0]);
+		
 		// Iterator initIterator = initStates.iterator();
 		// NeverState init = (NeverState) initIterator.next();
 		
 		for (int i = 0;i < levelNodes.size();i++) {
-			if(match) {return;}
-			dfsBlue(levelNodes.get(i), init);
+			for(int j = 0;j < initStates.size();j++)
+			{
+				if(match) {return;}
+				NeverState init = ((NeverState) initStates.toArray()[j]);
+				dfsBlue(levelNodes.get(i), init);
+			}
 		}
 		
 	}
@@ -83,24 +87,34 @@ public class ModelCheckerVerifier {
 			
 			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = state.getEnableTrans(nextNode);
 			
-			for(int k = 0;k < firstVisited.size();k++)
-			{
-				if(nextNode.equals(firstVisited.get(k)) && (neverEdges.size()>0))
+//			for(int k = 0;k < firstVisited.size();k++)
+//			{
+//				if(nextNode.equals(firstVisited.get(k)) && (neverEdges.size()>0))
+//				{
+//					match = true;
+//					mLogger.info("report cycle");
+//					return;
+//				}
+//			}
+//			else if(nextNode.equals(seed) && nextState.equals(Neverseed))
+			
+			for (int j = 0;j < neverEdges.size();j++) {
+				OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
+				NeverState nextState = state.doTransition(neverEdge, nextNode);
+				
+				if(!secondVisited.contains(nextNode))
+				{
+					Pair p = new Pair(node, state);
+					redpath.push(p);
+					dfsRed(nextNode, nextState);
+				}
+				else if(nextNode.equals(seed))
+//				else if(firstVisited.contains(nextNode))
 				{
 					match = true;
 					mLogger.info("report cycle");
 					return;
 				}
-			}
-
-			for (int j = 0;j < neverEdges.size();j++) {
-				OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
-				NeverState nextState = state.doTransition(neverEdge, nextNode);
-				
-				Pair p = new Pair(node, state);
-				redpath.push(p);
-				
-				dfsRed(nextNode, nextState);
 			}	
 		}
 		if(!redpath.empty())
@@ -121,32 +135,47 @@ public class ModelCheckerVerifier {
 		}
 		levelNodes = nProgramNodes;
 		
-		anotherTrans:
+//		anotherTrans:
 		for (int i = 0;i < levelNodes.size();i++) {
 			if(match) {return;}
 			ProgramState nextNode = levelNodes.get(i);
 			
-			for(int k = 0;k < firstVisited.size();k++)
+//			for(int k = 0;k < firstVisited.size();k++)
+//			{
+//				if(nextNode.equals(firstVisited.get(k)))
+//				{
+//					levelNodes.remove(i);
+//					break anotherTrans;
+//				}
+//			}
+			
+			if(!firstVisited.contains(nextNode))
 			{
-				if(nextNode.equals(firstVisited.get(k)))
-				{
-					levelNodes.remove(i);
-					break anotherTrans;
-				}
+				List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = init.getEnableTrans(nextNode);
+				
+				for (int j = 0;j < neverEdges.size();j++) {
+					if(match) {return;}
+					OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
+					NeverState nextState = init.doTransition(neverEdge, nextNode);
+					
+					Pair p = new Pair(node, init);
+					bluepath.push(p);
+					dfsBlue(nextNode, nextState);
+				}	
 			}
 			
-			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = init.getEnableTrans(nextNode);
-			
-			for (int j = 0;j < neverEdges.size();j++) {
-				if(match) {return;}
-				OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
-				NeverState nextState = init.doTransition(neverEdge, nextNode);
-				
-				Pair p = new Pair(node, init);
-				bluepath.push(p);
-				
-				dfsBlue(nextNode, nextState);
-			}	
+//			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = init.getEnableTrans(nextNode);
+//			
+//			for (int j = 0;j < neverEdges.size();j++) {
+//				if(match) {return;}
+//				OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
+//				NeverState nextState = init.doTransition(neverEdge, nextNode);
+//				
+//				Pair p = new Pair(node, init);
+//				bluepath.push(p);
+//				
+//				dfsBlue(nextNode, nextState);
+//			}	
 		}
 		
 		if(!bluepath.empty())
@@ -155,12 +184,9 @@ public class ModelCheckerVerifier {
 			if(bluepath.peek().getSecond().isFinal())
 			{
 				seed = bluepath.peek().getFirst();
-				dfsRed(seed, bluepath.peek().getSecond());
+				Neverseed = bluepath.peek().getSecond();
+				dfsRed(seed, Neverseed);
 			}
-		}
-		if(!bluepath.empty())
-		{
-			if(match) {return;}
 			bluepath.pop();
 		}
 	}

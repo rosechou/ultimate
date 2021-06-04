@@ -28,6 +28,8 @@
 package tw.ntu.svvrl.ultimate.debugplugin;
 
 import java.util.ArrayList;
+
+import tw.ntu.svvrl.ultimate.lib.modelchecker.ModelCheckerDoubleDFS;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.*;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.NeverClaimAutExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
@@ -35,7 +37,6 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverSta
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerverifier.ModelCheckerVerifier;
 
 import java.util.HashSet;
 import java.util.List;
@@ -70,7 +71,7 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 	
 	private ModelCheckerAssistant mModelCheckerAssistant;
 	
-	private ModelCheckerVerifier mModelCheckerVerifier;
+	private ModelCheckerDoubleDFS mModelCheckerDoubleDFS;
 	
 	public DebugPluginObserver(final ILogger logger, final IUltimateServiceProvider services) {
 		mLogger = logger;
@@ -78,7 +79,7 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		mRcfg = null;
 		mNeverClaimNWAContainer = null;
 		mModelCheckerAssistant = null;
-		mModelCheckerVerifier = null;
+		mModelCheckerDoubleDFS = null;
 	}
 
 	@Override
@@ -101,8 +102,8 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		mModelCheckerAssistant = new ModelCheckerAssistant(mNeverClaimNWAContainer.getValue(), mRcfg, mLogger, mServices);
 		// mModelCheckerAssistant = new ModelCheckerAssistant(mRcfg, mLogger, mServices);
 		
-		mModelCheckerVerifier = new ModelCheckerVerifier(mLogger, mModelCheckerAssistant);
-		mLogger.info("Finished Verifier setup");
+		mModelCheckerDoubleDFS= new ModelCheckerDoubleDFS(mLogger, mModelCheckerAssistant);
+		mLogger.info("Finished Verifier");
 		
 		/*-----------debugging-----------*/
 //		Set<ProgramState> pInitialStates = new HashSet<>();

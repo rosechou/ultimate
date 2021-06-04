@@ -1,10 +1,10 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Library-ModelCheckerUtilsVerifier
-Bundle-SymbolicName: tw.ntu.svvrl.ultimate.lib.modelcheckerverifier
+Bundle-SymbolicName: tw.ntu.svvrl.ultimate.lib.modelchecker
 Bundle-Version: 0.2.1
 Bundle-RequiredExecutionEnvironment: JavaSE-11
-Export-Package: tw.ntu.svvrl.ultimate.lib.modelcheckerverifier
+Export-Package: tw.ntu.svvrl.ultimate.lib.modelchecker
 Require-Bundle: de.uni_freiburg.informatik.ultimate.core,
  de.uni_freiburg.informatik.ultimate.lib.util,
  de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils,
@@ -18,4 +18,4 @@ Require-Bundle: de.uni_freiburg.informatik.ultimate.core,
  net.sf.javabdd,
  tw.ntu.svvrl.ultimate.lib.modelcheckerassistant;bundle-version="0.2.1"
 Import-Package: org.apache.commons.lang3
-Automatic-Module-Name: tw.ntu.svvrl.ultimate.lib.modelcheckerverifier
+Automatic-Module-Name: tw.ntu.svvrl.ultimate.lib.modelchecker

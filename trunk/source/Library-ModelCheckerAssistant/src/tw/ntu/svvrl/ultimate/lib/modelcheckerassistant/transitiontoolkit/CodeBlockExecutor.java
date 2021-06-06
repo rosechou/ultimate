@@ -7,6 +7,6 @@ public abstract class CodeBlockExecutor<S extends IState<S>> {
 	protected S mCurrentState;
 	protected CodeBlock mCodeBlock;
 
-	protected abstract boolean checkEnable();
+	protected abstract boolean checkEnabled();
 
 }

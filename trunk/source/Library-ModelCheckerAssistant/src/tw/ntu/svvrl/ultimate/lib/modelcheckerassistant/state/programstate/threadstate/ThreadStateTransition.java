@@ -6,9 +6,9 @@ public class ThreadStateTransition {
 	private final IcfgEdge mIcfgEdge;
 	private final long mThreadID;
 	
-	public ThreadStateTransition(IcfgEdge edge, long mThreadID2) {
+	public ThreadStateTransition(IcfgEdge edge, long threadID) {
 		mIcfgEdge = edge;
-		mThreadID = mThreadID2;
+		mThreadID = threadID;
 	}
 	
 	public IcfgEdge getIcfgEdge() {

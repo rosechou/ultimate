@@ -53,7 +53,7 @@ public class NeverState implements IState<NeverState>{
 		for(final OutgoingInternalTransition<CodeBlock, NeverState> edge : mTranss) {
 			final NeverTransitionToolkit transitionToolkit
 			= new NeverTransitionToolkit(edge, this, correspondingProgramState);
-			if (transitionToolkit.checkTransEnable()) {
+			if (transitionToolkit.checkTransEnabled()) {
 				enableTrans.add(edge);
 			}
 		}

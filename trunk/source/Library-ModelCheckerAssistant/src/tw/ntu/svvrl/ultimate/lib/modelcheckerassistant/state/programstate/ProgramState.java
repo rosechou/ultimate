@@ -67,7 +67,8 @@ public class ProgramState extends ValuationState<ProgramState> {
 		return false;
 	}
 	
-	public List<ThreadStateTransition> getEnableTrans() {
+	
+	public List<ThreadStateTransition> getEnabledTrans() {
 //		/**
 //		 * Check if there are threads being in the exit node.
 //		 * If so, unlock the block of the thread where current thread
@@ -82,9 +83,9 @@ public class ProgramState extends ValuationState<ProgramState> {
 //		}
 		
 		
-		final List<ThreadStateTransition> enableTrans = new ArrayList<>();
+		final List<ThreadStateTransition> enabledTrans = new ArrayList<>();
 		for(final ThreadState threadState : mThreadStates.values()) {
-			enableTrans.addAll(threadState.getEnableTrans());
+			enabledTrans.addAll(threadState.getEnabledTrans());
 		}
 		
 		/**
@@ -92,7 +93,7 @@ public class ProgramState extends ValuationState<ProgramState> {
 		 * it is blocked, remove it from <code>enableTrans</code>.
 		 */
 		final List<ThreadStateTransition> blockedTrans = new ArrayList<>();
-		for(final ThreadStateTransition trans : enableTrans) {
+		for(final ThreadStateTransition trans : enabledTrans) {
 			if(trans.getIcfgEdge() instanceof JoinThreadCurrent) {
 				final JoinHandler joinHandler = new JoinHandler(this, trans);
 				if(joinHandler.isJoinBlocked()) {
@@ -100,9 +101,9 @@ public class ProgramState extends ValuationState<ProgramState> {
 				}
 			}
 		}
-		enableTrans.removeAll(blockedTrans);
+		enabledTrans.removeAll(blockedTrans);
 		
-		return enableTrans;
+		return enabledTrans;
 	}
 	
 	/**
@@ -219,7 +220,7 @@ public class ProgramState extends ValuationState<ProgramState> {
 		
 		/**
 		 * If there's any thread state that doesn't match, the two program states
-		 * are not equivelent.
+		 * are not equivalent.
 		 */
 		return !match.contains(false);
 	}

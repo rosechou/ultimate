@@ -36,9 +36,8 @@ public class ModelCheckerDoubleDFS{
 	ProgramState loc = null;
 	ProgramState seed = null;
 	NeverState Neverseed = null;
-	Stack<ProgramState> firstVisited = new Stack<>();
-	Stack<ProgramState> secondVisited = new Stack<>();
-
+	// Stack<ProgramState> firstVisited = new Stack<>();
+	// Stack<ProgramState> secondVisited = new Stack<>();
 	
 	protected Set<NeverState> initStates =new HashSet<>();
 	
@@ -69,10 +68,21 @@ public class ModelCheckerDoubleDFS{
 		}
 		
 	}
+	public boolean compare(Stack<Pair<ProgramState, NeverState>> path, ProgramState node, NeverState state)
+	{
+		for(int i = 0; i < path.size();i++)
+		{
+			if(node.equals(path.get(i).getFirst()) && state.equals(path.get(i).getSecond()))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 	
 	public void dfsRed(ProgramState node, NeverState state)
 	{
-		secondVisited.push(node);
+		// secondVisited.push(node);
 		List<ThreadStateTransition> programEdges = node.getEnableTrans();
 		
 		List<ProgramState> nProgramNodes = new ArrayList<ProgramState>();
@@ -102,14 +112,13 @@ public class ModelCheckerDoubleDFS{
 				OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
 				NeverState nextState = state.doTransition(neverEdge, nextNode);
 				
-				if(!secondVisited.contains(nextNode))
+				if(!compare(redpath, nextNode, nextState))
 				{
 					Pair p = new Pair(node, state);
 					redpath.push(p);
 					dfsRed(nextNode, nextState);
 				}
 				else if(nextNode.equals(seed))
-//				else if(firstVisited.contains(nextNode))
 				{
 					match = true;
 					mLogger.info("report cycle");
@@ -125,7 +134,7 @@ public class ModelCheckerDoubleDFS{
 		
 	public void dfsBlue(ProgramState node, NeverState init)
 	{
-		firstVisited.push(node);
+		// firstVisited.push(node);
 		List<ThreadStateTransition> programEdges = node.getEnableTrans();
 		
 		List<ProgramState> nProgramNodes = new ArrayList<ProgramState>();
@@ -140,29 +149,38 @@ public class ModelCheckerDoubleDFS{
 			if(match) {return;}
 			ProgramState nextNode = levelNodes.get(i);
 			
-//			for(int k = 0;k < firstVisited.size();k++)
-//			{
-//				if(nextNode.equals(firstVisited.get(k)))
-//				{
-//					levelNodes.remove(i);
-//					break anotherTrans;
-//				}
-//			}
+			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = init.getEnableTrans(nextNode);
 			
-			if(!firstVisited.contains(nextNode))
-			{
-				List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = init.getEnableTrans(nextNode);
+			for (int j = 0;j < neverEdges.size();j++) {
+				if(match) {return;}
+				OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
+				NeverState nextState = init.doTransition(neverEdge, nextNode);
 				
-				for (int j = 0;j < neverEdges.size();j++) {
-					if(match) {return;}
-					OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
-					NeverState nextState = init.doTransition(neverEdge, nextNode);
-					
+			// need to compare neverState at the same time
+				if(!compare(bluepath, nextNode, nextState))
+				{
+					// levelNodes.remove(i);
+					// break anotherTrans;
 					Pair p = new Pair(node, init);
 					bluepath.push(p);
 					dfsBlue(nextNode, nextState);
 				}	
+					
 			}
+//			if(!firstVisited.contains(nextNode))
+//			{
+//				List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = init.getEnableTrans(nextNode);
+//				
+//				for (int j = 0;j < neverEdges.size();j++) {
+//					if(match) {return;}
+//					OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
+//					NeverState nextState = init.doTransition(neverEdge, nextNode);
+//					
+//					Pair p = new Pair(node, init);
+//					bluepath.push(p);
+//					dfsBlue(nextNode, nextState);
+//				}	
+//			}
 			
 //			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = init.getEnableTrans(nextNode);
 //			

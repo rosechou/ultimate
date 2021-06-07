@@ -39,25 +39,25 @@ public class NeverState implements IState<NeverState>{
 		return mStateName;
 	}
 	
-	public List<OutgoingInternalTransition<CodeBlock, NeverState>> getEnableTrans(final ProgramState correspondingProgramState) {
-		List<OutgoingInternalTransition<CodeBlock, NeverState>> enableTrans = new ArrayList<>();
+	public List<OutgoingInternalTransition<CodeBlock, NeverState>> getEnabledTrans(final ProgramState correspondingProgramState) {
+		List<OutgoingInternalTransition<CodeBlock, NeverState>> enabledTrans = new ArrayList<>();
 		/**
 		 * All NonOld global variables must be initialized, or some errors
 		 * will occur during expression evaluation.
 		 * If some global variables are not initialized yet, return empty list.
 		 */
 		if(!correspondingProgramState.allNonOldGlobalInitialized()) {
-			return enableTrans;
+			return enabledTrans;
 		}
 		
 		for(final OutgoingInternalTransition<CodeBlock, NeverState> edge : mTranss) {
 			final NeverTransitionToolkit transitionToolkit
 			= new NeverTransitionToolkit(edge, this, correspondingProgramState);
 			if (transitionToolkit.checkTransEnabled()) {
-				enableTrans.add(edge);
+				enabledTrans.add(edge);
 			}
 		}
-		return enableTrans;
+		return enabledTrans;
 	}
 
 	public NeverState doTransition(final OutgoingInternalTransition<CodeBlock, NeverState> edge

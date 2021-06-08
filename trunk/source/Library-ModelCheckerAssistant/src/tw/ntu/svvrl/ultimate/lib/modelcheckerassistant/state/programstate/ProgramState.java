@@ -224,9 +224,10 @@ public class ProgramState extends ValuationState<ProgramState> {
 		if(this.getThreadNumber() != anotherProgramState.getThreadNumber()) {
 			return false;
 		}
+		final int threadNumber = this.getThreadNumber();
 		
 		List<Boolean> match = new ArrayList<>();
-		for(int i = 0; i < this.getThreadNumber(); i++) {
+		for(int i = 0; i < threadNumber; i++) {
 			match.add(false);
 		}
 		
@@ -234,10 +235,10 @@ public class ProgramState extends ValuationState<ProgramState> {
 		 * If two program state are equivalent, thread states must have
 		 * one-to-one mapping.
 		 */
-		ThreadState[] thisThreadStates = (ThreadState[]) this.mThreadStates.values().toArray();
-		ThreadState[] anotherThreadStates = (ThreadState[]) anotherProgramState.mThreadStates.values().toArray();
-		for(int i = 0; i < this.getThreadNumber(); i++) {
-			for(int j = 0; j < this.getThreadNumber(); j++) {
+		ThreadState[] thisThreadStates = this.mThreadStates.values().toArray(new ThreadState[threadNumber]);
+		ThreadState[] anotherThreadStates = anotherProgramState.mThreadStates.values().toArray(new ThreadState[threadNumber]);
+		for(int i = 0; i < threadNumber; i++) {
+			for(int j = 0; j < threadNumber; j++) {
 				if(!match.get(j) && thisThreadStates[i].equals(anotherThreadStates[j])) {
 					match.set(j, true);
 					break;

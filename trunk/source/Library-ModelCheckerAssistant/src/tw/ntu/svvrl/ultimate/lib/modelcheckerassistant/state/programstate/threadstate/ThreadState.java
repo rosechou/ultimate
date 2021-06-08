@@ -203,15 +203,6 @@ public class ThreadState extends ValuationState<ThreadState>{
 			}
 		}
 		
-		/**
-		 * If this state has no successor, attach a nil self-loop.
-		 * @see the definition of synchronous product.
-		 */
-		if(enabledTrans.isEmpty()) {
-			final Nil edge = new Nil(0, mCorrespondingIcfgLoc, mCorrespondingIcfgLoc, null);
-			final ThreadStateTransition trans = new ThreadStateTransition(edge, mThreadID);
-			enabledTrans.add(trans);
-		}
 		return enabledTrans;
 	}
 	

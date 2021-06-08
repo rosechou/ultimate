@@ -87,7 +87,7 @@ public abstract class CodeBlock extends IcfgEdge implements IActionWithBranchEnc
 
 	private int mOccurenceInCounterexamples = 0;
 
-	public CodeBlock(final int serialNumber, final BoogieIcfgLocation source, final BoogieIcfgLocation target,
+	CodeBlock(final int serialNumber, final BoogieIcfgLocation source, final BoogieIcfgLocation target,
 			final ILogger logger) {
 		super(source, target, source == null ? new Payload() : new Payload(source.getPayload()));
 		mSerialnumber = serialNumber;

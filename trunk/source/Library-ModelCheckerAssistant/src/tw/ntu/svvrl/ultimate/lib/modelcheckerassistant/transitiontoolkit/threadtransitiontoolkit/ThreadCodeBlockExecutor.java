@@ -22,7 +22,6 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Seq
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.StatementSequence;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Summary;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProcInfo;
-import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.Nil;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.CodeBlockExecutor;
 
@@ -123,10 +122,6 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 			executeJoinThreadCurrent((JoinThreadCurrent) mCodeBlock);
 		} else if(mCodeBlock instanceof JoinThreadOther) {
 			executeJoinThreadOther((JoinThreadOther) mCodeBlock);
-		} else if(mCodeBlock instanceof Nil) {
-			/**
-			 * Do nothing.
-			 */
 		} else if(mCodeBlock instanceof ParallelComposition) {
 			/**
 			 * This type of edge will only occur when Size of code block is not set to "SingleStatement"

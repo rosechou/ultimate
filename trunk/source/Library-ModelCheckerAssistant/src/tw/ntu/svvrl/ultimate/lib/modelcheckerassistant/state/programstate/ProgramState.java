@@ -68,7 +68,7 @@ public class ProgramState extends ValuationState<ProgramState> {
 	}
 	
 	
-	public List<ThreadStateTransition> getEnabledTrans() {
+	public List<ProgramStateTransition> getEnabledTrans() {
 //		/**
 //		 * Check if there are threads being in the exit node.
 //		 * If so, unlock the block of the thread where current thread
@@ -83,7 +83,7 @@ public class ProgramState extends ValuationState<ProgramState> {
 //		}
 		
 		
-		final List<ThreadStateTransition> enabledTrans = new ArrayList<>();
+		final List<ProgramStateTransition> enabledTrans = new ArrayList<>();
 		for(final ThreadState threadState : mThreadStates.values()) {
 			enabledTrans.addAll(threadState.getEnabledTrans());
 		}
@@ -92,10 +92,11 @@ public class ProgramState extends ValuationState<ProgramState> {
 		 * If there is a join in <code>enableTrans</code> and
 		 * it is blocked, remove it from <code>enableTrans</code>.
 		 */
-		final List<ThreadStateTransition> blockedTrans = new ArrayList<>();
-		for(final ThreadStateTransition trans : enabledTrans) {
-			if(trans.getIcfgEdge() instanceof JoinThreadCurrent) {
-				final JoinHandler joinHandler = new JoinHandler(this, trans);
+		final List<ProgramStateTransition> blockedTrans = new ArrayList<>();
+		for(final ProgramStateTransition trans : enabledTrans) {
+			assert trans instanceof ThreadStateTransition;
+			if(((ThreadStateTransition) trans).getIcfgEdge() instanceof JoinThreadCurrent) {
+				final JoinHandler joinHandler = new JoinHandler(this, (ThreadStateTransition) trans);
 				if(joinHandler.isJoinBlocked()) {
 					blockedTrans.add(trans);
 				}
@@ -103,6 +104,22 @@ public class ProgramState extends ValuationState<ProgramState> {
 		}
 		enabledTrans.removeAll(blockedTrans);
 		
+		
+		if(enabledTrans.isEmpty()) {
+			/**
+			 * If every thread state has no successor, attach a nil self-loop.
+			 * @see the definition of synchronous product.
+			 */
+			boolean hasNoSucc = true;
+			for(final ThreadState threadState : mThreadStates.values()) {
+				if(!threadState.getCorrespondingIcfgLoc().getOutgoingEdges().isEmpty()) {
+					hasNoSucc = false;
+				}
+			}
+			if(hasNoSucc) {
+				enabledTrans.add(new NilSelfLoop());
+			}
+		}
 		return enabledTrans;
 	}
 	
@@ -110,34 +127,44 @@ public class ProgramState extends ValuationState<ProgramState> {
 	 * One of thread state do the transition.
 	 * (According to the threadID on the {@link ThreadStateTransition}).
 	 */
-	public ProgramState doTransition(final ThreadStateTransition trans) {
+	public ProgramState doTransition(final ProgramStateTransition trans) {
 		ProgramState newProgramState = new ProgramState(this);
 		
-		/**
-		 * For Fork and Join, we need to pass the whole program state which
-		 * consists of all thread states.
-		 */
-		if(trans.getIcfgEdge() instanceof ForkThreadCurrent) {
-			final ForkHandler forkHandler = new ForkHandler(this, trans);
-			newProgramState = forkHandler.doFork();
-		} else if(trans.getIcfgEdge() instanceof JoinThreadCurrent) {
-			final JoinHandler joinHandler = new JoinHandler(this, trans);
-			newProgramState = joinHandler.doJoin();
+		if(trans instanceof ThreadStateTransition) {
+			final ThreadStateTransition threadTrans = (ThreadStateTransition) trans;
+			/**
+			 * For Fork and Join, we need to pass the whole program state which
+			 * consists of all thread states.
+			 */
+			if(threadTrans.getIcfgEdge() instanceof ForkThreadCurrent) {
+				final ForkHandler forkHandler = new ForkHandler(this, threadTrans);
+				newProgramState = forkHandler.doFork();
+			} else if(threadTrans.getIcfgEdge() instanceof JoinThreadCurrent) {
+				final JoinHandler joinHandler = new JoinHandler(this, threadTrans);
+				newProgramState = joinHandler.doJoin();
+			} else {
+				/**
+				 * For others(not Fork and Join), Only one thread state is considered.
+				 * which thread state to be executed is according to the threadID
+				 * in {@link ThreadStateTransition}.
+				 */
+				final ThreadState newState 
+				= newProgramState.getThreadStateByID(threadTrans.getThreadID()).doTransition(threadTrans);
+				/**
+				 * update the thread state who did the transition.
+				 */
+				newProgramState.updateThreadState(newState.getThreadID(), newState);
+			}
+			return newProgramState;
+		} else if(trans instanceof NilSelfLoop) {
+			/**
+			 * Do nothing.
+			 */
+			return this;
 		} else {
-			/**
-			 * For others(not Fork and Join), Only one thread state is considered.
-			 * which thread state to be executed is according to the threadID
-			 * in {@link ThreadStateTransition}.
-			 */
-			final ThreadState newState 
-			= newProgramState.getThreadStateByID(trans.getThreadID()).doTransition(trans);
-			/**
-			 * update the thread state who did the transition.
-			 */
-			newProgramState.updateThreadState(newState.getThreadID(), newState);
+			throw new UnsupportedOperationException("Unkown ProgramStateTransition type: "
+					+ trans.getClass().getSimpleName());
 		}
-		
-		return newProgramState;
 	}
 	
 	private Map<String, BoogieIcfgLocation> getEntryNodesMap(){

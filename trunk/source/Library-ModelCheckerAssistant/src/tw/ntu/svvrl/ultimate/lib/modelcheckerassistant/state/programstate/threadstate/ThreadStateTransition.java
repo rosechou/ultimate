@@ -1,8 +1,9 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate;
 
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramStateTransition;
 
-public class ThreadStateTransition {
+public class ThreadStateTransition extends ProgramStateTransition {
 	private final IcfgEdge mIcfgEdge;
 	private final long mThreadID;
 	

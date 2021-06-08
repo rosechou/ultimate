@@ -15,7 +15,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.NeverClaimAutExp
 /**
  * This is a helper for the SPIN-like model checker.
  * It mainly consists of two component. One is for the exploration of
- * Boogie program states, another is for the exploration of the
+ * Boogie program states, the other is for the exploration of the
  * never claim automaton which is originally represented as an LTL formula.
  * 
  * One can call the methods this class provides to imitate SPIN and

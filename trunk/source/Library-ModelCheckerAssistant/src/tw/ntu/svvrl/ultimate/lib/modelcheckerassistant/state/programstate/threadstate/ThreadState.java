@@ -7,6 +7,7 @@ import java.util.Stack;
 
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit.ThreadTransitionToolkit;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.Valuation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.ValuationState;
@@ -34,7 +35,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 	
 	/**
 	 * The stack that keeps the procedure calls.
-	 * top element is the current procedure name.
+	 * top element is the current procedure.
 	 * call: push
 	 * return: pop
 	 */
@@ -59,7 +60,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 						final FuncInitValuationInfo funcInitValuationInfo,
 						final Map<String, List<String>> proc2InParams,
 						final Map<String, List<String>> proc2OutParams,
-						final long threadID, final long forkedFrom) {
+						final long threadID) {
 		mValuation = v;
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
 		mFuncInitValuationInfo = funcInitValuationInfo;
@@ -180,12 +181,16 @@ public class ThreadState extends ValuationState<ThreadState>{
 	/**
 	 * Get the a list of transitions which is enable from this state.
 	 * A transition is enable if the assume statement is not violated.
+	 * 
+	 * @param exitNodes
+	 * 		a mapping from procedure name to cfg location.
+	 * 		This is used to check whether this thread state is in the exit node.
 	 * @return
 	 * 		a list of enable transitions.
 	 */
-	public List<ThreadStateTransition> getEnableTrans() {
+	public List<ThreadStateTransition> getEnabledTrans() {
 		final List<IcfgEdge> edges = mCorrespondingIcfgLoc.getOutgoingEdges();
-		final List<ThreadStateTransition> enableTrans = new ArrayList<>();
+		final List<ThreadStateTransition> enabledTrans = new ArrayList<>();
 		for(final IcfgEdge edge : edges) {
 			/**
 			 * Mark outgoing edge using current thread ID.
@@ -193,11 +198,12 @@ public class ThreadState extends ValuationState<ThreadState>{
 			final ThreadStateTransition trans = new ThreadStateTransition(edge, mThreadID);
 			final ThreadTransitionToolkit transitionToolkit 
 					= new ThreadTransitionToolkit(trans, this);
-			if (transitionToolkit.checkTransEnable()) {
-				enableTrans.add(trans);
+			if (transitionToolkit.checkTransEnabled()) {
+				enabledTrans.add(trans);
 			}
 		}
-		return enableTrans;
+		
+		return enabledTrans;
 	}
 	
 	
@@ -224,6 +230,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 	 * @return
 	 * 		true if two states are equivalent, false if not.
 	 */
+	@Override
 	public boolean equals(final ThreadState anotherThreadState) {
 		if(!mCorrespondingIcfgLoc.equals(anotherThreadState.getCorrespondingIcfgLoc())) {
 			return false;

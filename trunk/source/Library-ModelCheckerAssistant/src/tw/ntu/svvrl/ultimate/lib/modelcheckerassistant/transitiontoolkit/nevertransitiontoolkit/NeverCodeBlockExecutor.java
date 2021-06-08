@@ -31,7 +31,7 @@ public class NeverCodeBlockExecutor extends CodeBlockExecutor<NeverState> {
 	}
 	
 
-	public boolean checkEnable() {
+	public boolean checkEnabled() {
 		if(mCodeBlock instanceof StatementSequence) {
 			List<Statement> stmts = ((StatementSequence) mCodeBlock).getStatements();
 			final ProgramStatementsChecker statementChecker = new ProgramStatementsChecker(stmts, mCorrespondingProgramState);

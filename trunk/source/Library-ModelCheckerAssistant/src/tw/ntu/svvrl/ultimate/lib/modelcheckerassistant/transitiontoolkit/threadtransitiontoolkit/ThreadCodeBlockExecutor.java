@@ -38,7 +38,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	
 
 
-	public boolean checkEnable() {
+	public boolean checkEnabled() {
 		if(mCodeBlock instanceof StatementSequence) {
 			List<Statement> stmts = ((StatementSequence) mCodeBlock).getStatements();
 			final ThreadStatementsChecker statementChecker = new ThreadStatementsChecker(stmts, mCurrentState);

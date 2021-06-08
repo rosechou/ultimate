@@ -5,6 +5,9 @@ import java.util.Map;
 import java.util.Set;
 
 public class Valuation implements Cloneable {
+	/**
+	 * Procedure Name -> Variable Name -> Value
+	 */
 	private Map<String, Map<String, Object>> mValueMap = new HashMap<>();
 	
 	public Valuation() {

@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.simulation.multipebble.IFullMultipebbleAuxiliaryGameState.AuxiliaryGameStateType;
+
 public class Valuation implements Cloneable {
 	/**
 	 * Procedure Name -> Variable Name -> Value
@@ -106,20 +108,31 @@ public class Valuation implements Cloneable {
 	}
 
 	/**
-	 * Check if all non-old global variables have been initialized.
-	 * All non-old global variables should be initialized before doing 
+	 * Check if all non-old global variables and non-auxiliary variables
+	 *  have been initialized.
+	 * They should be initialized before doing 
 	 * the transition in the never claim automata.
 	 * @return true if all are initialized, false otherwise.
 	 */
-	public boolean allNonOldGlobalInitialized() {
+	public boolean allNonOldNonAuxGlobalInitialized() {
 		final Map<String, Object> globalVarMap = mValueMap.get(null);
 		for(final String globalVarName : globalVarMap.keySet()) {
 			boolean isOld = isOld(globalVarName);
-		    if(!isOld && globalVarMap.get(globalVarName) == null) {
+			boolean isAux = isAux(globalVarName);
+			boolean isNull = isNull(globalVarMap.get(globalVarName));
+		    if(!isOld && !isAux && isNull) {
 		    	return false;
 		    }
 		}
 		return true;
+	}
+
+	private boolean isNull(Object v) {
+		if(v instanceof Object[]) {
+			return isNull(((Object[]) v)[0]);
+		} else {
+			return v ==null;
+		}
 	}
 
 	/**
@@ -134,6 +147,16 @@ public class Valuation implements Cloneable {
 			if(s.startsWith("old(") && s.endsWith(")")) {
 				return true;
 			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Check the variable is a auxiliary variable or not (in Boogie).
+	 */
+	public boolean isAux(String s) {
+		if(s.startsWith("#")) {
+			return true;
 		}
 		return false;
 	}

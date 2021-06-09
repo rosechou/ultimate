@@ -200,7 +200,7 @@ public class ProgramState extends ValuationState<ProgramState> {
 	}
 	
 	public boolean allNonOldGlobalInitialized() {
-		return mValuation.allNonOldGlobalInitialized();
+		return mValuation.allNonOldNonAuxGlobalInitialized();
 	}
 	
 	private void addThreadState(ThreadState s) {

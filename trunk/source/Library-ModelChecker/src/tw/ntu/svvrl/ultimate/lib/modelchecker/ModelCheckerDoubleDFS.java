@@ -10,10 +10,12 @@ import de.uni_freiburg.informatik.ultimate.automata.nestedword.transitions.Outgo
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.NestedWordAutomaton;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.NestedWordAutomatonCache;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramStateTransition;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
 import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.Pair;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverStateFactory;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.ModelCheckerAssistant;
+
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -66,6 +68,10 @@ public class ModelCheckerDoubleDFS{
 				dfsBlue(levelNodes.get(i), init);
 			}
 		}
+		if(!match) 
+		{
+			mLogger.info("All specifications hold");
+		}
 		
 	}
 	public boolean compare(Stack<Pair<ProgramState, NeverState>> path, ProgramState node, NeverState state)
@@ -83,7 +89,7 @@ public class ModelCheckerDoubleDFS{
 	public void dfsRed(ProgramState node, NeverState state)
 	{
 		// secondVisited.push(node);
-		List<ThreadStateTransition> programEdges = node.getEnableTrans();
+		List<ProgramStateTransition> programEdges = node.getEnabledTrans();
 		
 		List<ProgramState> nProgramNodes = new ArrayList<ProgramState>();
 		for(int j = 0;j < programEdges.size();j++)
@@ -95,7 +101,7 @@ public class ModelCheckerDoubleDFS{
 		for (int i = 0;i < levelNodes.size();i++) {
 			ProgramState nextNode = levelNodes.get(i);
 			
-			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = state.getEnableTrans(nextNode);
+			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = state.getEnabledTrans(nextNode);
 			
 //			for(int k = 0;k < firstVisited.size();k++)
 //			{
@@ -121,7 +127,7 @@ public class ModelCheckerDoubleDFS{
 				else if(nextNode.equals(seed))
 				{
 					match = true;
-					mLogger.info("report cycle");
+					mLogger.info("Violation of LTL property");
 					return;
 				}
 			}	
@@ -135,7 +141,7 @@ public class ModelCheckerDoubleDFS{
 	public void dfsBlue(ProgramState node, NeverState init)
 	{
 		// firstVisited.push(node);
-		List<ThreadStateTransition> programEdges = node.getEnableTrans();
+		List<ProgramStateTransition> programEdges = node.getEnabledTrans();
 		
 		List<ProgramState> nProgramNodes = new ArrayList<ProgramState>();
 		for(int j = 0;j < programEdges.size();j++)
@@ -149,7 +155,15 @@ public class ModelCheckerDoubleDFS{
 			if(match) {return;}
 			ProgramState nextNode = levelNodes.get(i);
 			
-			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = init.getEnableTrans(nextNode);
+			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = init.getEnabledTrans(nextNode);
+			
+			if(neverEdges.isEmpty())
+			{
+				Pair p = new Pair(node, init);
+				bluepath.push(p);
+				dfsBlue(nextNode, init);
+				//break;
+			}
 			
 			for (int j = 0;j < neverEdges.size();j++) {
 				if(match) {return;}
@@ -181,19 +195,7 @@ public class ModelCheckerDoubleDFS{
 //					dfsBlue(nextNode, nextState);
 //				}	
 //			}
-			
-//			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = init.getEnableTrans(nextNode);
-//			
-//			for (int j = 0;j < neverEdges.size();j++) {
-//				if(match) {return;}
-//				OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
-//				NeverState nextState = init.doTransition(neverEdge, nextNode);
-//				
-//				Pair p = new Pair(node, init);
-//				bluepath.push(p);
-//				
-//				dfsBlue(nextNode, nextState);
-//			}	
+
 		}
 		
 		if(!bluepath.empty())

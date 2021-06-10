@@ -7,14 +7,17 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.AssignmentStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssumeStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.HavocStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsChecker;
 
 public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
-	
-	public ThreadStatementsChecker(final List<Statement> statements, final ThreadState state) {
+	private final ProgramStateExplorer mProgramStateExplorer;
+	public ThreadStatementsChecker(final List<Statement> statements, final ThreadState state
+									, final ProgramStateExplorer pe) {
 		super(statements);
 		mState = state;
+		mProgramStateExplorer = pe;
 	}
 	
 	/**
@@ -46,10 +49,10 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 					|| stmt instanceof HavocStatement) {
 				assert mState instanceof ThreadState;
 				final ThreadStatementsExecutor stmtsExecutor
-					= new ThreadStatementsExecutor(stmt, mState, ThreadStatementsExecutor.execType.check);
+					= new ThreadStatementsExecutor(stmt, mState, ThreadStatementsExecutor.execType.check, mProgramStateExplorer);
 				moveToNewState(stmtsExecutor.execute());
 				ThreadStatementsChecker nextStatementsChecker 
-						= new ThreadStatementsChecker(mStatements.subList(i+1, mStatements.size()), mState);
+						= new ThreadStatementsChecker(mStatements.subList(i+1, mStatements.size()), mState, mProgramStateExplorer);
 				return nextStatementsChecker.checkStatementsEnable();
 			}
 		}
@@ -57,7 +60,7 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 	}
 	
 	protected boolean checkAssumeStatement(final AssumeStatement assumeStmt) {
-		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mState);
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mState, mProgramStateExplorer);
 		return (boolean) exprEvaluator.evaluate(assumeStmt.getFormula());
 	}
 	

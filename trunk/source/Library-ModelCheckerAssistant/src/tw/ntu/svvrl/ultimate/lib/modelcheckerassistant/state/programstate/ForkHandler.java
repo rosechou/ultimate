@@ -1,8 +1,11 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate;
 
+import java.util.Map;
+
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ForkStatement;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadCurrent;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit.ThreadStatementsExecutor;
@@ -10,12 +13,15 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadt
 public class ForkHandler {
 	final ProgramState mProgramState;
 	final ThreadStateTransition mTrans;
+	final ProgramStateExplorer mProgramStateExplorer;
 	
-	public ForkHandler(final ProgramState programState, final ThreadStateTransition trans) {
+	public ForkHandler(final ProgramState programState, final ThreadStateTransition trans
+						, final ProgramStateExplorer pe) {
 		mProgramState = new ProgramState(programState);
 		mTrans = trans;
+		mProgramStateExplorer = pe;
 	}
-	
+
 	/**
 	 * Fork to two thread states.
 	 * @return
@@ -46,9 +52,9 @@ public class ForkHandler {
 		 * new thread's entry node.
 		 */
 		final ThreadStatementsExecutor stmtExecutor = new ThreadStatementsExecutor(
-				forkStmt, currentThreadState, ThreadStatementsExecutor.execType.realExec);
+				forkStmt, currentThreadState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
 		final ThreadState otherNextState =  stmtExecutor.execute();
-		BoogieIcfgLocation threadEntryNode = mProgramState.getEntryNode(forkProcName);
+		BoogieIcfgLocation threadEntryNode = mProgramStateExplorer.getEntryNode(forkProcName);
 		otherNextState.setCorrespondingIcfgLoc(threadEntryNode);
 		
 		

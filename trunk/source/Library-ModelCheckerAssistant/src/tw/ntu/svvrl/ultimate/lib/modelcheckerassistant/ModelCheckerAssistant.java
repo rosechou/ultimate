@@ -1,8 +1,10 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant;
 
+import java.util.List;
 import java.util.Set;
 
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.INestedWordAutomaton;
+import de.uni_freiburg.informatik.ultimate.automata.nestedword.transitions.OutgoingInternalTransition;
 import de.uni_freiburg.informatik.ultimate.core.model.services.ILogger;
 import de.uni_freiburg.informatik.ultimate.core.model.services.IUltimateServiceProvider;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgContainer;
@@ -10,6 +12,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Cod
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramStateTransition;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.NeverClaimAutExplorer;
 
 /**
@@ -76,4 +79,21 @@ public class ModelCheckerAssistant {
 		return mNeverClaimAutExplorer.getInitialStates();
 	}
 	
+	public List<ProgramStateTransition> getProgramEnabledTrans(final ProgramState p) {
+		return mProgramStateExplorer.getEnabledTrans(p);
+	}
+	
+	public List<OutgoingInternalTransition<CodeBlock, NeverState>> 
+		getNeverEnabledTrans(final NeverState n, final ProgramState correspondingProgramState) {
+		return mNeverClaimAutExplorer.getEnabledTrans(n, correspondingProgramState);
+	}
+	
+	public ProgramState doProgramTransition(final ProgramState p, final ProgramStateTransition trans) {
+		return mProgramStateExplorer.doTransition(p, trans);
+	}
+	
+	public NeverState doNeverTransition(final NeverState n, final OutgoingInternalTransition<CodeBlock, NeverState> edge
+			, final ProgramState correspondingProgramState) {
+		return mNeverClaimAutExplorer.doTransition(n, edge, correspondingProgramState);
+	}
 }

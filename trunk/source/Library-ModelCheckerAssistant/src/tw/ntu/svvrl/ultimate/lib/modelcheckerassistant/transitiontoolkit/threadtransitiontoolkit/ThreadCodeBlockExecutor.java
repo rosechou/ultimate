@@ -21,19 +21,22 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Ret
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.SequentialComposition;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.StatementSequence;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Summary;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProcInfo;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.CodeBlockExecutor;
 
 public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
+	private final ProgramStateExplorer mProgramStateExplorer;
 	/**
 	 * For Program Automata.
 	 * @param codeBlock
 	 * @param state
 	 */
-	public ThreadCodeBlockExecutor(final CodeBlock codeBlock, final ThreadState state) {
+	public ThreadCodeBlockExecutor(final CodeBlock codeBlock, final ThreadState state, final ProgramStateExplorer pe) {
 		mCodeBlock = codeBlock;
 		mCurrentState = state;
+		mProgramStateExplorer = pe;
 	}
 	
 
@@ -41,7 +44,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	public boolean checkEnabled() {
 		if(mCodeBlock instanceof StatementSequence) {
 			List<Statement> stmts = ((StatementSequence) mCodeBlock).getStatements();
-			final ThreadStatementsChecker statementChecker = new ThreadStatementsChecker(stmts, mCurrentState);
+			final ThreadStatementsChecker statementChecker = new ThreadStatementsChecker(stmts, mCurrentState, mProgramStateExplorer);
 			return statementChecker.checkStatementsEnable();
 		} else if(mCodeBlock instanceof Return) {
 			/**
@@ -157,14 +160,14 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	private void executeStatementSequence(final StatementSequence stmtSeq) {
 		final List<Statement> stmts = stmtSeq.getStatements();
 		final ThreadStatementsExecutor statementExecutor 
-			= new ThreadStatementsExecutor(stmts, mCurrentState, ThreadStatementsExecutor.execType.realExec);
+			= new ThreadStatementsExecutor(stmts, mCurrentState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
 		moveToNewState(statementExecutor.execute());
 	}
 
 	private void executeCall(final Call call) {
 		final CallStatement callStmt = call.getCallStatement();
 		final ThreadStatementsExecutor statementExecutor 
-			= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.execType.realExec);
+			= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
 		moveToNewState(statementExecutor.execute());
 	}
 
@@ -218,7 +221,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 				+ "is not yet implemented.");
 	}
 
-	public static ThreadState doReturnRoutines(final ThreadState fromState, final ProcInfo toInfo
+	public ThreadState doReturnRoutines(final ThreadState fromState, final ProcInfo toInfo
 			, final VariableLHS[] stmtLhss) {
 
 		final ProcInfo fromProc = fromState.getCurrentProc();
@@ -228,7 +231,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		/**
 		 * Retrieve return values
 		 */
-		final List<String> outParamNames = fromState.getProc2OutParams().get(fromProcName);
+		final List<String> outParamNames = mProgramStateExplorer.getProc2OutParams().get(fromProcName);
 		final VariableLHS[] lhss = stmtLhss;
 		final Object[] values = new Object[lhss.length];
 		assert(lhss.length == outParamNames.size());

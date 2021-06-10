@@ -1,15 +1,20 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.INestedWordAutomaton;
+import de.uni_freiburg.informatik.ultimate.automata.nestedword.transitions.OutgoingInternalTransition;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverStateFactory;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.nevertransitiontoolkit.NeverTransitionToolkit;
 
 public class NeverClaimAutExplorer {
 	final INestedWordAutomaton<CodeBlock, String> mNwa;
@@ -30,5 +35,32 @@ public class NeverClaimAutExplorer {
 		return result;
 	}
 	
+	public List<OutgoingInternalTransition<CodeBlock, NeverState>> getEnabledTrans(final NeverState n, final ProgramState correspondingProgramState) {
+		List<OutgoingInternalTransition<CodeBlock, NeverState>> enabledTrans = new ArrayList<>();
+		/**
+		 * All NonOld global variables must be initialized, or some errors
+		 * will occur during expression evaluation.
+		 * If some global variables are not initialized yet, return empty list.
+		 */
+		if(!correspondingProgramState.allNonOldGlobalInitialized()) {
+			return enabledTrans;
+		}
+		
+		for(final OutgoingInternalTransition<CodeBlock, NeverState> edge : n.getTranss()) {
+			final NeverTransitionToolkit transitionToolkit
+			= new NeverTransitionToolkit(edge, n, correspondingProgramState);
+			if (transitionToolkit.checkTransEnabled()) {
+				enabledTrans.add(edge);
+			}
+		}
+		return enabledTrans;
+	}
 	
+
+	public NeverState doTransition(final NeverState n, final OutgoingInternalTransition<CodeBlock, NeverState> edge
+			, final ProgramState correspondingProgramState) {
+		final NeverTransitionToolkit transitionToolkit 
+			= new NeverTransitionToolkit(edge, n, correspondingProgramState);
+		return (NeverState) transitionToolkit.doTransition();
+	}
 }

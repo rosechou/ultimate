@@ -108,252 +108,160 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		
 		
 		ProgramState a = ((ProgramState) pInitialStates.toArray()[0]);
-		List<ProgramStateTransition> edges = a.getEnabledTrans();
+		List<ProgramStateTransition> edges = mModelCheckerAssistant.getProgramEnabledTrans(a);
 		ProgramStateTransition edge = edges.get(0);
-		ProgramState b = a.doTransition(edge);
+		ProgramState b = mModelCheckerAssistant.doProgramTransition(a, edge);
 		
-		List<OutgoingInternalTransition<CodeBlock, NeverState>> nedges = n.getEnabledTrans(b);
+		List<OutgoingInternalTransition<CodeBlock, NeverState>> nedges = mModelCheckerAssistant.getNeverEnabledTrans(n, b);
 		if(nedges.size() > 0) {
 			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
-			NeverState m = n.doTransition(nedge, b);
+			NeverState m = mModelCheckerAssistant.doNeverTransition(n, nedge, b);
 			n = m;
 		}
 		
-		edges = b.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(b);
 		edge = edges.get(0);
-		ProgramState c = b.doTransition(edge);
+		ProgramState c = mModelCheckerAssistant.doProgramTransition(b, edge);
 		
-		edges = c.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(c);
 		edge = edges.get(0);
-		ProgramState d = c.doTransition(edge);
+		ProgramState d = mModelCheckerAssistant.doProgramTransition(c, edge);
 		
-		edges = d.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(d);
 		edge = edges.get(0);
-		ProgramState e = d.doTransition(edge);
+		ProgramState e = mModelCheckerAssistant.doProgramTransition(d, edge);
 		
-		edges = e.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(e);
 		edge = edges.get(0);
-		ProgramState f = e.doTransition(edge);
+		ProgramState f = mModelCheckerAssistant.doProgramTransition(e, edge);
 		
-		edges = f.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(f);
 		edge = edges.get(0);
-		ProgramState g = f.doTransition(edge);
+		ProgramState g = mModelCheckerAssistant.doProgramTransition(f, edge);
 		
-		nedges = n.getEnabledTrans(g);
-		if(nedges.size() > 0) {
-			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
-			NeverState m = n.doTransition(nedge, g);
-			n = m;
-		}
-		
-		edges = g.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(g);
 		edge = edges.get(0);
-		ProgramState h = g.doTransition(edge);
+		ProgramState h = mModelCheckerAssistant.doProgramTransition(g, edge);
 		
-		edges = h.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(h);
 		edge = edges.get(0);
-		ProgramState i = h.doTransition(edge);
+		ProgramState i = mModelCheckerAssistant.doProgramTransition(h, edge);
 		
-		edges = i.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(i);
 		edge = edges.get(0);
-		ProgramState j = i.doTransition(edge);
+		ProgramState j = mModelCheckerAssistant.doProgramTransition(i, edge);
 		
-		edges = j.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(j);
 		edge = edges.get(0);
-		ProgramState k = j.doTransition(edge);
+		ProgramState k = mModelCheckerAssistant.doProgramTransition(j, edge);
 		
-		edges = k.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(k);
 		edge = edges.get(0);
-		ProgramState l = k.doTransition(edge);
+		ProgramState l = mModelCheckerAssistant.doProgramTransition(k, edge);
 		
-		edges = l.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(l);
 		edge = edges.get(0);
-		ProgramState o = l.doTransition(edge);
+		ProgramState o = mModelCheckerAssistant.doProgramTransition(l, edge);
 		
-		edges = o.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(o);
 		edge = edges.get(0);
-		ProgramState p = o.doTransition(edge);
+		ProgramState p = mModelCheckerAssistant.doProgramTransition(o, edge);
 		
-		edges = p.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(p);
 		edge = edges.get(0);
-		ProgramState q = p.doTransition(edge);
+		ProgramState q = mModelCheckerAssistant.doProgramTransition(p, edge);
 		
-		edges = q.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(q);
 		edge = edges.get(0);
-		ProgramState r = q.doTransition(edge);
+		ProgramState r = mModelCheckerAssistant.doProgramTransition(q, edge);
 		
-		edges = r.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(r);
 		edge = edges.get(0);
-		ProgramState s = r.doTransition(edge);
+		ProgramState s = mModelCheckerAssistant.doProgramTransition(r, edge);
 		
-		edges = s.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(s);
 		edge = edges.get(0);
-		ProgramState t = s.doTransition(edge);
+		ProgramState t = mModelCheckerAssistant.doProgramTransition(s, edge);
 		
-		edges = t.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(t);
 		edge = edges.get(0);
-		ProgramState u = t.doTransition(edge);
+		ProgramState u = mModelCheckerAssistant.doProgramTransition(t, edge);
 		
-		edges = u.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(u);
 		edge = edges.get(0);
-		ProgramState v = u.doTransition(edge);
+		ProgramState v = mModelCheckerAssistant.doProgramTransition(u, edge);
 		
-		edges = v.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(v);
 		edge = edges.get(0);
-		ProgramState w = v.doTransition(edge);
+		ProgramState w = mModelCheckerAssistant.doProgramTransition(v, edge);
 		
-		edges = w.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(w);
 		edge = edges.get(0);
-		ProgramState y = w.doTransition(edge);
+		ProgramState x = mModelCheckerAssistant.doProgramTransition(w, edge);
 		
-		edges = y.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(x);
 		edge = edges.get(0);
-		ProgramState z = y.doTransition(edge);
+		ProgramState y = mModelCheckerAssistant.doProgramTransition(x, edge);
 		
-		edges = z.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(y);
 		edge = edges.get(0);
-		ProgramState A = z.doTransition(edge);
+		ProgramState z = mModelCheckerAssistant.doProgramTransition(y, edge);
 		
-		edges = A.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(z);
 		edge = edges.get(0);
-		ProgramState B = A.doTransition(edge);
+		ProgramState A = mModelCheckerAssistant.doProgramTransition(z, edge);
 		
-		edges = B.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(A);
 		edge = edges.get(0);
-		ProgramState C = B.doTransition(edge);
+		ProgramState B = mModelCheckerAssistant.doProgramTransition(A, edge);
 		
-		edges = C.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(B);
 		edge = edges.get(0);
-		ProgramState D = C.doTransition(edge);
+		ProgramState C = mModelCheckerAssistant.doProgramTransition(B, edge);
 		
-		edges = D.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(C);
 		edge = edges.get(0);
-		ProgramState E = D.doTransition(edge);
+		ProgramState D = mModelCheckerAssistant.doProgramTransition(C, edge);
 		
-		edges = E.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(D);
 		edge = edges.get(0);
-		ProgramState F = E.doTransition(edge);
+		ProgramState E = mModelCheckerAssistant.doProgramTransition(D, edge);
 		
-		edges = F.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(E);
 		edge = edges.get(0);
-		ProgramState G = F.doTransition(edge);
+		ProgramState F = mModelCheckerAssistant.doProgramTransition(E, edge);
 		
-		edges = G.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(F);
 		edge = edges.get(0);
-		ProgramState H = G.doTransition(edge);
+		ProgramState G = mModelCheckerAssistant.doProgramTransition(F, edge);
 		
-		edges = H.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(G);
 		edge = edges.get(0);
-		ProgramState I = H.doTransition(edge);
+		ProgramState H = mModelCheckerAssistant.doProgramTransition(G, edge);
 		
-		edges = I.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(H);
 		edge = edges.get(0);
-		ProgramState J = I.doTransition(edge);
+		ProgramState I = mModelCheckerAssistant.doProgramTransition(H, edge);
 		
-		edges = J.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(I);
 		edge = edges.get(0);
-		ProgramState K = J.doTransition(edge);
+		ProgramState J = mModelCheckerAssistant.doProgramTransition(I, edge);
 		
-		edges = K.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(J);
 		edge = edges.get(0);
-		ProgramState L = K.doTransition(edge);
+		ProgramState K = mModelCheckerAssistant.doProgramTransition(J, edge);
 		
-		edges = L.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(K);
 		edge = edges.get(0);
-		ProgramState M = L.doTransition(edge);
+		ProgramState L = mModelCheckerAssistant.doProgramTransition(K, edge);
 		
-		edges = M.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(L);
 		edge = edges.get(0);
-		ProgramState N = M.doTransition(edge);
+		ProgramState M = mModelCheckerAssistant.doProgramTransition(L, edge);
 		
-		edges = N.getEnabledTrans();
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(M);
 		edge = edges.get(0);
-		ProgramState O = N.doTransition(edge);
-		
-		edges = O.getEnabledTrans();
-		edge = edges.get(0);
-		ProgramState P = O.doTransition(edge);
-		
-		edges = P.getEnabledTrans();
-		edge = edges.get(0);
-		ProgramState Q = P.doTransition(edge);
-		
-		edges = Q.getEnabledTrans();
-		edge = edges.get(0);
-		ProgramState R = Q.doTransition(edge);
-		
-		edges = R.getEnabledTrans();
-		edge = edges.get(0);
-		ProgramState S = R.doTransition(edge);
-		
-		edges = S.getEnabledTrans();
-		
-//		nedges = n.getEnabledTrans(c);
-//		if(nedges.size() > 0) {
-//			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
-//			NeverState m = n.doTransition(nedge, c);
-//			n = m;
-//		}
-//		
-//		edges = c.getEnabledTrans();
-//		edge = edges.get(0);
-//		ProgramState d = c.doTransition(edge);
-//		
-//		nedges = n.getEnabledTrans(d);
-//		if(nedges.size() > 0) {
-//			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
-//			NeverState m = n.doTransition(nedge, d);
-//			n = m;
-//		}
-//		
-//		edges = d.getEnabledTrans();
-//		edge = edges.get(0);
-//		ProgramState e = d.doTransition(edge);
-//		
-//		nedges = n.getEnabledTrans(e);
-//		if(nedges.size() > 0) {
-//			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
-//			NeverState m = n.doTransition(nedge, e);
-//			n = m;
-//		}
-//		
-//		edges = e.getEnabledTrans();
-//		edge = edges.get(0);
-//		ProgramState f = e.doTransition(edge);
-//		
-//		nedges = n.getEnabledTrans(f);
-//		if(nedges.size() > 0) {
-//			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(1);
-//			NeverState m = n.doTransition(nedge, f);
-//			n = m;
-//		}
-//		
-//		edges = f.getEnabledTrans();
-//		edge = edges.get(0);
-//		ProgramState g = f.doTransition(edge);
-//		
-//		nedges = n.getEnabledTrans(g);
-//		if(nedges.size() > 0) {
-//			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
-//			NeverState m = n.doTransition(nedge, g);
-//			n = m;
-//		}
-//		
-//		edges = g.getEnabledTrans();
-//		edge = edges.get(0);
-//		ProgramState h = g.doTransition(edge);
-//		
-//		nedges = n.getEnabledTrans(h);
-//		if(nedges.size() > 0) {
-//			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
-//			NeverState m = n.doTransition(nedge, h);
-//			n = m;
-//		}
-	
-		
-//		for(ProgramState initialState : initialStates) {
-//			initialState.getEnabledTrans();
-//		}
+		ProgramState N = mModelCheckerAssistant.doProgramTransition(M, edge);
 		// Do something...
 	}
 

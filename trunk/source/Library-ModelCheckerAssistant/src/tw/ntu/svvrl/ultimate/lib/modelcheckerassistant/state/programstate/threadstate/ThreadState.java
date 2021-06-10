@@ -9,6 +9,7 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.I
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit.ThreadTransitionToolkit;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.Valuation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.ValuationState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.FuncInitValuationInfo;
@@ -23,15 +24,12 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.Stateme
  */
 
 public class ThreadState extends ValuationState<ThreadState>{
-
+	private ProgramStateExplorer mProgramStateExplorer;
 	/**
 	 * To specify which IcfgLocation this state is generated from.
 	 */
 	private BoogieIcfgLocation mCorrespondingIcfgLoc;
-	private final FuncInitValuationInfo mFuncInitValuationInfo;
 	
-	private final Map<String, List<String>> mProc2InParams;
-	private final Map<String, List<String>> mProc2OutParams;
 	
 	/**
 	 * The stack that keeps the procedure calls.
@@ -57,18 +55,13 @@ public class ThreadState extends ValuationState<ThreadState>{
 	 */
 	public ThreadState(final Valuation v,
 						final BoogieIcfgLocation boogieIcfgLocation,
-						final FuncInitValuationInfo funcInitValuationInfo,
-						final Map<String, List<String>> proc2InParams,
-						final Map<String, List<String>> proc2OutParams,
-						final long threadID) {
+						final long threadID, final ProgramStateExplorer pe) {
 		mValuation = v;
 		mCorrespondingIcfgLoc = boogieIcfgLocation;
-		mFuncInitValuationInfo = funcInitValuationInfo;
-		mProc2InParams = proc2InParams;
-		mProc2OutParams = proc2OutParams;
 		mProcStack.push(
 				new ProcInfo(mCorrespondingIcfgLoc.getProcedure()));
 		mThreadID = threadID;
+		mProgramStateExplorer = pe;
 	}
 	
 	/**
@@ -83,11 +76,9 @@ public class ThreadState extends ValuationState<ThreadState>{
 	public ThreadState(final Valuation v, final ThreadState oldState) {
 		mValuation = v;
 		mCorrespondingIcfgLoc = null;
-		mFuncInitValuationInfo = oldState.getFuncInitValuationInfo();
-		mProc2InParams = oldState.getProc2InParams();
-		mProc2OutParams = oldState.getProc2OutParams();
 		mProcStack = oldState.getProcStackCopy();
 		mThreadID = oldState.getThreadID();
+		mProgramStateExplorer = oldState.getProgramStateExplorer();
 	}
 	
 	/**
@@ -98,27 +89,17 @@ public class ThreadState extends ValuationState<ThreadState>{
 	public ThreadState(final ThreadState threadState) {
 		mValuation = threadState.getValuationLocalCopy();
 		mCorrespondingIcfgLoc = threadState.getCorrespondingIcfgLoc();
-		mFuncInitValuationInfo = threadState.getFuncInitValuationInfo();
-		mProc2InParams = threadState.getProc2InParams();
-		mProc2OutParams = threadState.getProc2OutParams();
 		mProcStack = threadState.getProcStackCopy();
 		mThreadID = threadState.getThreadID();
+		mProgramStateExplorer = threadState.getProgramStateExplorer();
 	}
 
 	public BoogieIcfgLocation getCorrespondingIcfgLoc() {
 		return mCorrespondingIcfgLoc;
 	}
 	
-	public FuncInitValuationInfo getFuncInitValuationInfo() {
-		return mFuncInitValuationInfo;
-	}
-	
-	public Map<String, List<String>> getProc2InParams() {
-		return mProc2InParams;
-	}
-	
-	public Map<String, List<String>> getProc2OutParams() {
-		return mProc2OutParams;
+	public ProgramStateExplorer getProgramStateExplorer() {
+		return mProgramStateExplorer;
 	}
 	
 	public Stack<ProcInfo> getProcStackCopy() {
@@ -197,7 +178,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 			 */
 			final ThreadStateTransition trans = new ThreadStateTransition(edge, mThreadID);
 			final ThreadTransitionToolkit transitionToolkit 
-					= new ThreadTransitionToolkit(trans, this);
+					= new ThreadTransitionToolkit(trans, this, mProgramStateExplorer);
 			if (transitionToolkit.checkTransEnabled()) {
 				enabledTrans.add(trans);
 			}
@@ -218,7 +199,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 	 */
 	public ThreadState doTransition(final ThreadStateTransition edge) {
 		final ThreadTransitionToolkit transitionToolkit
-				= new ThreadTransitionToolkit(edge, this);
+				= new ThreadTransitionToolkit(edge, this, mProgramStateExplorer);
 		return transitionToolkit.doTransition();
 	}
 	

@@ -2,15 +2,16 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.thread
 
 import java.util.Map;
 
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.FuncInitValuationInfo;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.ExprEvaluator;
 
 public class ThreadExprEvaluator extends ExprEvaluator<ThreadState> {
 
-	public ThreadExprEvaluator(final ThreadState state) {
+	public ThreadExprEvaluator(final ThreadState state, final ProgramStateExplorer pe) {
 		super(state);
-		mFuncInitValuationInfo = state.getFuncInitValuationInfo();
+		mFuncInitValuationInfo = pe.getFuncInitValuationInfo();
 		createFuncInitValuation(mFuncInitValuationInfo);
 	}
 	

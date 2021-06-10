@@ -31,12 +31,14 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WhileStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogiePrimitiveType;
 import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.Valuation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProcInfo;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsExecutor;
 
-public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
+public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
+	private final ProgramStateExplorer mProgramStateExplorer;
 	public static enum execType{
 		check, realExec
 	}
@@ -50,10 +52,11 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 	 * @param threadState
 	 */
 	public ThreadStatementsExecutor(final List<Statement> statements, final ThreadState state
-									, final execType t) {
+									, final execType t, final ProgramStateExplorer pe) {
 		super(statements);
 		mCurrentState = new ThreadState(state);
 		mExecType = t;
+		mProgramStateExplorer = pe;
 	}
 	
 	/**
@@ -62,10 +65,11 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 	 * @param threadState
 	 */
 	public ThreadStatementsExecutor(final Statement statement, final ThreadState state
-									, final execType t) {
+									, final execType t, final ProgramStateExplorer pe) {
 		super(statement);
 		mCurrentState = new ThreadState(state);
 		mExecType = t;
+		mProgramStateExplorer = pe;
 	}
 	
 	/**
@@ -76,6 +80,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 		super();
 		mCurrentState = new ThreadState(state);
 		mExecType = t;
+		mProgramStateExplorer = null;
 	}
 	
 	public void executeOne(final Statement stmt) {
@@ -115,7 +120,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 
 
 	private void executeAssertStatement(AssertStatement stmt) {
-		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState, mProgramStateExplorer);
 		if(!(boolean) exprEvaluator.evaluate(stmt.getFormula())) {
 			throw new UnsupportedOperationException("Assertion is violated during"
 					+ " the statement execution.");
@@ -130,7 +135,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 	 * 		new thread state.
 	 */
 	private void executeAssignmentStatement(final AssignmentStatement stmt) {
-		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState, mProgramStateExplorer);
 		
 		final LeftHandSide[] lhs = stmt.getLhs();
 		final Expression[] rhs = stmt.getRhs();
@@ -207,7 +212,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 		
 		doCallRoutines(procName, args);
 		
-		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState, mProgramStateExplorer);
 		long newThreadID = (long) exprEvaluator.evaluate(stmt.getThreadID()[0]);
 		mCurrentState.assignNewThreadID(newThreadID);
 	}
@@ -259,15 +264,17 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 
 	private void executeIfStatement(IfStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
-		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState, mProgramStateExplorer);
 		if((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
 			final ThreadStatementsExecutor newStatementsExecutor
-					 = new ThreadStatementsExecutor(Arrays.asList(stmt.getThenPart()), mCurrentState, mExecType);
+					 = new ThreadStatementsExecutor(Arrays.asList(stmt.getThenPart())
+							 , mCurrentState, mExecType, mProgramStateExplorer);
 			final ThreadState newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		} else {
 			final ThreadStatementsExecutor newStatementsExecutor
-			 		= new ThreadStatementsExecutor(Arrays.asList(stmt.getElsePart()), mCurrentState, mExecType);
+			 		= new ThreadStatementsExecutor(Arrays.asList(stmt.getElsePart())
+			 				, mCurrentState, mExecType, mProgramStateExplorer);
 			final ThreadState newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}
@@ -299,10 +306,11 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 
 	private void executeWhileStatement(WhileStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
-		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState, mProgramStateExplorer);
 		while((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
 			final ThreadStatementsExecutor newStatementsExecutor
-	 			= new ThreadStatementsExecutor(Arrays.asList(stmt.getBody()), mCurrentState, mExecType);
+	 			= new ThreadStatementsExecutor(Arrays.asList(stmt.getBody())
+	 					, mCurrentState, mExecType, mProgramStateExplorer);
 			final ThreadState newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}
@@ -352,9 +360,9 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState>  {
 	}
 	
 	private void doCallRoutines(String procName, Expression[] args) {
-		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState);
+		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState, mProgramStateExplorer);
 		
-		List<String> argsName = mCurrentState.getProc2InParams().get(procName);
+		List<String> argsName = mProgramStateExplorer.getProc2InParams().get(procName);
 		assert(args.length == argsName.size());
 		
 		/**

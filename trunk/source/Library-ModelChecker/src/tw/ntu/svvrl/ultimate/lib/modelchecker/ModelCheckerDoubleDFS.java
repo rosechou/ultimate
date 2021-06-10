@@ -34,7 +34,6 @@ public class ModelCheckerDoubleDFS{
 	private boolean match = false;
 	//	ProgramState is the node of the Control Flow Graph
 	private List<ProgramState> levelNodes = new ArrayList<ProgramState>();
-	// ProgramState preState = null;
 	ProgramState loc = null;
 	ProgramState seed = null;
 	NeverState Neverseed = null;
@@ -89,19 +88,19 @@ public class ModelCheckerDoubleDFS{
 	public void dfsRed(ProgramState node, NeverState state)
 	{
 		// secondVisited.push(node);
-		List<ProgramStateTransition> programEdges = node.getEnabledTrans();
+		List<ProgramStateTransition> programEdges = assistant.getProgramEnabledTrans(node);
 		
 		List<ProgramState> nProgramNodes = new ArrayList<ProgramState>();
 		for(int j = 0;j < programEdges.size();j++)
 		{
-			nProgramNodes.add(node.doTransition(programEdges.get(j)));
+			nProgramNodes.add(assistant.doProgramTransition(node, programEdges.get(j)));
 		}
 		levelNodes = nProgramNodes;
 		
 		for (int i = 0;i < levelNodes.size();i++) {
 			ProgramState nextNode = levelNodes.get(i);
 			
-			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = state.getEnabledTrans(nextNode);
+			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = assistant.getNeverEnabledTrans(state, nextNode);
 			
 //			for(int k = 0;k < firstVisited.size();k++)
 //			{
@@ -116,7 +115,7 @@ public class ModelCheckerDoubleDFS{
 			
 			for (int j = 0;j < neverEdges.size();j++) {
 				OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
-				NeverState nextState = state.doTransition(neverEdge, nextNode);
+				NeverState nextState = assistant.doNeverTransition(state, neverEdge, nextNode);
 				
 				if(!compare(redpath, nextNode, nextState))
 				{
@@ -128,6 +127,15 @@ public class ModelCheckerDoubleDFS{
 				{
 					match = true;
 					mLogger.info("Violation of LTL property");
+					// print bluepath and redpath
+					for(int a = 0; a < bluepath.size();a++)
+					{
+						mLogger.info(bluepath.get(a).getFirst().getThreadStates().toString() + bluepath.get(a).getSecond().getName());
+					}
+					for(int a = 0; a < redpath.size();a++)
+					{
+						mLogger.info(redpath.get(a).getFirst().getThreadStates().toString() + redpath.get(a).getSecond().getName());
+					}
 					return;
 				}
 			}	
@@ -141,61 +149,41 @@ public class ModelCheckerDoubleDFS{
 	public void dfsBlue(ProgramState node, NeverState init)
 	{
 		// firstVisited.push(node);
-		List<ProgramStateTransition> programEdges = node.getEnabledTrans();
+		List<ProgramStateTransition> programEdges = assistant.getProgramEnabledTrans(node);
 		
 		List<ProgramState> nProgramNodes = new ArrayList<ProgramState>();
 		for(int j = 0;j < programEdges.size();j++)
 		{
-			nProgramNodes.add(node.doTransition(programEdges.get(j)));
+			nProgramNodes.add(assistant.doProgramTransition(node, programEdges.get(j)));
 		}
 		levelNodes = nProgramNodes;
 		
-//		anotherTrans:
+		anotherTrans:
 		for (int i = 0;i < levelNodes.size();i++) {
 			if(match) {return;}
 			ProgramState nextNode = levelNodes.get(i);
 			
-			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = init.getEnabledTrans(nextNode);
-			
-			if(neverEdges.isEmpty())
+			if(!assistant.globalVarsInitialized(nextNode))
 			{
 				Pair p = new Pair(node, init);
 				bluepath.push(p);
 				dfsBlue(nextNode, init);
-				//break;
+				break anotherTrans;
 			}
 			
+			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = assistant.getNeverEnabledTrans(init, nextNode);
 			for (int j = 0;j < neverEdges.size();j++) {
 				if(match) {return;}
 				OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
-				NeverState nextState = init.doTransition(neverEdge, nextNode);
+				NeverState nextState = assistant.doNeverTransition(init, neverEdge, nextNode);
 				
-			// need to compare neverState at the same time
 				if(!compare(bluepath, nextNode, nextState))
 				{
-					// levelNodes.remove(i);
-					// break anotherTrans;
 					Pair p = new Pair(node, init);
 					bluepath.push(p);
 					dfsBlue(nextNode, nextState);
-				}	
-					
+				}		
 			}
-//			if(!firstVisited.contains(nextNode))
-//			{
-//				List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = init.getEnableTrans(nextNode);
-//				
-//				for (int j = 0;j < neverEdges.size();j++) {
-//					if(match) {return;}
-//					OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
-//					NeverState nextState = init.doTransition(neverEdge, nextNode);
-//					
-//					Pair p = new Pair(node, init);
-//					bluepath.push(p);
-//					dfsBlue(nextNode, nextState);
-//				}	
-//			}
-
 		}
 		
 		if(!bluepath.empty())

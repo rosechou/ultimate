@@ -1,17 +1,22 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.Boogie2SmtSymbolTable;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.debugidentifiers.DebugIdentifier;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.ILocalProgramVar;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgContainer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadCurrent;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.JoinThreadCurrent;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ForkHandler;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.FuncInitValuationInfo;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.JoinHandler;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.NilSelfLoop;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
@@ -19,6 +24,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.Progra
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramStateTransition;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit.ThreadTransitionToolkit;
 
 /**
  * This class explores the boogie program states with the help of
@@ -31,26 +37,33 @@ public class ProgramStateExplorer {
 	/*---------------RCFG fields---------------*/
 	private final Map<String, BoogieIcfgLocation> mEntryNodes;
 	private final Map<String, BoogieIcfgLocation> mExitNodes;
-	private final Set<BoogieIcfgLocation> mLoopLocations;
-	private final Map<String, Set<BoogieIcfgLocation>> mErrorNodes;
 	private final Map<String, Map<DebugIdentifier, BoogieIcfgLocation>> mLocNodes;
 	private final Set<BoogieIcfgLocation> mInitialNodes;
 	/*------------End of RCFG fields-----------*/
 	
 	private final ProgramStateFactory mProgramStateFactory;
+	
+	private final FuncInitValuationInfo mFuncInitValuationInfo;
+	
+	private final Map<String, List<String>> mProc2InParams;
+	private final Map<String, List<String>> mProc2OutParams;
 
 	public ProgramStateExplorer(final BoogieIcfgContainer rcfg) {
 		/*---------------RCFG fields---------------*/
 		mEntryNodes = rcfg.getProcedureEntryNodes();
 		mExitNodes = rcfg.getProcedureExitNodes();
-		mLoopLocations = rcfg.getLoopLocations();
-		mErrorNodes = rcfg.getProcedureErrorNodes();
 		mLocNodes = rcfg.getProgramPoints();
 		mInitialNodes = rcfg.getInitialNodes();
 		/*------------End of RCFG fields-----------*/
 		
-		mProgramStateFactory = new ProgramStateFactory(rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable()
-				, rcfg.getCfgSmtToolkit(), mEntryNodes, mExitNodes);
+		final Boogie2SmtSymbolTable boogie2SmtSymbolTable = rcfg.getBoogie2SMT().getBoogie2SmtSymbolTable();
+		mFuncInitValuationInfo = new FuncInitValuationInfo(
+				boogie2SmtSymbolTable.getBoogieDeclarations().getFunctionDeclarations());
+		mProc2InParams = createProc2Prams(boogie2SmtSymbolTable, "in");
+		mProc2OutParams = createProc2Prams(boogie2SmtSymbolTable, "out");
+		
+		mProgramStateFactory = new ProgramStateFactory(boogie2SmtSymbolTable
+				, rcfg.getCfgSmtToolkit(), mEntryNodes, mExitNodes, this);
 	}
 	
 	
@@ -83,7 +96,7 @@ public class ProgramStateExplorer {
 		for(final ProgramStateTransition trans : enabledTrans) {
 			assert trans instanceof ThreadStateTransition;
 			if(((ThreadStateTransition) trans).getIcfgEdge() instanceof JoinThreadCurrent) {
-				final JoinHandler joinHandler = new JoinHandler(p, (ThreadStateTransition) trans, mExitNodes);
+				final JoinHandler joinHandler = new JoinHandler(p, (ThreadStateTransition) trans, this);
 				if(joinHandler.isJoinBlocked()) {
 					blockedTrans.add(trans);
 				}
@@ -124,11 +137,11 @@ public class ProgramStateExplorer {
 			 * consists of all thread states.
 			 */
 			if(threadTrans.getIcfgEdge() instanceof ForkThreadCurrent) {
-				final ForkHandler forkHandler = new ForkHandler(p, threadTrans, mEntryNodes);
+				final ForkHandler forkHandler = new ForkHandler(p, threadTrans, this);
 				newProgramState = forkHandler.doFork();
 			} else if(threadTrans.getIcfgEdge() instanceof JoinThreadCurrent) {
-				final JoinHandler joinHandler = new JoinHandler(p, threadTrans, mExitNodes);
-				newProgramState = joinHandler.doJoin();
+				final JoinHandler joinHandler = new JoinHandler(p, threadTrans, this);
+				newProgramState = joinHandler.doJoin(this);
 			} else {
 				/**
 				 * For others(not Fork and Join), Only one thread state is considered.
@@ -168,11 +181,46 @@ public class ProgramStateExplorer {
 		return null;
 	}
 	
+	private Map<String, List<String>> createProc2Prams(Boogie2SmtSymbolTable boogie2SmtSymbolTable
+			, String inOrOut) {
+		final Map<String, List<String>> result = new HashMap<>();
+		Map<String, List<ILocalProgramVar>> p2p = new HashMap<>();
+		if(inOrOut.equals("in")) {
+			p2p = boogie2SmtSymbolTable.getProc2InParams();
+		} else if(inOrOut.equals("out")) {
+			p2p = boogie2SmtSymbolTable.getProc2OutParams();
+		} else {
+			throw new UnsupportedOperationException("Invalid argument: "
+					+ inOrOut);
+		}
+				
+		for(final String procName : p2p.keySet()) {
+			List<String> paramNames = new ArrayList<>();
+			for(final ILocalProgramVar param : p2p.get(procName)) {
+				paramNames.add(param.getIdentifier());
+			}
+			result.put(procName, paramNames);
+		}
+		return result;
+	}
+	
 	public BoogieIcfgLocation getEntryNode(final String procName) {
 		return mEntryNodes.get(procName);
 	}
 	
 	public BoogieIcfgLocation getExitNode(final String procName) {
 		return mExitNodes.get(procName);
+	}
+	
+	public FuncInitValuationInfo getFuncInitValuationInfo() {
+		return mFuncInitValuationInfo;
+	}
+	
+	public Map<String, List<String>> getProc2InParams() {
+		return mProc2InParams;
+	}
+	
+	public Map<String, List<String>> getProc2OutParams() {
+		return mProc2OutParams;
 	}
 }

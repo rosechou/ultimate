@@ -6,6 +6,7 @@ import java.util.Map;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.Boogie2SmtSymbolTable;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.CfgSmtToolkit;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.Valuation;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateFactory;
@@ -18,9 +19,10 @@ public class ProgramStateFactory {
 	public ProgramStateFactory(final Boogie2SmtSymbolTable boogie2SmtSymbolTable
 			, final CfgSmtToolkit cfgSmtToolkit
 			, final Map<String, BoogieIcfgLocation> entryNodes
-			, final Map<String, BoogieIcfgLocation> exitNodes) {
+			, final Map<String, BoogieIcfgLocation> exitNodes
+			, final ProgramStateExplorer pe) {
 		mVarAdder = new VarAndParamAdder(boogie2SmtSymbolTable);
-		mThreadStateFactory = new ThreadStateFactory(boogie2SmtSymbolTable, cfgSmtToolkit);
+		mThreadStateFactory = new ThreadStateFactory(boogie2SmtSymbolTable, cfgSmtToolkit, pe);
 	}
 
 

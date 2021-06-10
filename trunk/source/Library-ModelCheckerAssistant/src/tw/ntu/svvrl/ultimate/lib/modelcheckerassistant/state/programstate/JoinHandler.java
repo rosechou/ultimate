@@ -9,6 +9,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadCurrent;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.JoinThreadCurrent;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit.ThreadCodeBlockExecutor;
@@ -18,13 +19,13 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadt
 public class JoinHandler {
 	final ProgramState mProgramState;
 	final ThreadStateTransition mTrans;
-	final Map<String, BoogieIcfgLocation> mExitNodes;
+	final ProgramStateExplorer mProgramStateExplorer;
 	
 	public JoinHandler(final ProgramState programState, final ThreadStateTransition trans
-					, final Map<String, BoogieIcfgLocation> exitNodes) {
+					, final ProgramStateExplorer pe) {
 		mProgramState = new ProgramState(programState);
 		mTrans = trans;
-		mExitNodes = exitNodes;
+		mProgramStateExplorer = pe;
 	}
 	
 	/**
@@ -38,22 +39,22 @@ public class JoinHandler {
 		final long currentThreadID = mTrans.getThreadID();
 		final ThreadState currentThreadState = mProgramState.getThreadStateByID(currentThreadID);
 		final JoinStatement joinStmt = ((JoinThreadCurrent) mTrans.getIcfgEdge()).getJoinStatement();
-		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(currentThreadState);
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(currentThreadState, mProgramStateExplorer);
 		final long targetThreadID = (long) exprEvaluator.evaluate(joinStmt.getThreadID()[0]);
 		final ThreadState targetState = mProgramState.getThreadStateByID(targetThreadID);
 		final String targetProcName = targetState.getCurrentProc().getProcName();
 		
-		return !mExitNodes.get(targetProcName).equals(targetState.getCorrespondingIcfgLoc());
+		return !mProgramStateExplorer.getExitNode(targetProcName).equals(targetState.getCorrespondingIcfgLoc());
 	}
 
-	public ProgramState doJoin() {
+	public ProgramState doJoin(final ProgramStateExplorer pe) {
 		final long currentThreadID = mTrans.getThreadID();
 		final ThreadState currentThreadState = mProgramState.getThreadStateByID(currentThreadID);
 		final ProcInfo currentProcInfo = currentThreadState.getCurrentProc();
 		final JoinStatement joinStmt = ((JoinThreadCurrent) mTrans.getIcfgEdge()).getJoinStatement();
 		
 		
-		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(currentThreadState);
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(currentThreadState, mProgramStateExplorer);
 		final long targetThreadID = (long) exprEvaluator.evaluate(joinStmt.getThreadID()[0]);
 		final ThreadState targetState = mProgramState.getThreadStateByID(targetThreadID);
 		
@@ -88,7 +89,7 @@ public class JoinHandler {
 		/**
 		 * Retrieve return values
 		 */
-		final List<String> outParamNames = fromState.getProc2OutParams().get(fromProcName);
+		final List<String> outParamNames = mProgramStateExplorer.getProc2OutParams().get(fromProcName);
 		final VariableLHS[] lhss = stmtLhss;
 		final Object[] values = new Object[lhss.length];
 		

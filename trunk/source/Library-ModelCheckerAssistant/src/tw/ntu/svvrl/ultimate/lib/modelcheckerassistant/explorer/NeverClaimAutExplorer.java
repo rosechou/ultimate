@@ -37,14 +37,6 @@ public class NeverClaimAutExplorer {
 	
 	public List<OutgoingInternalTransition<CodeBlock, NeverState>> getEnabledTrans(final NeverState n, final ProgramState correspondingProgramState) {
 		List<OutgoingInternalTransition<CodeBlock, NeverState>> enabledTrans = new ArrayList<>();
-		/**
-		 * All NonOld global variables must be initialized, or some errors
-		 * will occur during expression evaluation.
-		 * If some global variables are not initialized yet, return empty list.
-		 */
-		if(!correspondingProgramState.allNonOldGlobalInitialized()) {
-			return enabledTrans;
-		}
 		
 		for(final OutgoingInternalTransition<CodeBlock, NeverState> edge : n.getTranss()) {
 			final NeverTransitionToolkit transitionToolkit

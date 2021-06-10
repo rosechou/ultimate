@@ -14,8 +14,6 @@ public class ProgramStateFactory {
 	private final VarAndParamAdder mVarAdder;
 	private final ThreadStateFactory mThreadStateFactory;
 
-	private final Map<String, BoogieIcfgLocation> mEntryNodes;
-	private final Map<String, BoogieIcfgLocation> mExitNodes;
 	
 	public ProgramStateFactory(final Boogie2SmtSymbolTable boogie2SmtSymbolTable
 			, final CfgSmtToolkit cfgSmtToolkit
@@ -23,8 +21,6 @@ public class ProgramStateFactory {
 			, final Map<String, BoogieIcfgLocation> exitNodes) {
 		mVarAdder = new VarAndParamAdder(boogie2SmtSymbolTable);
 		mThreadStateFactory = new ThreadStateFactory(boogie2SmtSymbolTable, cfgSmtToolkit);
-		mEntryNodes = entryNodes;
-		mExitNodes = exitNodes;
 	}
 
 
@@ -36,7 +32,7 @@ public class ProgramStateFactory {
 		
 		final ThreadState initialThreadState = mThreadStateFactory.createInitialState(loc, globalValuation);
 		
-		return new ProgramState(initialThreadState, globalValuation, mEntryNodes, mExitNodes);
+		return new ProgramState(initialThreadState, globalValuation);
 	}
 	
 }

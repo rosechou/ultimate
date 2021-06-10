@@ -1,6 +1,7 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate;
 
 import java.util.List;
+import java.util.Map;
 
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ForkStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.JoinStatement;
@@ -17,10 +18,13 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadt
 public class JoinHandler {
 	final ProgramState mProgramState;
 	final ThreadStateTransition mTrans;
+	final Map<String, BoogieIcfgLocation> mExitNodes;
 	
-	public JoinHandler(final ProgramState programState, final ThreadStateTransition trans) {
+	public JoinHandler(final ProgramState programState, final ThreadStateTransition trans
+					, final Map<String, BoogieIcfgLocation> exitNodes) {
 		mProgramState = new ProgramState(programState);
 		mTrans = trans;
+		mExitNodes = exitNodes;
 	}
 	
 	/**
@@ -39,7 +43,7 @@ public class JoinHandler {
 		final ThreadState targetState = mProgramState.getThreadStateByID(targetThreadID);
 		final String targetProcName = targetState.getCurrentProc().getProcName();
 		
-		return !mProgramState.getExitNode(targetProcName).equals(targetState.getCorrespondingIcfgLoc());
+		return !mExitNodes.get(targetProcName).equals(targetState.getCorrespondingIcfgLoc());
 	}
 
 	public ProgramState doJoin() {
@@ -87,7 +91,7 @@ public class JoinHandler {
 		final List<String> outParamNames = fromState.getProc2OutParams().get(fromProcName);
 		final VariableLHS[] lhss = stmtLhss;
 		final Object[] values = new Object[lhss.length];
-		assert(lhss.length == outParamNames.size());
+		
 		for(int i = 0; i < lhss.length; i++) {
 			final Object v = fromState.getValuationLocalCopy().lookUpValue(fromProcName, outParamNames.get(i));
 			values[i] = v;

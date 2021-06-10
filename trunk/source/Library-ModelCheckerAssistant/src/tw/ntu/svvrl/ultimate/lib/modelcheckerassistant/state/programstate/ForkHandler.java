@@ -1,5 +1,7 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate;
 
+import java.util.Map;
+
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ForkStatement;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadCurrent;
@@ -10,12 +12,15 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadt
 public class ForkHandler {
 	final ProgramState mProgramState;
 	final ThreadStateTransition mTrans;
+	final  Map<String, BoogieIcfgLocation> mEntryNodes;
 	
-	public ForkHandler(final ProgramState programState, final ThreadStateTransition trans) {
+	public ForkHandler(final ProgramState programState, final ThreadStateTransition trans
+						, final Map<String, BoogieIcfgLocation> entryNodes) {
 		mProgramState = new ProgramState(programState);
 		mTrans = trans;
+		mEntryNodes = entryNodes;
 	}
-	
+
 	/**
 	 * Fork to two thread states.
 	 * @return
@@ -48,7 +53,7 @@ public class ForkHandler {
 		final ThreadStatementsExecutor stmtExecutor = new ThreadStatementsExecutor(
 				forkStmt, currentThreadState, ThreadStatementsExecutor.execType.realExec);
 		final ThreadState otherNextState =  stmtExecutor.execute();
-		BoogieIcfgLocation threadEntryNode = mProgramState.getEntryNode(forkProcName);
+		BoogieIcfgLocation threadEntryNode = mEntryNodes.get(forkProcName);
 		otherNextState.setCorrespondingIcfgLoc(threadEntryNode);
 		
 		

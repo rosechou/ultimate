@@ -150,7 +150,7 @@ public class ModelCheckerDoubleDFS{
 		}
 		levelNodes = nProgramNodes;
 		
-//		anotherTrans:
+		anotherTrans:
 		for (int i = 0;i < levelNodes.size();i++) {
 			if(match) {return;}
 			ProgramState nextNode = levelNodes.get(i);
@@ -162,7 +162,7 @@ public class ModelCheckerDoubleDFS{
 				Pair p = new Pair(node, init);
 				bluepath.push(p);
 				dfsBlue(nextNode, init);
-				//break;
+				break anotherTrans;
 			}
 			
 			for (int j = 0;j < neverEdges.size();j++) {

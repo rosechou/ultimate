@@ -79,6 +79,18 @@ public class ModelCheckerAssistant {
 		return mNeverClaimAutExplorer.getInitialStates();
 	}
 	
+	public boolean globalVarsInitialized(final ProgramState p) {
+		/**
+		 * All NonOld global variables must be initialized, or some errors
+		 * will occur during expression evaluation.
+		 * @return If some global variables are not initialized yet, return false.
+		 */
+		if(p.allNonOldNonAuxGlobalInitialized()) {
+			return true;
+		}
+		return false;
+	}
+	
 	public List<ProgramStateTransition> getProgramEnabledTrans(final ProgramState p) {
 		return mProgramStateExplorer.getEnabledTrans(p);
 	}

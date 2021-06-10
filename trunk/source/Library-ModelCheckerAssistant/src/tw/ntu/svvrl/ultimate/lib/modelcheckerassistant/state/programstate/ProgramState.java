@@ -78,7 +78,7 @@ public class ProgramState extends ValuationState<ProgramState> {
 		mThreadStates.remove(threadID);
 	}
 	
-	public boolean allNonOldGlobalInitialized() {
+	public boolean allNonOldNonAuxGlobalInitialized() {
 		return mValuation.allNonOldNonAuxGlobalInitialized();
 	}
 	

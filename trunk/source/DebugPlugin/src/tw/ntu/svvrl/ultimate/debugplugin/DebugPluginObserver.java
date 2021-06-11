@@ -112,11 +112,13 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		ProgramStateTransition edge = edges.get(0);
 		ProgramState b = mModelCheckerAssistant.doProgramTransition(a, edge);
 		
-		List<OutgoingInternalTransition<CodeBlock, NeverState>> nedges = mModelCheckerAssistant.getNeverEnabledTrans(n, b);
-		if(nedges.size() > 0) {
-			OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
-			NeverState m = mModelCheckerAssistant.doNeverTransition(n, nedge, b);
-			n = m;
+		if(mModelCheckerAssistant.globalVarsInitialized(b)) {
+			List<OutgoingInternalTransition<CodeBlock, NeverState>> nedges = mModelCheckerAssistant.getNeverEnabledTrans(n, b);
+			if(nedges.size() > 0) {
+				OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
+				NeverState m = mModelCheckerAssistant.doNeverTransition(n, nedge, b);
+				n = m;
+			}
 		}
 		
 		edges = mModelCheckerAssistant.getProgramEnabledTrans(b);

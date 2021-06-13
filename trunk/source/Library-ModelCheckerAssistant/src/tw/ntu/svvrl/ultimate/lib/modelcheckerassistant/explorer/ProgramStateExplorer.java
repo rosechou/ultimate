@@ -82,11 +82,11 @@ public class ProgramStateExplorer {
 		return initialProgramStates;
 	}
 	
-	public List<ProgramStateTransition> getEnabledTrans(final ProgramState p) {
+
+	public List<ProgramStateTransition> getEnabledTransByThreadID(final ProgramState p, long tid) {
 		final List<ProgramStateTransition> enabledTrans = new ArrayList<>();
-		for(final ThreadState threadState : p.getThreadStates()) {
-			enabledTrans.addAll(threadState.getEnabledTrans());
-		}
+		final ThreadState threadState = p.getThreadStateByID(tid);
+		enabledTrans.addAll(threadState.getEnabledTrans());
 		
 		/**
 		 * If there is a join in <code>enableTrans</code> and
@@ -104,6 +104,14 @@ public class ProgramStateExplorer {
 		}
 		enabledTrans.removeAll(blockedTrans);
 		
+		return enabledTrans;
+	}
+	
+	public List<ProgramStateTransition> getEnabledTrans(final ProgramState p) {
+		final List<ProgramStateTransition> enabledTrans = new ArrayList<>();
+		for(final long tid : p.getThreadIDs()) {
+			enabledTrans.addAll(getEnabledTransByThreadID(p, tid));
+		}
 		
 		if(enabledTrans.isEmpty()) {
 			/**

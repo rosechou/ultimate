@@ -1,5 +1,5 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate;
 
-public class ProgramStateTransition {
-
+public abstract class ProgramStateTransition {
+	public abstract String getCStatement();
 }

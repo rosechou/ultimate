@@ -19,4 +19,14 @@ public class ThreadStateTransition extends ProgramStateTransition {
 	public long getThreadID() {
 		return mThreadID;
 	}
+	
+	@Override
+	public String getCStatement() {
+		return mIcfgEdge.getPayload().toString();
+	}
+	
+	@Override
+	public String toString() {
+		return "Thread" + mThreadID + " do \"" + mIcfgEdge.toString() + "\"";
+	}
 }

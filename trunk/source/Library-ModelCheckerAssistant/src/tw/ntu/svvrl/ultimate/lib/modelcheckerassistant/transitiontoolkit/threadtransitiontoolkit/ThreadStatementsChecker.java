@@ -67,7 +67,7 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 				final ThreadStatementsExecutor stmtsExecutor
 					= new ThreadStatementsExecutor(stmt, mState, ThreadStatementsExecutor.execType.check, mProgramStateExplorer);
 				moveToNewState(stmtsExecutor.execute());
-				ThreadStatementsChecker nextStatementsChecker 
+				final ThreadStatementsChecker nextStatementsChecker 
 						= new ThreadStatementsChecker(mStatements.subList(i+1, mStatements.size()), mState, mProgramStateExplorer);
 				return nextStatementsChecker.checkStatementsEnable();
 			}
@@ -100,7 +100,7 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 				accessOnlyLocals = checkAssumeAccessOnlyLocalVar((AssumeStatement) statement);
 			} else if(statement instanceof AtomicStatement) {
 				List<Statement> statements = Arrays.asList(((AtomicStatement) statement).getBody());
-				ThreadStatementsChecker nextStatementsChecker 
+				final ThreadStatementsChecker nextStatementsChecker 
 					= new ThreadStatementsChecker(statements, mState, mProgramStateExplorer);
 				accessOnlyLocals = nextStatementsChecker.checkStatementsAccessOnlyLocalVar();
 			} else if(statement instanceof BreakStatement) {
@@ -185,29 +185,57 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 		 * Check right hand sides
 		 */
 		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mState, mProgramStateExplorer);
-		final Expression[] rhs = stmt.getRhs();
+		final Expression[] rhss = stmt.getRhs();
+		for(final Expression rhs : rhss) {
+			if(!exprEvaluator.checkAccessOnlyLocalVar(rhs)) {
+				return false;
+			}
+		}
 		
-		return false;
+		return true;
 	}
 
 	private boolean checkAssumeAccessOnlyLocalVar(final AssumeStatement stmt) {
-		// TODO Auto-generated method stub
-		return false;
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mState, mProgramStateExplorer);
+		if(!exprEvaluator.checkAccessOnlyLocalVar(stmt.getFormula())) {
+			return false;
+		}
+		return true;
 	}
 
 	private boolean checkHavocAccessOnlyLocalVar(final HavocStatement stmt) {
-		// TODO Auto-generated method stub
-		return false;
+		/**
+		 * Check left hand sides
+		 */
+		final VariableLHS[] lhss = stmt.getIdentifiers();
+		for(final VariableLHS lhs : lhss) {
+			final String procName = lhs.getDeclarationInformation().getProcedure();
+			if(procName == null) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private boolean checkIfAccessOnlyLocalVar(final IfStatement stmt) {
-		// TODO Auto-generated method stub
-		return false;
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mState, mProgramStateExplorer);
+		final ThreadStatementsChecker thenStatementsChecker 
+			= new ThreadStatementsChecker(Arrays.asList(stmt.getThenPart()), mState, mProgramStateExplorer);
+		final ThreadStatementsChecker elseStatementsChecker 
+		= new ThreadStatementsChecker(Arrays.asList(stmt.getElsePart()), mState, mProgramStateExplorer);
+		
+		return exprEvaluator.checkAccessOnlyLocalVar(stmt.getCondition())
+				&& thenStatementsChecker.checkStatementsAccessOnlyLocalVar()
+				&& elseStatementsChecker.checkStatementsAccessOnlyLocalVar();
 	}
 
 	private boolean checkWhileAccessOnlyLocalVar(final WhileStatement stmt) {
-		// TODO Auto-generated method stub
-		return false;
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mState, mProgramStateExplorer);
+		final ThreadStatementsChecker bodyStatementsChecker 
+			= new ThreadStatementsChecker(Arrays.asList(stmt.getBody()), mState, mProgramStateExplorer);
+		
+		return exprEvaluator.checkAccessOnlyLocalVar(stmt.getCondition())
+				&& bodyStatementsChecker.checkStatementsAccessOnlyLocalVar();
 	}
 
 	/**

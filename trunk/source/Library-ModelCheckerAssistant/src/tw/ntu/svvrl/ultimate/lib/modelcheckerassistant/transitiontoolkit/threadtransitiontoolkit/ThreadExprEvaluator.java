@@ -83,28 +83,22 @@ public class ThreadExprEvaluator extends ExprEvaluator<ThreadState> {
 
 	private boolean checkArrayAccessExpression(final ArrayAccessExpression expr) {
 		final Expression[] indices = expr.getIndices();
-		boolean indicesAccessOnlyLocalVar = true;
 		for(final Expression index : indices) {
 			if(!checkAccessOnlyLocalVar(index)) {
-				indicesAccessOnlyLocalVar = false;
-				break;
+				return false;
 			}
 		}
-		return checkAccessOnlyLocalVar(expr.getArray())
-				&& indicesAccessOnlyLocalVar;
+		return checkAccessOnlyLocalVar(expr.getArray());
 	}
 
 	private boolean checkArrayStoreExpression(final ArrayStoreExpression expr) {
 		final Expression[] indices = expr.getIndices();
-		boolean indicesAccessOnlyLocalVar = true;
 		for(final Expression index : indices) {
 			if(!checkAccessOnlyLocalVar(index)) {
-				indicesAccessOnlyLocalVar = false;
-				break;
+				return false;
 			}
 		}
 		return checkAccessOnlyLocalVar(expr.getArray())
-				&& indicesAccessOnlyLocalVar
 				&& checkAccessOnlyLocalVar(expr.getValue());
 	}
 
@@ -115,14 +109,12 @@ public class ThreadExprEvaluator extends ExprEvaluator<ThreadState> {
 
 	private boolean checkFunctionApplication(final FunctionApplication expr) {
 		final Expression[] args = expr.getArguments();
-		boolean argsAccessOnlyLocalVar = true;
 		for(final Expression arg : args) {
 			if(!checkAccessOnlyLocalVar(arg)) {
-				argsAccessOnlyLocalVar = false;
-				break;
+				return false;
 			}
 		}
-		return argsAccessOnlyLocalVar;
+		return true;
 	}
 
 	private boolean checkIdentifierExpression(final IdentifierExpression expr) {

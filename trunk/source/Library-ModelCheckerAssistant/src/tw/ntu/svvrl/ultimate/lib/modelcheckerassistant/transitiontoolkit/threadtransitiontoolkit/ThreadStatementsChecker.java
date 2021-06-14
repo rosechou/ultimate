@@ -184,12 +184,9 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 		/**
 		 * Check right hand sides
 		 */
-		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mState, mProgramStateExplorer);
 		final Expression[] rhss = stmt.getRhs();
-		for(final Expression rhs : rhss) {
-			if(!exprEvaluator.checkAccessOnlyLocalVar(rhs)) {
-				return false;
-			}
+		if(!checkExpressionsAccessOnlyLocalVar(rhss)) {
+			return false;
 		}
 		
 		return true;
@@ -208,11 +205,8 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 		 * Check left hand sides
 		 */
 		final VariableLHS[] lhss = stmt.getIdentifiers();
-		for(final VariableLHS lhs : lhss) {
-			final String procName = lhs.getDeclarationInformation().getProcedure();
-			if(procName == null) {
-				return false;
-			}
+		if(!checkVariableLHSAccessOnlyLocalVar(lhss)) {
+			return false;
 		}
 		return true;
 	}
@@ -239,30 +233,104 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 	}
 
 	/**
-	 * For CodeBlocks.
+	 * CodeBlocks.
 	 */
-	
-	public boolean checkReturnAccessOnlyLocalVar() {
-		assert mStatements.size() == 1;
-		// TODO Auto-generated method stub
-		return false;
-	}
 
+	/**
+	 * For {@link Call}, check the arguments. 
+	 */
 	public boolean checkCallAccessOnlyLocalVar() {
 		assert mStatements.size() == 1;
-		// TODO Auto-generated method stub
-		return false;
+		final CallStatement callStmt = (CallStatement) mStatements.get(0);
+		
+		/**
+		 * Check arguments
+		 */
+		final Expression[] args = callStmt.getArguments();
+		if(!checkExpressionsAccessOnlyLocalVar(args)) {
+			return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * For {@link Return}, check the variables that return values are written to. 
+	 */
+	public boolean checkReturnAccessOnlyLocalVar() {
+		assert mStatements.size() == 1;
+		final CallStatement correspondingCall = (CallStatement) mStatements.get(0);
+
+		/**
+		 * Check left hand sides
+		 */
+		final VariableLHS[] lhss = correspondingCall.getLhs();
+		if(!checkVariableLHSAccessOnlyLocalVar(lhss)) {
+			return false;
+		}
+		return true;
 	}
 
 	public boolean checkForkAccessOnlyLocalVar() {
 		assert mStatements.size() == 1;
-		// TODO Auto-generated method stub
-		return false;
+		final ForkStatement forkStmt = (ForkStatement) mStatements.get(0);
+		/**
+		 * Check thread IDs
+		 */
+		final Expression[] threadIDs = forkStmt.getThreadID();
+		if(!checkExpressionsAccessOnlyLocalVar(threadIDs)) {
+			return false;
+		}
+		
+		/**
+		 * Check arguments
+		 */
+		final Expression[] args = forkStmt.getArguments();
+		if(!checkExpressionsAccessOnlyLocalVar(args)) {
+			return false;
+		}
+		
+		return true;
 	}
 
 	public boolean checkJoinAccessOnlyLocalVar() {
 		assert mStatements.size() == 1;
-		// TODO Auto-generated method stub
-		return false;
+		final JoinStatement joinStmt = (JoinStatement) mStatements.get(0);
+		
+		/**
+		 * Check thread IDs
+		 */
+		final Expression[] threadIDs = joinStmt.getThreadID();
+		if(!checkExpressionsAccessOnlyLocalVar(threadIDs)) {
+			return false;
+		}
+		
+		/**
+		 * Check left hand sides
+		 */
+		final VariableLHS[] lhss = joinStmt.getLhs();
+		if(!checkVariableLHSAccessOnlyLocalVar(lhss)) {
+			return false;
+		}
+		return true;
+	}
+	
+	private boolean checkExpressionsAccessOnlyLocalVar(final Expression[] exprs) {
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mState, mProgramStateExplorer);
+		for(final Expression expr : exprs) {
+			if(!exprEvaluator.checkAccessOnlyLocalVar(expr)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	private boolean checkVariableLHSAccessOnlyLocalVar(final VariableLHS[] lhss) {
+		for(final VariableLHS lhs : lhss) {
+			final String procName = lhs.getDeclarationInformation().getProcedure();
+			if(procName == null) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

@@ -3,20 +3,25 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.thread
 import java.util.Arrays;
 import java.util.List;
 
+import de.uni_freiburg.informatik.ultimate.boogie.ast.ArrayLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssertStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssignmentStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssumeStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AtomicStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.BreakStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.CallStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.Expression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ForkStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.GotoStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.HavocStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.IfStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.JoinStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Label;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.LeftHandSide;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ReturnStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.StructLHS;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WhileStatement;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
@@ -152,27 +157,55 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 	}
 
 	
-	private boolean checkAssignmentAccessOnlyLocalVar(AssignmentStatement statement) {
+	private boolean checkAssignmentAccessOnlyLocalVar(final AssignmentStatement stmt) {
+		/**
+		 * Check left hand sides
+		 */
+		final LeftHandSide[] lhss = stmt.getLhs();
+		for(final LeftHandSide lhs : lhss) {
+			if(lhs instanceof VariableLHS) {
+				final String procName = ((VariableLHS) lhs).getDeclarationInformation().getProcedure();
+				if(procName == null) {
+					return false;
+				}
+			} else if(lhs instanceof ArrayLHS) {
+				/**
+				 * I don't know how to produce these case.
+				 * It seems no chance to occur. (?)
+				 */
+				throw new UnsupportedOperationException(lhs.getClass().getSimpleName() 
+						+ " is not yet supported.");
+			} else if(lhs instanceof StructLHS) {
+				throw new UnsupportedOperationException(lhs.getClass().getSimpleName() 
+						+ " is not yet supported.");
+			}
+		}
+		
+		/**
+		 * Check right hand sides
+		 */
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mState, mProgramStateExplorer);
+		final Expression[] rhs = stmt.getRhs();
+		
+		return false;
+	}
+
+	private boolean checkAssumeAccessOnlyLocalVar(final AssumeStatement stmt) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
-	private boolean checkAssumeAccessOnlyLocalVar(AssumeStatement statement) {
+	private boolean checkHavocAccessOnlyLocalVar(final HavocStatement stmt) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
-	private boolean checkHavocAccessOnlyLocalVar(HavocStatement statement) {
+	private boolean checkIfAccessOnlyLocalVar(final IfStatement stmt) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
-	private boolean checkIfAccessOnlyLocalVar(IfStatement statement) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	private boolean checkWhileAccessOnlyLocalVar(WhileStatement statement) {
+	private boolean checkWhileAccessOnlyLocalVar(final WhileStatement stmt) {
 		// TODO Auto-generated method stub
 		return false;
 	}

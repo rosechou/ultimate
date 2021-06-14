@@ -67,4 +67,33 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 	private void moveToNewState(final ThreadState newState) {
 		mState = newState;
 	}
+
+	public boolean checkStatementsAccessOnlyLocalVar() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public boolean checkReturnAccessOnlyLocalVar() {
+		assert mStatements.size() == 1;
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public boolean checkCallAccessOnlyLocalVar() {
+		assert mStatements.size() == 1;
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public boolean checkForkAccessOnlyLocalVar() {
+		assert mStatements.size() == 1;
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public boolean checkJoinAccessOnlyLocalVar() {
+		assert mStatements.size() == 1;
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

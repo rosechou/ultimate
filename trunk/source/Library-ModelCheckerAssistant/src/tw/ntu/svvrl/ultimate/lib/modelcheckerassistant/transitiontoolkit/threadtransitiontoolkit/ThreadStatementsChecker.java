@@ -1,12 +1,23 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit;
 
+import java.util.Arrays;
 import java.util.List;
 
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssertStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssignmentStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.AssumeStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.AtomicStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.BreakStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.CallStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.ForkStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.GotoStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.HavocStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.IfStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.JoinStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.Label;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.ReturnStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.WhileStatement;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.StatementsChecker;
@@ -68,11 +79,108 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 		mState = newState;
 	}
 
+	/**
+	 * Check Statement Sequence.
+	 */
 	public boolean checkStatementsAccessOnlyLocalVar() {
+		boolean accessOnlyLocals = true;
+		for(final Statement statement : mStatements) {
+			if(statement instanceof AssertStatement) {
+				/**
+				 * Do nothing.
+				 */
+			} else if(statement instanceof AssignmentStatement) {
+				accessOnlyLocals = checkAssignmentAccessOnlyLocalVar((AssignmentStatement) statement);
+			} else if(statement instanceof AssumeStatement) {
+				accessOnlyLocals = checkAssumeAccessOnlyLocalVar((AssumeStatement) statement);
+			} else if(statement instanceof AtomicStatement) {
+				List<Statement> statements = Arrays.asList(((AtomicStatement) statement).getBody());
+				ThreadStatementsChecker nextStatementsChecker 
+					= new ThreadStatementsChecker(statements, mState, mProgramStateExplorer);
+				accessOnlyLocals = nextStatementsChecker.checkStatementsAccessOnlyLocalVar();
+			} else if(statement instanceof BreakStatement) {
+				/**
+				 * Do nothing.
+				 */
+			} else if(statement instanceof CallStatement) {
+				/**
+				 * handled in the {@link CodeBlock} level.
+				 */
+				throw new UnsupportedOperationException("Suppose "
+						+ statement.getClass().getSimpleName() + " cannot appear here.");
+			} else if(statement instanceof ForkStatement) {
+				/**
+				 * handled in the {@link CodeBlock} level.
+				 */
+				throw new UnsupportedOperationException("Suppose "
+						+ statement.getClass().getSimpleName() + " cannot appear here.");
+			} else if(statement instanceof GotoStatement) {
+				/**
+				 * Do nothing.
+				 */
+			} else if(statement instanceof HavocStatement) {
+				accessOnlyLocals = checkHavocAccessOnlyLocalVar((HavocStatement) statement);
+			} else if(statement instanceof IfStatement) {
+				accessOnlyLocals = checkIfAccessOnlyLocalVar((IfStatement) statement);
+			} else if(statement instanceof JoinStatement) {
+				/**
+				 * handled in the {@link CodeBlock} level.
+				 */
+				throw new UnsupportedOperationException("Suppose "
+						+ statement.getClass().getSimpleName() + " cannot appear here.");
+			} else if(statement instanceof Label) {
+				/**
+				 * Do nothing.
+				 */
+			} else if(statement instanceof ReturnStatement) {
+				/**
+				 * handled in the {@link CodeBlock} level.
+				 */
+				throw new UnsupportedOperationException("Suppose "
+						+ statement.getClass().getSimpleName() + " cannot appear here.");
+			} else if(statement instanceof WhileStatement) {
+				accessOnlyLocals = checkWhileAccessOnlyLocalVar((WhileStatement) statement);
+			} else {
+				throw new UnsupportedOperationException("Unknown statement type: "
+						+ statement.getClass().getSimpleName());
+			}
+			if(!accessOnlyLocals) {
+				return accessOnlyLocals;
+			}
+		}
+		return accessOnlyLocals;
+	}
+
+	
+	private boolean checkAssignmentAccessOnlyLocalVar(AssignmentStatement statement) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
+	private boolean checkAssumeAccessOnlyLocalVar(AssumeStatement statement) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	private boolean checkHavocAccessOnlyLocalVar(HavocStatement statement) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	private boolean checkIfAccessOnlyLocalVar(IfStatement statement) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	private boolean checkWhileAccessOnlyLocalVar(WhileStatement statement) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	/**
+	 * For CodeBlocks.
+	 */
+	
 	public boolean checkReturnAccessOnlyLocalVar() {
 		assert mStatements.size() == 1;
 		// TODO Auto-generated method stub

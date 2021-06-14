@@ -126,7 +126,10 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 			} else if(statement instanceof HavocStatement) {
 				accessOnlyLocals = checkHavocAccessOnlyLocalVar((HavocStatement) statement);
 			} else if(statement instanceof IfStatement) {
-				accessOnlyLocals = checkIfAccessOnlyLocalVar((IfStatement) statement);
+				/**
+				 * Compound Statement
+				 */
+				accessOnlyLocals = false;
 			} else if(statement instanceof JoinStatement) {
 				/**
 				 * handled in the {@link CodeBlock} level.
@@ -144,7 +147,10 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 				throw new UnsupportedOperationException("Suppose "
 						+ statement.getClass().getSimpleName() + " cannot appear here.");
 			} else if(statement instanceof WhileStatement) {
-				accessOnlyLocals = checkWhileAccessOnlyLocalVar((WhileStatement) statement);
+				/**
+				 * Compound Statement
+				 */
+				accessOnlyLocals = false;
 			} else {
 				throw new UnsupportedOperationException("Unknown statement type: "
 						+ statement.getClass().getSimpleName());
@@ -211,26 +217,30 @@ public class ThreadStatementsChecker extends StatementsChecker<ThreadState> {
 		return true;
 	}
 
-	private boolean checkIfAccessOnlyLocalVar(final IfStatement stmt) {
-		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mState, mProgramStateExplorer);
-		final ThreadStatementsChecker thenStatementsChecker 
-			= new ThreadStatementsChecker(Arrays.asList(stmt.getThenPart()), mState, mProgramStateExplorer);
-		final ThreadStatementsChecker elseStatementsChecker 
-		= new ThreadStatementsChecker(Arrays.asList(stmt.getElsePart()), mState, mProgramStateExplorer);
-		
-		return exprEvaluator.checkAccessOnlyLocalVar(stmt.getCondition())
-				&& thenStatementsChecker.checkStatementsAccessOnlyLocalVar()
-				&& elseStatementsChecker.checkStatementsAccessOnlyLocalVar();
-	}
+	/**
+	 * Do not take compound statements(i.e. if and while 
+	 * and those contains statements as body) into account.
+	 */
+//	private boolean checkIfAccessOnlyLocalVar(final IfStatement stmt) {
+//		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mState, mProgramStateExplorer);
+//		final ThreadStatementsChecker thenStatementsChecker 
+//			= new ThreadStatementsChecker(Arrays.asList(stmt.getThenPart()), mState, mProgramStateExplorer);
+//		final ThreadStatementsChecker elseStatementsChecker 
+//		= new ThreadStatementsChecker(Arrays.asList(stmt.getElsePart()), mState, mProgramStateExplorer);
+//		
+//		return exprEvaluator.checkAccessOnlyLocalVar(stmt.getCondition())
+//				&& thenStatementsChecker.checkStatementsAccessOnlyLocalVar()
+//				&& elseStatementsChecker.checkStatementsAccessOnlyLocalVar();
+//	}
 
-	private boolean checkWhileAccessOnlyLocalVar(final WhileStatement stmt) {
-		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mState, mProgramStateExplorer);
-		final ThreadStatementsChecker bodyStatementsChecker 
-			= new ThreadStatementsChecker(Arrays.asList(stmt.getBody()), mState, mProgramStateExplorer);
-		
-		return exprEvaluator.checkAccessOnlyLocalVar(stmt.getCondition())
-				&& bodyStatementsChecker.checkStatementsAccessOnlyLocalVar();
-	}
+//	private boolean checkWhileAccessOnlyLocalVar(final WhileStatement stmt) {
+//		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mState, mProgramStateExplorer);
+//		final ThreadStatementsChecker bodyStatementsChecker 
+//			= new ThreadStatementsChecker(Arrays.asList(stmt.getBody()), mState, mProgramStateExplorer);
+//		
+//		return exprEvaluator.checkAccessOnlyLocalVar(stmt.getCondition())
+//				&& bodyStatementsChecker.checkStatementsAccessOnlyLocalVar();
+//	}
 
 	/**
 	 * CodeBlocks.

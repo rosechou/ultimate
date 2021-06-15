@@ -86,6 +86,12 @@ public abstract class CodeBlock extends IcfgEdge implements IActionWithBranchEnc
 	protected RCFGEdgeAnnotation mAnnotation;
 
 	private int mOccurenceInCounterexamples = 0;
+	
+	/**
+	 * 2021-06-15 by Hong-Yang Lin
+	 * For static partial order reduction.
+	 */
+	private boolean mAccessOnlyLocalVar = false;
 
 	CodeBlock(final int serialNumber, final BoogieIcfgLocation source, final BoogieIcfgLocation target,
 			final ILogger logger) {
@@ -242,4 +248,12 @@ public abstract class CodeBlock extends IcfgEdge implements IActionWithBranchEnc
 	public final int hashCode() {
 		return getSerialNumber();
 	}
+	
+	/**
+	 * 2021-06-15 by Hong-Yang Lin
+	 * For static partial order reduction.
+	 */
+	public void setAccessOnlyLocalVar(final boolean a) {
+		mAccessOnlyLocalVar = a;
+	};
 }

@@ -13,6 +13,7 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.d
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.ILocalProgramVar;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgContainer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadCurrent;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.JoinThreadCurrent;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ForkHandler;
@@ -64,9 +65,36 @@ public class ProgramStateExplorer {
 		
 		mProgramStateFactory = new ProgramStateFactory(boogie2SmtSymbolTable
 				, rcfg.getCfgSmtToolkit(), mEntryNodes, mExitNodes, this);
+		
+		/**
+		 * static reduction.
+		 * @see Holzmann G.J., Peled D. (1995) An Improvement in Formal Verification.
+		 * 	In: Hogrefe D., Leue S. (eds) Formal Description Techniques VII.
+		 * IFIP Advances in Information and Communication Technology. Springer, Boston, MA.
+		 * https://doi.org/10.1007/978-0-387-34878-0_13
+		 */
+		markEdges(rcfg);
 	}
 	
 	
+	private void markEdges(final BoogieIcfgContainer rcfg) {
+		Map<String, Map<DebugIdentifier, BoogieIcfgLocation>> locNodes = rcfg.getProgramPoints();
+		for(final String procName : locNodes.keySet()) {
+			for(final BoogieIcfgLocation procLoc : locNodes.get(procName).values()) {
+				for(final IcfgEdge edge : procLoc.getOutgoingEdges()) {
+					assert edge instanceof CodeBlock;
+					final ThreadStateTransition trans = new ThreadStateTransition(edge, -1);
+					final ThreadState dummyState = new ThreadState(null, procLoc, 0, this);
+					final ThreadTransitionToolkit transToolkit = new ThreadTransitionToolkit(trans, dummyState, this);
+					if(transToolkit.checkAccessOnlyLocalVar()) {
+						((CodeBlock) edge).setAccessOnlyLocalVar(true);
+					}
+				}
+			}
+		}
+	}
+
+
 	/**
 	 * Based on the given rcfg, extend the initial {@link BoogieIcfgLocation}s with
 	 * value tables so that they become automaton initial states.

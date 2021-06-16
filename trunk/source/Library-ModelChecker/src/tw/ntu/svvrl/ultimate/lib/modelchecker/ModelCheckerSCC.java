@@ -55,36 +55,40 @@ public class ModelCheckerSCC {
 		count = count + 1;
 		dfsnum.put(count, node);
 		
-		List<ProgramStateTransition> programEdges = node.getEnabledTrans();
+		List<ProgramStateTransition> programEdges = assistant.getProgramEnabledTrans(node);
 		
 		List<ProgramState> nProgramNodes = new ArrayList<ProgramState>();
 		for(int j = 0;j < programEdges.size();j++)
 		{
-			nProgramNodes.add(node.doTransition(programEdges.get(j)));
+			nProgramNodes.add(assistant.doProgramTransition(node, programEdges.get(j)));
 		}
 		levelNodes = nProgramNodes;
-			
+		
 		for (int i = 0;i < levelNodes.size();i++) {
 			if(match) {return;}
 			ProgramState nextNode = levelNodes.get(i);
 			
-			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = init.getEnabledTrans(nextNode);
-	
+			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = assistant.getNeverEnabledTrans(init, nextNode);
+			
+			if(neverEdges.isEmpty())
+			{
+//				Pair p = new Pair(node, init);
+//				bluepath.push(p);
+				dfsBlue(nextNode, init);
+				break;
+			}
+			
 			for (int j = 0;j < neverEdges.size();j++) {
 				if(match) {return;}
 				OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
-				NeverState nextState = init.doTransition(neverEdge, nextNode);
+				NeverState nextState = assistant.doNeverTransition(init, neverEdge, nextNode);
 				
-				if(!compare(bluepath, nextNode, nextState))
-				{
+				Pair p = new Pair(node, init);
+				bluepath.push(p);
+				dfsBlue(nextNode, nextState);
 
-					Pair p = new Pair(node, init);
-					bluepath.push(p);
-					dfsBlue(nextNode, nextState);
-				}	
 					
 			}
-
 
 		}
 		

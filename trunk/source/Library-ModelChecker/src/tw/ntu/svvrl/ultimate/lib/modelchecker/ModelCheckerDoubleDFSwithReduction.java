@@ -9,6 +9,7 @@ import de.uni_freiburg.informatik.ultimate.automata.nestedword.transitions.Incom
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.transitions.OutgoingInternalTransition;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.NestedWordAutomaton;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.NestedWordAutomatonCache;
+import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.optncsb.automata.IState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramStateTransition;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadStateTransition;
@@ -28,7 +29,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.*;
 
-public class ModelCheckerDoubleDFS{
+public class ModelCheckerDoubleDFSwithReduction{
 	private final ModelCheckerAssistant assistant;
 	private final ILogger mLogger;
 	private boolean match = false;
@@ -41,14 +42,18 @@ public class ModelCheckerDoubleDFS{
 	// Stack<ProgramState> secondVisited = new Stack<>();
 	
 	protected Set<NeverState> initStates =new HashSet<>();
+	Stack<NeverState> Neverstack = new Stack<>();
+	Stack<ProgramState> Programstack = new Stack<>();
+	Set<Pair<ProgramState, Integer>> Statespace = new HashSet<>();
 	
-	Stack<Pair<ProgramState, NeverState>> bluepath = new Stack<>();
-	Stack<Pair<ProgramState, NeverState>> redpath = new Stack<>();
+	// Stack<Pair<ProgramState, NeverState>> bluepath = new Stack<>();
+	// Stack<Pair<ProgramState, NeverState>> redpath = new Stack<>();
 	
-	public ModelCheckerDoubleDFS(final ILogger logger, final ModelCheckerAssistant mca)
+	public ModelCheckerDoubleDFSwithReduction(final ILogger logger, final ModelCheckerAssistant mca)
 	{	
 		mLogger = logger;
 		assistant = mca;
+		
 		// set of initial cfg locations
 		levelNodes.addAll(assistant.getProgramInitialStates());
 		
@@ -56,22 +61,104 @@ public class ModelCheckerDoubleDFS{
 		Set<NeverState> initStates = new HashSet<>();
 		initStates = assistant.getNeverInitialStates();
 		
-		// Iterator initIterator = initStates.iterator();
-		// NeverState init = (NeverState) initIterator.next();
-		
 		for (int i = 0;i < levelNodes.size();i++) {
+			Statespace.add(new Pair(levelNodes.get(i), 1));
+			Programstack.push(levelNodes.get(i));
 			for(int j = 0;j < initStates.size();j++)
 			{
-				if(match) {return;}
-				NeverState init = ((NeverState) initStates.toArray()[j]);
-				dfsBlue(levelNodes.get(i), init);
+				Neverstack.push((NeverState) initStates.toArray()[j]);
+				Dfs(1);
 			}
 		}
+		
 		if(!match) 
 		{
 			mLogger.info("All specifications hold");
 		}
 		
+	}
+	/* system move */
+	public void dfs(int a)
+	{
+		ProgramState node = Programstack.peek();
+		for(int k = 0; k < node.getThreadNumber(); k++)
+		{
+			boolean NotInStack = true;
+			boolean AtLeaseOneSuccesor = false;
+			List<ProgramStateTransition> programEdges = assistant.getProgramEnabledTrans(node);
+			// all transitions of the state in pid=k
+			List<ProgramState> nProgramNodes = new ArrayList<ProgramState>();
+			for(int j = 0;j < programEdges.size();j++)
+			{
+				nProgramNodes.add(assistant.doProgramTransition(node, programEdges.get(j)));
+			}
+			levelNodes = nProgramNodes;
+			
+			for (int i = 0;i < levelNodes.size();i++) {
+				ProgramState nextNode = levelNodes.get(i);
+				if(!Statespace.contains(new Pair(nextNode, 1)))
+				{
+					Statespace.add(new Pair(nextNode, 1));
+					Programstack.push(nextNode);
+					Dfs(a);
+				}else if(Programstack.contains(nextNode))
+				{
+					NotInStack = false;
+				}
+				AtLeaseOneSuccesor = true;
+			}
+			if(AtLeaseOneSuccesor && NotInStack)
+			{
+				break;
+			}
+		}
+		if(!Programstack.empty())
+		{
+			Programstack.pop();
+		}
+		
+	}
+	/* specification move */
+	public void Dfs(int a)
+	{
+		NeverState state = Neverstack.peek();
+		ProgramState node = Programstack.peek();
+		List<ProgramStateTransition> programEdges = assistant.getProgramEnabledTrans(node);
+		List<ProgramState> nProgramNodes = new ArrayList<ProgramState>();
+		for(int j = 0;j < programEdges.size();j++)
+		{
+			nProgramNodes.add(assistant.doProgramTransition(node, programEdges.get(j)));
+		}
+		levelNodes = nProgramNodes;
+		
+		for (int i = 0;i < levelNodes.size();i++) {
+			if(match) {return;}
+			ProgramState nextNode = levelNodes.get(i);
+			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = assistant.getNeverEnabledTrans(state, nextNode);
+			
+			if(a == 2 && nextNode.equals(seed))
+			{
+				match = true;
+				mLogger.info("Violation of LTL property");
+				return;
+			}
+			
+			if(!Statespace.contains(new Pair(nextNode, 1)))
+			{
+				Statespace.add(new Pair(nextNode, 1));
+				Programstack.push(nextNode);
+				dfs(a);
+				if(a == 1 && state.isFinal())
+				{
+					seed = node;
+					dfs(2);
+				}	
+			}
+		}
+		if(!Programstack.empty())
+		{
+			Programstack.pop();
+		}
 	}
 	public boolean compare(Stack<Pair<ProgramState, NeverState>> path, ProgramState node, NeverState state)
 	{
@@ -130,9 +217,9 @@ public class ModelCheckerDoubleDFS{
 					// print bluepath and redpath
 					for(int a = 0; a < bluepath.size();a++)
 					{
-						mLogger.info(bluepath.get(a).getFirst().getThreadNumber() + bluepath.get(a).getFirst().getThreadStates().toString() + bluepath.get(a).getSecond().getName() + bluepath.get(a).getFirst().getThreadStates().getThreadID());
+						mLogger.info(bluepath.get(a).getFirst().getThreadStates().toString() + bluepath.get(a).getSecond().getName());
 					}
-					mLogger.info(" ------------------------ "+ match);
+					mLogger.info("==============================");
 					for(int a = 0; a < redpath.size();a++)
 					{
 						mLogger.info(redpath.get(a).getFirst().getThreadStates().toString() + redpath.get(a).getSecond().getName());

@@ -222,6 +222,6 @@ public class ThreadState extends ValuationState<ThreadState>{
 
 	@Override
 	public String toString() {
-		return "ThreadState@" + mCorrespondingIcfgLoc.toString();
+		return "Thread" + mThreadID + "@" + mCorrespondingIcfgLoc.toString();
 	}
 }

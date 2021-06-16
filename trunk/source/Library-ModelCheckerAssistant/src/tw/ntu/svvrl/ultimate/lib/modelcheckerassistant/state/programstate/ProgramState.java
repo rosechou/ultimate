@@ -131,4 +131,22 @@ public class ProgramState extends ValuationState<ProgramState> {
 		 */
 		return !match.contains(false);
 	}
+	
+	@Override
+	public String toString() {
+		if(getThreadStates().size() == 0) {
+			return "[]";
+		}
+		String s = "[";
+		for(ThreadState t : getThreadStates()) {
+			s = s + t.toString() + ", ";
+		}
+		/**
+		 * Remove the last ", "
+		 */
+		if(s.length() > 1) {
+			s = s.substring(0, s.length() - 2);
+		}
+		return s + "]";
+	}
 }

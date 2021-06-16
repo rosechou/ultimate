@@ -130,8 +130,11 @@ public class ModelCheckerDoubleDFS{
 					// print bluepath and redpath
 					for(int a = 0; a < bluepath.size();a++)
 					{
-						mLogger.info(bluepath.get(a).getFirst().getThreadStates().toString() + bluepath.get(a).getSecond().getName());
+
+						mLogger.info(bluepath.get(a).getFirst().getThreadNumber() + bluepath.get(a).getFirst().getThreadStates().toString() + bluepath.get(a).getSecond().getName());
 					}
+					mLogger.info(" ------------------------ "+ match);
+
 					for(int a = 0; a < redpath.size();a++)
 					{
 						mLogger.info(redpath.get(a).getFirst().getThreadStates().toString() + redpath.get(a).getSecond().getName());

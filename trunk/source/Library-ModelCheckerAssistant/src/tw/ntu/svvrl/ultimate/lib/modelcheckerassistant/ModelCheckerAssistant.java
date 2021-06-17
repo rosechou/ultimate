@@ -99,6 +99,10 @@ public class ModelCheckerAssistant {
 		return mProgramStateExplorer.getEnabledTrans(p);
 	}
 	
+	public List<Long> getProgramSafestOrder(final ProgramState p) {
+		return mProgramStateExplorer.getSafestOrder(p);
+	}
+	
 	public List<OutgoingInternalTransition<CodeBlock, NeverState>> 
 		getNeverEnabledTrans(final NeverState n, final ProgramState correspondingProgramState) {
 		return mNeverClaimAutExplorer.getEnabledTrans(n, correspondingProgramState);

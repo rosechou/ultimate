@@ -94,6 +94,7 @@ public class ProgramState extends ValuationState<ProgramState> {
 		}
 		mThreadStates.put(s.getThreadID(), s);
 	}
+
 	
 	/**
 	 * Check whether two program automaton states are equivalent.

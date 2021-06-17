@@ -253,6 +253,10 @@ public abstract class CodeBlock extends IcfgEdge implements IActionWithBranchEnc
 	 * 2021-06-15 by Hong-Yang Lin
 	 * For static partial order reduction.
 	 */
+	public boolean accessOnlyLocalVar() {
+		return mAccessOnlyLocalVar;
+	}
+	
 	public void setAccessOnlyLocalVar(final boolean a) {
 		mAccessOnlyLocalVar = a;
 	};

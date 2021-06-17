@@ -1,6 +1,7 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -201,6 +202,58 @@ public class ProgramStateExplorer {
 			throw new UnsupportedOperationException("Unkown ProgramStateTransition type: "
 					+ trans.getClass().getSimpleName());
 		}
+	}
+	
+	/**
+	 * Implementation of line 8a in figure 1e in
+	 * Holzmann G.J., Peled D. (1995) An Improvement in Formal Verification.
+	 * In: Hogrefe D., Leue S. (eds) Formal Description Techniques VII.
+	 * IFIP Advances in Information and Communication Technology. Springer, Boston, MA.
+	 * https://doi.org/10.1007/978-0-387-34878-0_13
+	 *
+	 * @return a sorted list contains threadIDs. (Safest thread first)
+	 */
+	public List<Long> getSafestOrder(final ProgramState p) {
+		final Set<Long> threadIDs = p.getThreadIDs();
+		final Map<Long, Float> ID2SafeProp = new HashMap<>();
+		for(final long tid : threadIDs) {
+			final List<ProgramStateTransition> threadEnabledTrans = getEnabledTransByThreadID(p, tid);
+			float safeCount = 0;
+			for(final ProgramStateTransition pt : threadEnabledTrans) {
+				if(pt instanceof NilSelfLoop) {
+					safeCount++;
+				} else if(pt instanceof ThreadStateTransition) {
+					if(((ThreadStateTransition) pt).accessOnlyLocalVar()) {
+						safeCount++;
+					}
+				} else {
+					throw new UnsupportedOperationException("Unkown ThreadStateTransition type: "
+							+ pt.getClass().getSimpleName());
+				}
+			}
+			ID2SafeProp.put(tid, safeCount / threadEnabledTrans.size());
+		}
+		
+		/**
+		 * Sort ID2SafeProp by prop.
+		 */
+		 List<Map.Entry<Long, Float>> l = new ArrayList<Map.Entry<Long, Float>>(ID2SafeProp.entrySet());
+		 l.sort(new Comparator<Map.Entry<Long, Float>>() {
+	          @Override
+	          public int compare(Map.Entry<Long, Float> o1, Map.Entry<Long, Float> o2) {
+	              return o2.getValue().compareTo(o1.getValue());
+	          }
+	      });
+		 
+		 /**
+		  * Add sorted threadIDs to result.
+		  */
+		 List<Long> result = new ArrayList<>();
+		 for(final Map.Entry<Long, Float> e : l) {
+			 result.add(e.getKey());
+		 }
+		 
+		 return result;
 	}
 	
 	/**

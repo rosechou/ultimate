@@ -1,11 +1,14 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.NotImplementedException;
 
 import de.uni_freiburg.informatik.ultimate.boogie.ast.CallStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.ForkStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.JoinStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
@@ -44,8 +47,8 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	public boolean checkEnabled() {
 		if(mCodeBlock instanceof StatementSequence) {
 			List<Statement> stmts = ((StatementSequence) mCodeBlock).getStatements();
-			final ThreadStatementsChecker statementChecker = new ThreadStatementsChecker(stmts, mCurrentState, mProgramStateExplorer);
-			return statementChecker.checkStatementsEnable();
+			final ThreadStatementsChecker statementsChecker = new ThreadStatementsChecker(stmts, mCurrentState, mProgramStateExplorer);
+			return statementsChecker.checkStatementsEnable();
 		} else if(mCodeBlock instanceof Return) {
 			/**
 			 * The caller procedure (top-1)
@@ -270,6 +273,67 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		
 		statementExecutor.getCurrentState().popProc();
 		return statementExecutor.getCurrentState();
+	}
+
+
+
+	public boolean checkAccessOnlyLocalVar() {
+		if(mCodeBlock instanceof StatementSequence) {
+			final List<Statement> stmts = ((StatementSequence) mCodeBlock).getStatements();
+			final ThreadStatementsChecker statementsChecker = new ThreadStatementsChecker(stmts, mCurrentState, mProgramStateExplorer);
+			return statementsChecker.checkStatementsAccessOnlyLocalVar();
+		} else if(mCodeBlock instanceof Call) {
+			final List<Statement> stmts = new ArrayList<>();
+			final CallStatement callStmt = ((Call) mCodeBlock).getCallStatement();
+			stmts.add(callStmt);
+			final ThreadStatementsChecker statementsChecker = new ThreadStatementsChecker(stmts, mCurrentState, mProgramStateExplorer);
+			return statementsChecker.checkCallAccessOnlyLocalVar();
+		} else if(mCodeBlock instanceof Return) {
+			final List<Statement> stmts = new ArrayList<>();
+			final CallStatement callStmt = ((Return) mCodeBlock).getCorrespondingCall().getCallStatement();
+			stmts.add(callStmt);
+			final ThreadStatementsChecker statementsChecker = new ThreadStatementsChecker(stmts, mCurrentState, mProgramStateExplorer);
+			return statementsChecker.checkReturnAccessOnlyLocalVar();
+		} else if(mCodeBlock instanceof ForkThreadCurrent) {
+			final List<Statement> stmts = new ArrayList<>();
+			final ForkStatement forkStmt = ((ForkThreadCurrent) mCodeBlock).getForkStatement();
+			stmts.add(forkStmt);
+			final ThreadStatementsChecker statementsChecker = new ThreadStatementsChecker(stmts, mCurrentState, mProgramStateExplorer);
+			return statementsChecker.checkForkAccessOnlyLocalVar();
+		} else if(mCodeBlock instanceof ForkThreadOther) {
+			throw new NotImplementedException(ForkThreadOther.class.getSimpleName()
+					+ "is not yet implemented.");
+		} else if(mCodeBlock instanceof JoinThreadCurrent) {
+			final List<Statement> stmts = new ArrayList<>();
+			final JoinStatement joinStmt = ((JoinThreadCurrent) mCodeBlock).getJoinStatement();
+			stmts.add(joinStmt);
+			final ThreadStatementsChecker statementsChecker = new ThreadStatementsChecker(stmts, mCurrentState, mProgramStateExplorer);
+			return statementsChecker.checkJoinAccessOnlyLocalVar();
+		} else if(mCodeBlock instanceof JoinThreadOther) {
+			throw new NotImplementedException(JoinThreadOther.class.getSimpleName()
+					+ "is not yet implemented.");
+		} else if(mCodeBlock instanceof ParallelComposition) {
+			/**
+			 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
+			 * This case is not yet implemented because I'm lazy.
+			 * (one of the preferences in
+			 * de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder)
+			 */
+			throw new NotImplementedException(ParallelComposition.class.getSimpleName()
+					+ "is not yet implemented.");
+		} else if(mCodeBlock instanceof SequentialComposition) {
+			/**
+			 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
+			 * This case is not yet implemented because I'm lazy.
+			 * (one of the preferences in
+			 * de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder)
+			 */
+			throw new NotImplementedException(ParallelComposition.class.getSimpleName()
+					+ "is not yet implemented.");
+		} else {
+			// other edge types are OK.
+			return true;
+		}
 	}
 	
 }

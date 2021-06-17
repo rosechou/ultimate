@@ -37,4 +37,16 @@ public class ThreadTransitionToolkit extends TransitionToolkit<ThreadState> {
 		newState.setCorrespondingIcfgLoc(correspondingLoc);
 		return newState;
 	}
+	
+	/**
+	 * For partial order reduction.
+	 * @see Holzmann G.J., Peled D. (1995) An Improvement in Formal Verification.
+	 * 		In: Hogrefe D., Leue S. (eds) Formal Description Techniques VII.
+	 * 		IFIP Advances in Information and Communication Technology. Springer, Boston, MA.
+	 * 		https://doi.org/10.1007/978-0-387-34878-0_13
+	 * @return true if this transition do not read or write global variable, false else.
+	 */
+	public boolean checkAccessOnlyLocalVar() {
+		return ((ThreadCodeBlockExecutor) mCodeBlockExecutor).checkAccessOnlyLocalVar();
+	}
 }

@@ -55,8 +55,8 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 	protected ExprEvaluator(final S state) {
 		mValuation = state.getValuation();
 	}
-
-	public Object evaluate(Expression expr) {
+	
+	public Object evaluate(final Expression expr) {
 		if(expr instanceof ArrayAccessExpression) {
 			return evaluateArrayAccessExpression((ArrayAccessExpression) expr);
 		} else if(expr instanceof ArrayStoreExpression) {

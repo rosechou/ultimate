@@ -8,4 +8,9 @@ public class NilSelfLoop extends ProgramStateTransition {
 	public NilSelfLoop() {
 		
 	}
+
+	@Override
+	public String getCStatement() {
+		return "Stay put.";
+	}
 }

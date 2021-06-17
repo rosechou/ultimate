@@ -91,8 +91,16 @@ public class ModelCheckerAssistant {
 		return false;
 	}
 	
+	public List<ProgramStateTransition> getProgramEnabledTransByThreadID(final ProgramState p, final long tid) {
+		return mProgramStateExplorer.getEnabledTransByThreadID(p, tid);
+	}
+	
 	public List<ProgramStateTransition> getProgramEnabledTrans(final ProgramState p) {
 		return mProgramStateExplorer.getEnabledTrans(p);
+	}
+	
+	public List<Long> getProgramSafestOrder(final ProgramState p) {
+		return mProgramStateExplorer.getSafestOrder(p);
 	}
 	
 	public List<OutgoingInternalTransition<CodeBlock, NeverState>> 
@@ -107,5 +115,9 @@ public class ModelCheckerAssistant {
 	public NeverState doNeverTransition(final NeverState n, final OutgoingInternalTransition<CodeBlock, NeverState> edge
 			, final ProgramState correspondingProgramState) {
 		return mNeverClaimAutExplorer.doTransition(n, edge, correspondingProgramState);
+	}
+	
+	public String getCStatement(final ProgramStateTransition t) {
+		return t.getCStatement();
 	}
 }

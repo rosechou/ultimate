@@ -119,7 +119,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 	}
 
 
-	private void executeAssertStatement(AssertStatement stmt) {
+	private void executeAssertStatement(final AssertStatement stmt) {
 		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState, mProgramStateExplorer);
 		if(!(boolean) exprEvaluator.evaluate(stmt.getFormula())) {
 			throw new UnsupportedOperationException("Assertion is violated during"
@@ -158,16 +158,16 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 				 * I don't know how to produce these case.
 				 * It seems no chance to occur. (?)
 				 */
-				throw new UnsupportedOperationException(StructLHS.class.getSimpleName() 
+				throw new UnsupportedOperationException(lhs[i].getClass().getSimpleName() 
 						+ " is not yet supported.");
 			} else if(lhs[i] instanceof StructLHS) {
-				throw new UnsupportedOperationException(StructLHS.class.getSimpleName() 
+				throw new UnsupportedOperationException(lhs[i].getClass().getSimpleName() 
 						+ " is not yet supported.");
 			}
 		}
 	}
 
-	private void executeAtomicStatement(AtomicStatement stmt) {
+	private void executeAtomicStatement(final AtomicStatement stmt) {
 		/**
 		 * Suppose this statement would not occur here because
 		 * this statement is handled during the
@@ -180,7 +180,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 				+ "should not appear.");
 	}
 
-	private void executeBreakStatement(BreakStatement stmt) {
+	private void executeBreakStatement(final BreakStatement stmt) {
 		/**
 		 * Suppose this statement would not occur here because
 		 * this statement is translated to {@link GotoEdge} during the
@@ -190,7 +190,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 				+ "should not appear.");
 	}
 
-	private void executeCallStatement(CallStatement stmt) {
+	private void executeCallStatement(final CallStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
 		
 		recordOlds();
@@ -203,7 +203,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 		doCallRoutines(procName, args);
 	}
 
-	private void executeForkStatement(ForkStatement stmt) {
+	private void executeForkStatement(final ForkStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
 		
 		recordOlds();
@@ -217,7 +217,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 		mCurrentState.assignNewThreadID(newThreadID);
 	}
 
-	private void executeGotoStatement(GotoStatement stmt) {
+	private void executeGotoStatement(final GotoStatement stmt) {
 		/**
 		 * Suppose this statement would not occur here because
 		 * this statement is translated to {@link GotoEdge} during the
@@ -227,7 +227,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 				+ "should not appear.");
 	}
 
-	private void executeHavocStatement(HavocStatement stmt) {
+	private void executeHavocStatement(final HavocStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
 		VariableLHS[] lhs = stmt.getIdentifiers();
 		for(int i = 0; i < lhs.length; i++) {
@@ -262,7 +262,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 		}
 	}
 
-	private void executeIfStatement(IfStatement stmt) {
+	private void executeIfStatement(final IfStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
 		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState, mProgramStateExplorer);
 		if((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
@@ -280,7 +280,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 		}
 	}
 
-	private void executeJoinStatement(JoinStatement stmt) {
+	private void executeJoinStatement(final JoinStatement stmt) {
 		/**
 		 * Join statement is implemented in the {@link JoinHandler}
 		 * because we need other thread state's information.
@@ -289,13 +289,13 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 				+ " is not implemented in the statement executor.");
 	}
 
-	private void executeLabel(Label stmt) {
+	private void executeLabel(final Label stmt) {
 		/**
 		 * Do nothing.
 		 */
 	}
 
-	private void executeReturnStatement(ReturnStatement stmt) {
+	private void executeReturnStatement(final ReturnStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
 		/**
 		 * Cannot produce this case
@@ -304,7 +304,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 				+ "is not yet implemented.");
 	}
 
-	private void executeWhileStatement(WhileStatement stmt) {
+	private void executeWhileStatement(final WhileStatement stmt) {
 		assert mCurrentState instanceof ThreadState;
 		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState, mProgramStateExplorer);
 		while((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
@@ -334,7 +334,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 	}
 	
 	
-	private void setCurrentState(ThreadState newState) {
+	private void setCurrentState(final ThreadState newState) {
 		mCurrentState = newState;
 	}
 	
@@ -359,7 +359,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 		}
 	}
 	
-	private void doCallRoutines(String procName, Expression[] args) {
+	private void doCallRoutines(final String procName, final Expression[] args) {
 		ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState, mProgramStateExplorer);
 		
 		List<String> argsName = mProgramStateExplorer.getProc2InParams().get(procName);

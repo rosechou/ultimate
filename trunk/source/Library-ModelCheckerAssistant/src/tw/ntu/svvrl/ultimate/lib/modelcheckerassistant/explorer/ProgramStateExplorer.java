@@ -1,6 +1,7 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -13,6 +14,7 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.d
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.variables.ILocalProgramVar;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgContainer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadCurrent;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.JoinThreadCurrent;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ForkHandler;
@@ -64,9 +66,36 @@ public class ProgramStateExplorer {
 		
 		mProgramStateFactory = new ProgramStateFactory(boogie2SmtSymbolTable
 				, rcfg.getCfgSmtToolkit(), mEntryNodes, mExitNodes, this);
+		
+		/**
+		 * static reduction.
+		 * @see Holzmann G.J., Peled D. (1995) An Improvement in Formal Verification.
+		 * 	In: Hogrefe D., Leue S. (eds) Formal Description Techniques VII.
+		 * IFIP Advances in Information and Communication Technology. Springer, Boston, MA.
+		 * https://doi.org/10.1007/978-0-387-34878-0_13
+		 */
+		markEdges(rcfg);
 	}
 	
 	
+	private void markEdges(final BoogieIcfgContainer rcfg) {
+		Map<String, Map<DebugIdentifier, BoogieIcfgLocation>> locNodes = rcfg.getProgramPoints();
+		for(final String procName : locNodes.keySet()) {
+			for(final BoogieIcfgLocation procLoc : locNodes.get(procName).values()) {
+				for(final IcfgEdge edge : procLoc.getOutgoingEdges()) {
+					assert edge instanceof CodeBlock;
+					final ThreadStateTransition trans = new ThreadStateTransition(edge, -1);
+					final ThreadState dummyState = new ThreadState(null, procLoc, 0, this);
+					final ThreadTransitionToolkit transToolkit = new ThreadTransitionToolkit(trans, dummyState, this);
+					if(transToolkit.checkAccessOnlyLocalVar()) {
+						((CodeBlock) edge).setAccessOnlyLocalVar(true);
+					}
+				}
+			}
+		}
+	}
+
+
 	/**
 	 * Based on the given rcfg, extend the initial {@link BoogieIcfgLocation}s with
 	 * value tables so that they become automaton initial states.
@@ -82,11 +111,11 @@ public class ProgramStateExplorer {
 		return initialProgramStates;
 	}
 	
-	public List<ProgramStateTransition> getEnabledTrans(final ProgramState p) {
+
+	public List<ProgramStateTransition> getEnabledTransByThreadID(final ProgramState p, long tid) {
 		final List<ProgramStateTransition> enabledTrans = new ArrayList<>();
-		for(final ThreadState threadState : p.getThreadStates()) {
-			enabledTrans.addAll(threadState.getEnabledTrans());
-		}
+		final ThreadState threadState = p.getThreadStateByID(tid);
+		enabledTrans.addAll(threadState.getEnabledTrans());
 		
 		/**
 		 * If there is a join in <code>enableTrans</code> and
@@ -104,6 +133,14 @@ public class ProgramStateExplorer {
 		}
 		enabledTrans.removeAll(blockedTrans);
 		
+		return enabledTrans;
+	}
+	
+	public List<ProgramStateTransition> getEnabledTrans(final ProgramState p) {
+		final List<ProgramStateTransition> enabledTrans = new ArrayList<>();
+		for(final long tid : p.getThreadIDs()) {
+			enabledTrans.addAll(getEnabledTransByThreadID(p, tid));
+		}
 		
 		if(enabledTrans.isEmpty()) {
 			/**
@@ -165,6 +202,58 @@ public class ProgramStateExplorer {
 			throw new UnsupportedOperationException("Unkown ProgramStateTransition type: "
 					+ trans.getClass().getSimpleName());
 		}
+	}
+	
+	/**
+	 * Implementation of line 8a in figure 1e in
+	 * Holzmann G.J., Peled D. (1995) An Improvement in Formal Verification.
+	 * In: Hogrefe D., Leue S. (eds) Formal Description Techniques VII.
+	 * IFIP Advances in Information and Communication Technology. Springer, Boston, MA.
+	 * https://doi.org/10.1007/978-0-387-34878-0_13
+	 *
+	 * @return a sorted list contains threadIDs. (Safest thread first)
+	 */
+	public List<Long> getSafestOrder(final ProgramState p) {
+		final Set<Long> threadIDs = p.getThreadIDs();
+		final Map<Long, Float> ID2SafeProp = new HashMap<>();
+		for(final long tid : threadIDs) {
+			final List<ProgramStateTransition> threadEnabledTrans = getEnabledTransByThreadID(p, tid);
+			float safeCount = 0;
+			for(final ProgramStateTransition pt : threadEnabledTrans) {
+				if(pt instanceof NilSelfLoop) {
+					safeCount++;
+				} else if(pt instanceof ThreadStateTransition) {
+					if(((ThreadStateTransition) pt).accessOnlyLocalVar()) {
+						safeCount++;
+					}
+				} else {
+					throw new UnsupportedOperationException("Unkown ThreadStateTransition type: "
+							+ pt.getClass().getSimpleName());
+				}
+			}
+			ID2SafeProp.put(tid, safeCount / threadEnabledTrans.size());
+		}
+		
+		/**
+		 * Sort ID2SafeProp by prop.
+		 */
+		 List<Map.Entry<Long, Float>> l = new ArrayList<Map.Entry<Long, Float>>(ID2SafeProp.entrySet());
+		 l.sort(new Comparator<Map.Entry<Long, Float>>() {
+	          @Override
+	          public int compare(Map.Entry<Long, Float> o1, Map.Entry<Long, Float> o2) {
+	              return o2.getValue().compareTo(o1.getValue());
+	          }
+	      });
+		 
+		 /**
+		  * Add sorted threadIDs to result.
+		  */
+		 List<Long> result = new ArrayList<>();
+		 for(final Map.Entry<Long, Float> e : l) {
+			 result.add(e.getKey());
+		 }
+		 
+		 return result;
 	}
 	
 	/**

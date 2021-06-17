@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.BoogieIcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
@@ -62,6 +63,10 @@ public class ProgramState extends ValuationState<ProgramState> {
 		return mThreadStates.size();
 	}
 	
+	public Set<Long> getThreadIDs() {
+		return mThreadStates.keySet();
+	}
+	
 	public Collection<ThreadState> getThreadStates() {
 		return mThreadStates.values();
 	}
@@ -89,6 +94,7 @@ public class ProgramState extends ValuationState<ProgramState> {
 		}
 		mThreadStates.put(s.getThreadID(), s);
 	}
+
 	
 	/**
 	 * Check whether two program automaton states are equivalent.

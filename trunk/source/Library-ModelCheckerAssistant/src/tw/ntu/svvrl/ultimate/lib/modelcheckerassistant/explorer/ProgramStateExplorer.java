@@ -229,7 +229,7 @@ public class ProgramStateExplorer {
 		final Map<Long, Float> ID2SafeProp = new HashMap<>();
 		for(final long tid : threadIDs) {
 			final List<ProgramStateTransition> threadEnabledTrans = getEnabledTransByThreadID(p, tid);
-			float safeCount = 0;
+			int safeCount = 0;
 			for(final ProgramStateTransition pt : threadEnabledTrans) {
 				if(pt instanceof NilSelfLoop) {
 					safeCount++;
@@ -242,7 +242,11 @@ public class ProgramStateExplorer {
 							+ pt.getClass().getSimpleName());
 				}
 			}
-			ID2SafeProp.put(tid, safeCount / threadEnabledTrans.size());
+			if(threadEnabledTrans.size() == 0) {
+				ID2SafeProp.put(tid, (float) -1);
+			} else {
+				ID2SafeProp.put(tid, (float)safeCount / threadEnabledTrans.size());
+			}
 		}
 		
 		/**

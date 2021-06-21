@@ -243,7 +243,7 @@ public class ProgramStateExplorer {
 				}
 			}
 			if(threadEnabledTrans.size() == 0) {
-				ID2SafeProp.put(tid, (float) 0);
+				ID2SafeProp.put(tid, (float) -1);
 			} else {
 				ID2SafeProp.put(tid, (float)safeCount / threadEnabledTrans.size());
 			}

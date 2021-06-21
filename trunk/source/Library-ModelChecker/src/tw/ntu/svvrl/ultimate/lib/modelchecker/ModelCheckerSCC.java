@@ -26,7 +26,10 @@ public class ModelCheckerSCC {
 	private int count = 0;
 	private List<ProgramState> levelNodes = new ArrayList<ProgramState>();
 	Stack<Pair<ProgramState, NeverState>> root = new Stack<>();
-	Map<Integer, ProgramState> dfsnum = new HashMap<Integer, ProgramState>();
+	Map<ProgramState, Integer> dfsnum = new HashMap<ProgramState, Integer>();
+	Map<ProgramState, Boolean> current = new HashMap<ProgramState, Boolean 	>();
+	// Stack<ProgramState> Roots = new Stack<>();
+	Stack<Pair<ProgramState, NeverState>> Roots = new Stack<>();
 	
 	public ModelCheckerSCC(final ILogger logger, final ModelCheckerAssistant mca) 
 	{
@@ -49,11 +52,50 @@ public class ModelCheckerSCC {
 			mLogger.info("All specifications hold");
 		}
 	}
+	public void remove(Pair<ProgramState, NeverState> RemoveElement)
+	{
+		if(!current.get(RemoveElement.getFirst()))
+		{
+			return;
+		}
+		current.replace(RemoveElement.getFirst(), false);
+		
+		List<ProgramStateTransition> programEdges = assistant.getProgramEnabledTrans(RemoveElement.getFirst());
+		
+		List<ProgramState> nProgramNodes = new ArrayList<ProgramState>();
+		for(int j = 0;j < programEdges.size();j++)
+		{
+			nProgramNodes.add(assistant.doProgramTransition(RemoveElement.getFirst(), programEdges.get(j)));
+		}
+		levelNodes = nProgramNodes;
+		
+		anotherTrans:
+			for (int i = 0;i < levelNodes.size();i++) {
+				if(match) {return;}
+				ProgramState nextNode = levelNodes.get(i);
+				
+				List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = assistant.getNeverEnabledTrans(RemoveElement.getSecond(), nextNode);
+				
+				
+				for (int j = 0;j < neverEdges.size();j++) {
+					if(match) {return;}
+					OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
+					NeverState nextState = assistant.doNeverTransition(RemoveElement.getSecond(), neverEdge, nextNode);
+					
+					Pair p = new Pair(nextNode, nextState);
+					remove(p);
+				}
+			}
+
+	}
 	
 	public void startSCC(ProgramState node, NeverState init)
 	{
 		count = count + 1;
-		dfsnum.put(count, node);
+		dfsnum.put(node, count);
+		Pair p = new Pair(node, init);
+		Roots.push(p);
+		current.put(node, true);
 		
 		List<ProgramStateTransition> programEdges = assistant.getProgramEnabledTrans(node);
 		
@@ -64,18 +106,17 @@ public class ModelCheckerSCC {
 		}
 		levelNodes = nProgramNodes;
 		
+		anotherTrans:
 		for (int i = 0;i < levelNodes.size();i++) {
 			if(match) {return;}
 			ProgramState nextNode = levelNodes.get(i);
 			
 			List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = assistant.getNeverEnabledTrans(init, nextNode);
 			
-			if(neverEdges.isEmpty())
+			if(!assistant.globalVarsInitialized(nextNode))
 			{
-//				Pair p = new Pair(node, init);
-//				bluepath.push(p);
-				dfsBlue(nextNode, init);
-				break;
+				startSCC(nextNode, init);
+				break anotherTrans;
 			}
 			
 			for (int j = 0;j < neverEdges.size();j++) {
@@ -83,27 +124,32 @@ public class ModelCheckerSCC {
 				OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
 				NeverState nextState = assistant.doNeverTransition(init, neverEdge, nextNode);
 				
-				Pair p = new Pair(node, init);
-				bluepath.push(p);
-				dfsBlue(nextNode, nextState);
-
-					
+				if(!dfsnum.containsKey(nextNode))
+				{
+					startSCC(nextNode, nextState);
+				}
+				else if(current.get(nextNode))
+				{
+					Pair<ProgramState, NeverState> element;
+					do
+					{
+						element = Roots.pop();
+						if(element.getSecond().isFinal())
+						{
+							match = true;
+							mLogger.info("Violation of LTL property");
+							return;
+						}
+					}while(dfsnum.get(element)<= dfsnum.get(nextNode));
+					Roots.push(element);
+				}
 			}
-
 		}
-		
-		if(!bluepath.empty())
+		if(Roots.peek().equals(p))
 		{
-			if(match) {return;}
-			if(bluepath.peek().getSecond().isFinal())
-			{
-				seed = bluepath.peek().getFirst();
-				Neverseed = bluepath.peek().getSecond();
-				dfsRed(seed, Neverseed);
-			}
-			bluepath.pop();
+			Roots.pop();
+			remove(p);
 		}
-		
 	}
 
 }

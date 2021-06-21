@@ -143,21 +143,32 @@ public class ProgramStateExplorer {
 		}
 		
 		if(enabledTrans.isEmpty()) {
-			/**
-			 * If every thread state has no successor, attach a nil self-loop.
-			 * @see the definition of synchronous product.
-			 */
-			boolean hasNoSucc = true;
-			for(final ThreadState threadState : p.getThreadStates()) {
-				if(!threadState.getCorrespondingIcfgLoc().getOutgoingEdges().isEmpty()) {
-					hasNoSucc = false;
-				}
-			}
-			if(hasNoSucc) {
+			if(checkNeedOfSelfLoop(p) != null) {
 				enabledTrans.add(new NilSelfLoop());
 			}
 		}
 		return enabledTrans;
+	}
+	
+	/**
+	 * @return If in ProgramState p, the {@link NilSelfLoop} is needed, 
+	 * return an instance of {@link NilSelfLoop}. Otherwise, return null.
+	 */
+	public NilSelfLoop checkNeedOfSelfLoop(final ProgramState p) {
+		/**
+		 * If every thread state has no successor, attach a nil self-loop.
+		 * @see the definition of synchronous product.
+		 */
+		boolean hasNoSucc = true;
+		for(final ThreadState threadState : p.getThreadStates()) {
+			if(!threadState.getCorrespondingIcfgLoc().getOutgoingEdges().isEmpty()) {
+				hasNoSucc = false;
+			}
+		}
+		if(hasNoSucc) {
+			return new NilSelfLoop();
+		}
+		return null;
 	}
 	
 	/**

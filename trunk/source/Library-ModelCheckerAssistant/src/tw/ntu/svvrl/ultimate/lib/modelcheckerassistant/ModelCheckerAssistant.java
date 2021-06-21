@@ -11,6 +11,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Boo
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.neverstate.NeverState;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.NilSelfLoop;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramState;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.ProgramStateTransition;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.NeverClaimAutExplorer;
@@ -97,6 +98,14 @@ public class ModelCheckerAssistant {
 	
 	public List<ProgramStateTransition> getProgramEnabledTrans(final ProgramState p) {
 		return mProgramStateExplorer.getEnabledTrans(p);
+	}
+	
+	/**
+	 * @return If in ProgramState p, the {@link NilSelfLoop} is needed, 
+	 * return an instance of {@link NilSelfLoop}. Otherwise, return <code>null</code>.
+	 */
+	public NilSelfLoop checkNeedOfSelfLoop(final ProgramState p) {
+		return mProgramStateExplorer.checkNeedOfSelfLoop(p);
 	}
 	
 	public List<Long> getProgramSafestOrder(final ProgramState p) {

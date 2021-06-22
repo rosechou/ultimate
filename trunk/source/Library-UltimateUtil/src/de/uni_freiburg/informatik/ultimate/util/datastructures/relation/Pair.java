@@ -63,4 +63,8 @@ public class Pair<E1, E2> extends BaseTuple<E1, E2> implements Entry<E1, E2> {
 	public E2 setValue(final E2 value) {
 		throw new UnsupportedOperationException("Pair is unmodifiable");
 	}
+	/* Modified by Jo-Chuan Chou */
+	public void setSecond(final E2 value) {
+		this.mSecondElement = value;
+	}
 }

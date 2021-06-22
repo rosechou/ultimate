@@ -19,7 +19,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.ModelCheckerAssistant;
 import java.util.Map.Entry;
 import java.util.*;
 
-public class ModelCheckerSCC {
+public class ModelCheckerSCCwithReduction {
 	private final ModelCheckerAssistant assistant;
 	private final ILogger mLogger;
 	private boolean match = false;
@@ -33,7 +33,7 @@ public class ModelCheckerSCC {
 	// Stack<ProgramState> Roots = new Stack<>();
 	Stack<Pair<ProgramState, NeverState>> Roots = new Stack<>();
 	
-	public ModelCheckerSCC(final ILogger logger, final ModelCheckerAssistant mca) 
+	public ModelCheckerSCCwithReduction(final ILogger logger, final ModelCheckerAssistant mca) 
 	{
 		mLogger = logger;
 		assistant = mca;

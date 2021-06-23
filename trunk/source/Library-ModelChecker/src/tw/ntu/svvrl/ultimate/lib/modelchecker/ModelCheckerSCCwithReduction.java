@@ -23,15 +23,13 @@ public class ModelCheckerSCCwithReduction {
 	private final ModelCheckerAssistant assistant;
 	private final ILogger mLogger;
 	private boolean match = false;
-	private int count = 0;
+	private int count = 1;
 	private List<ProgramState> levelNodes = new ArrayList<ProgramState>();
 
 	Stack<Pair<Pair<ProgramState, NeverState>, Integer>> dfsnum = new Stack<>();
-	// Map<ProgramState, Integer> dfsnum = new HashMap<ProgramState, Integer>();
 	Stack<Pair<Pair<ProgramState, NeverState>, Boolean>> current = new Stack<>();
-	// Map<ProgramState, Boolean> current = new HashMap<ProgramState, Boolean>();
-	// Stack<ProgramState> Roots = new Stack<>();
 	Stack<Pair<ProgramState, NeverState>> Roots = new Stack<>();
+	Stack<Pair<ProgramState, NeverState>> StateSpace = new Stack<>();
 	
 	public ModelCheckerSCCwithReduction(final ILogger logger, final ModelCheckerAssistant mca) 
 	{
@@ -45,8 +43,11 @@ public class ModelCheckerSCCwithReduction {
 			for(int j = 0;j < initStates.size();j++)
 			{
 				if(match) {return;}
-				NeverState init = ((NeverState) initStates.toArray()[j]);
-				startSCC(levelNodes.get(i), init);
+				Pair p = new Pair(levelNodes.get(i), (NeverState) initStates.toArray()[j]);
+				StateSpace.push(p);
+				Roots.push(p);
+				dfsnum.push(new Pair(p, count));
+				dfs(count);
 			}
 		}
 		if(!match) 
@@ -67,17 +68,6 @@ public class ModelCheckerSCCwithReduction {
 		return false;
 	}
 	
-	public boolean compareCurrent(Stack<Pair<Pair<ProgramState, NeverState>, Boolean>> path, ProgramState node, NeverState state)
-	{
-		for(int i = 0; i < path.size();i++)
-		{
-			if(node.equals(path.get(i).getFirst().getFirst()) && state.equals(path.get(i).getFirst().getSecond()) && path.get(i).getSecond())
-			{
-				return true;
-			}
-		}
-		return false;
-	}
 	
 	public int compareDfsnum(Stack<Pair<Pair<ProgramState, NeverState>, Integer>> path, ProgramState node, NeverState state)
 	{
@@ -91,69 +81,15 @@ public class ModelCheckerSCCwithReduction {
 		return 0;
 	}
 	
-	public void remove(Pair<ProgramState, NeverState> RemoveElement)
-	{
-		// if(!current.get(RemoveElement.getFirst()))
-		if(!compareCurrent(current, RemoveElement.getFirst(), RemoveElement.getSecond()))
-		{
-			return;
-		}
-		for(int i = 0;i < current.size();i++)
-		{
-			if(compareCurrent(current, RemoveElement.getFirst(), RemoveElement.getSecond()))
-			{
-				// current.replace(RemoveElement.getFirst(), false);
-				current.get(i).setSecond(false);
-				break;
-			}
-		}
-		
-		List<Long> OrderofProcesses = assistant.getProgramSafestOrder(RemoveElement.getFirst());
-		List<ProgramStateTransition> programEdges = new ArrayList<ProgramStateTransition>();
-		
-		for(int k = 0;k < OrderofProcesses.size();k++)
-		{
-			programEdges = assistant.getProgramEnabledTransByThreadID(RemoveElement.getFirst(), OrderofProcesses.get(k));
-			
-			List<ProgramState> nProgramNodes = new ArrayList<ProgramState>();
-			for(int j = 0;j < programEdges.size();j++)
-			{
-				nProgramNodes.add(assistant.doProgramTransition(RemoveElement.getFirst(), programEdges.get(j)));
-			}
-			levelNodes = nProgramNodes;
-			
-			for (int i = 0;i < levelNodes.size();i++) {
-				if(match) {return;}
-				ProgramState nextNode = levelNodes.get(i);
-				
-				if(!assistant.globalVarsInitialized(nextNode))
-				{					
-					Pair p = new Pair(nextNode, RemoveElement.getSecond());
-					remove(p);
-					continue;
-				}
-				
-				List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = assistant.getNeverEnabledTrans(RemoveElement.getSecond(), nextNode);
-				
-				for (int j = 0;j < neverEdges.size();j++) {
-					if(match) {return;}
-					OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
-					NeverState nextState = assistant.doNeverTransition(RemoveElement.getSecond(), neverEdge, nextNode);
-					
-					Pair p = new Pair(nextNode, nextState);
-					remove(p);
-				}
-			}
-		}
-	}
-	
-	
-	public void startSCC(ProgramState node, NeverState init)
+	/* system move */
+	public void dfs(int count)
 	{
 		count = count + 1;
+		ProgramState node = Roots.peek().getFirst();
+		NeverState state = Roots.peek().getSecond();
 		
 		List<Long> OrderofProcesses = assistant.getProgramSafestOrder(node);
- 		List<ProgramStateTransition> programEdges = new ArrayList<ProgramStateTransition>();
+		List<ProgramStateTransition> programEdges = new ArrayList<ProgramStateTransition>();
 		
 		for(int k = 0;k < OrderofProcesses.size();k++)
 		{
@@ -174,60 +110,32 @@ public class ModelCheckerSCCwithReduction {
 			}
 			levelNodes = nProgramNodes;
 			
+			
 			for (int i = 0;i < levelNodes.size();i++) {
 				if(match) {return;}
 				ProgramState nextNode = levelNodes.get(i);
 				
 				if(!assistant.globalVarsInitialized(nextNode))
 				{
-					Pair p = new Pair(node, init);					
+					Pair p = new Pair(nextNode, state);
 					dfsnum.push(new Pair(p, count));
 					Roots.push(p);
-					current.push(new Pair(p, true));
-					
-					startSCC(nextNode, init);
+					StateSpace.push(p);
+					dfs(count);
 					continue;
 				}
 				
-				List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = assistant.getNeverEnabledTrans(init, nextNode);
-				
-				for (int j = 0;j < neverEdges.size();j++) {
-					if(match) {return;}
-					OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
-					NeverState nextState = assistant.doNeverTransition(init, neverEdge, nextNode);
-					
-					// if(!dfsnum.containsKey(nextNode))
-					if(!compare(Roots, nextNode, nextState))
-					{
-						Pair p = new Pair(node, init);					
-						dfsnum.push(new Pair(p, count));
-						Roots.push(p);
-						// current.push(new Pair(p, true));
-						
-						startSCC(nextNode, nextState);
-					}
-					// else if(current.get(nextNode))
-					// else if(compareCurrent(current, nextNode, nextState))
-					else
-					{
-						Pair p = new Pair(nextNode, nextNode);					
-						dfsnum.push(new Pair(p, count));
-						
-						Pair<ProgramState, NeverState> element;
-						do
-						{
-							element = Roots.pop();
-							if(element.getSecond().isFinal())
-							{
-								match = true;
-								mLogger.info("Violation of LTL property");
-								return;
-							}
-						}while(compareDfsnum(dfsnum, element.getFirst(),element.getSecond())
-								> compareDfsnum(dfsnum, nextNode, nextState));
-						Roots.push(element);
-						NotInStack = false;
-					}
+				Pair p = new Pair(nextNode, state);
+
+				if(!compare(StateSpace, nextNode, state) || (node.equals(nextNode)&& !node.visited))
+				{
+					dfsnum.push(new Pair(p, count));
+					Roots.push(p);
+					StateSpace.push(p);
+					Dfs(count);
+ 				}else
+				{
+					NotInStack = false;
 				}
 				AtLeaseOneSuccesor = true;
 			}
@@ -236,13 +144,59 @@ public class ModelCheckerSCCwithReduction {
 				break;
 			}
 		}
+	}
+	/* specification move */
+	public void Dfs(int count)
+	{
+		NeverState state = Roots.peek().getSecond();
+		ProgramState node = Roots.peek().getFirst();
+		
+		List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = assistant.getNeverEnabledTrans(state, node);
+		
+		for (int j = 0;j < neverEdges.size();j++) {
+			if(match) {return;}
+			OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
+			NeverState nextState = assistant.doNeverTransition(state, neverEdge, node);
+			
+			dfsnum.pop();
+			Roots.pop();
+			StateSpace.pop();
+
+			Pair p = new Pair(node, nextState);
+			dfsnum.push(new Pair(p, count));
+			
+			if(compare(StateSpace, node, nextState))
+			{			
+				//dfsnum.push(new Pair(p, count));
+				
+				Pair<ProgramState, NeverState> element;
+				do
+				{
+					element = Roots.pop();
+					if(element.getSecond().isFinal())
+					{
+						match = true;
+						mLogger.info("Violation of LTL property");
+						return;
+					}
+				}while(compareDfsnum(dfsnum, element.getFirst(),element.getSecond())
+						> compareDfsnum(dfsnum, node, nextState));
+				element.getFirst().visited = true;
+				Roots.push(element);
+				dfs(count);
+				continue;
+			}
+			StateSpace.push(p);			
+			Roots.push(p);	
+			dfs(count);
+		}
 
 		if(!Roots.isEmpty())
 		{
 			Pair<ProgramState, NeverState> RemoveElement = Roots.pop();
+			StateSpace.pop();
 			mLogger.info(RemoveElement.getFirst().getThreadNumber() + RemoveElement.getFirst().getThreadStates().toString() + RemoveElement.getSecond().getName());
-			// remove(RemoveElement);
 		}
+		
 	}
-
 }

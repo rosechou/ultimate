@@ -36,6 +36,8 @@ public class ProgramState extends ValuationState<ProgramState> {
 		addThreadState(threadState);
 	}
 	
+	/* For ModelCheckerSCCwithReduction */
+	public boolean visited;
 	
 	/**
 	 * Deep copy a program state and let all the threadStates' global valuation 
@@ -155,4 +157,5 @@ public class ProgramState extends ValuationState<ProgramState> {
 		}
 		return s + "]";
 	}
+
 }

@@ -216,6 +216,20 @@ public class ThreadState extends ValuationState<ThreadState>{
 		if(!mCorrespondingIcfgLoc.equals(anotherThreadState.getCorrespondingIcfgLoc())) {
 			return false;
 		}
+		/**
+		 * The procNames in the two procStacks should be consistent
+		 */
+		final List<ProcInfo> l1 = new ArrayList<>(mProcStack);
+		final List<ProcInfo> l2 = new ArrayList<>(anotherThreadState.getProcStackCopy());
+		if(l1.size() != l2.size()) {
+			return false;
+		}
+		for(int i = 0; i < l1.size(); i++) {
+			if(!l1.get(i).getProcName().equals(l2.get(i).getProcName())) {
+				return false;
+			}
+		}
+		
 		return mValuation.equals(anotherThreadState.getValuationFullCopy()) ? true : false;
 	}
 

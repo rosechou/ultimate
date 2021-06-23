@@ -1,6 +1,7 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate;
 
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.Valuation;
+import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.threadstate.ThreadState;
 
 /**
  * Keep the needed information on the procedure stack.
@@ -31,4 +32,5 @@ public class ProcInfo {
 	public void setValuationRecord(Valuation v) {
 		mValuationRecord = v;
 	}
+	
 }

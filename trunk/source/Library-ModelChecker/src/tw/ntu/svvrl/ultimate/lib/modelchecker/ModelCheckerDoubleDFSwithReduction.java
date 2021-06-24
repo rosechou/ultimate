@@ -192,6 +192,10 @@ public class ModelCheckerDoubleDFSwithReduction{
 			{
 				match = true;
 				mLogger.info("Violation of LTL property");
+				for(int a = 0; a < CompoundStack.size();a++)
+				{
+					mLogger.info(CompoundStack.get(a).getFirst().getThreadStates().toString() + CompoundStack.get(a).getSecond().getName());
+				}
 				return;
 			}
 			

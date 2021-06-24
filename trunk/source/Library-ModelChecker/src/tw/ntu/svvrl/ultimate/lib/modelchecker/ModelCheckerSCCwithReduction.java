@@ -177,6 +177,11 @@ public class ModelCheckerSCCwithReduction {
 					{
 						match = true;
 						mLogger.info("Violation of LTL property");
+						for(int a = 0; a < StateSpace.size();a++)
+						{
+							mLogger.info(StateSpace.get(a).getFirst().getThreadStates().toString() + StateSpace.get(a).getSecond().getName());
+						}
+						
 						return;
 					}
 				}while(compareDfsnum(dfsnum, element.getFirst(),element.getSecond())
@@ -195,7 +200,7 @@ public class ModelCheckerSCCwithReduction {
 		{
 			Pair<ProgramState, NeverState> RemoveElement = Roots.pop();
 			StateSpace.pop();
-			mLogger.info(RemoveElement.getFirst().getThreadNumber() + RemoveElement.getFirst().getThreadStates().toString() + RemoveElement.getSecond().getName());
+			// mLogger.info(RemoveElement.getFirst().getThreadNumber() + RemoveElement.getFirst().getThreadStates().toString() + RemoveElement.getSecond().getName());
 		}
 		
 	}

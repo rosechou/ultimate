@@ -243,7 +243,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 						updateThreadState(procName, varName, value);
 						break;
 					case BoogiePrimitiveType.INT:
-						value = r.nextInt();
+						value = r.nextLong();
 						updateThreadState(procName, varName, value);
 						break;
 					case BoogiePrimitiveType.REAL:

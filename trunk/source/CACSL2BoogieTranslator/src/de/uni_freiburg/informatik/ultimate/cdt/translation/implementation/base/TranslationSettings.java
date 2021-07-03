@@ -333,6 +333,10 @@ public final class TranslationSettings {
 	public boolean useSimplePthreadTranslation() {
 		return mUseSimplePthreadTranslation;
 	}
+	
+	public boolean addSimpleImplementationToMemoryProcedure() {
+		return mAddSimpleImplementationToMemoryProcedure;
+	}
 
 	public TranslationSettings setMemoryModelPreference(final MemoryModel memoryModel) {
 		return new TranslationSettings(mDivisionByZeroOfIntegerTypes, mDivisionByZeroOfFloatingTypes,

@@ -2021,6 +2021,7 @@ public class MemoryHandler {
 			swrite.add(mProcedureManager.constructEnsuresSpecification(loc, false,
 					ExpressionFactory.and(loc, conjuncts), modifiedGlobals));
 		}
+		
 
 		mProcedureManager.addSpecificationsToCurrentProcedure(swrite);
 		mProcedureManager.endCustomProcedure(main, procName);

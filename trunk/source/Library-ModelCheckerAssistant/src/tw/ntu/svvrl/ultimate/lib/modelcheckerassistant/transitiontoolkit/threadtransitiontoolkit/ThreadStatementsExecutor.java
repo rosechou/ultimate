@@ -1,6 +1,7 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.StructLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.WhileStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.type.BoogieArrayType;
 import de.uni_freiburg.informatik.ultimate.boogie.type.BoogiePrimitiveType;
 import de.uni_freiburg.informatik.ultimate.core.model.models.IBoogieType;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.explorer.ProgramStateExplorer;
@@ -234,9 +236,9 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 			final String procName = lhs[i].getDeclarationInformation().getProcedure();
 			final String varName = lhs[i].getIdentifier();
 			final IBoogieType bt = lhs[i].getType();
+			final Random r = new Random();
+			Object value;
 			if (bt instanceof BoogiePrimitiveType) {
-				final Random r = new Random();
-				Object value;
 				switch(((BoogiePrimitiveType) bt).getTypeCode()) {
 					case BoogiePrimitiveType.BOOL:
 						value = r.nextBoolean();
@@ -255,6 +257,9 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 								+ " error or unknown type.");
 				}
 				
+			} else if(bt instanceof BoogieArrayType) {
+				value = new HashMap<>();
+				updateThreadState(procName, varName, value);
 			} else {
 				throw new UnsupportedOperationException("Unsupported"
 						+ "BoogieType:" + bt.toString() + " in havoc statement");

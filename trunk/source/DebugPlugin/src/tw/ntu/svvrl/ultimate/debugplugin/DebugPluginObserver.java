@@ -85,26 +85,26 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 
 	@Override
 	public void finish() throws Throwable {
-		if (mNeverClaimNWAContainer == null || mRcfg == null) {
-			return;
-		}
+//		if (mNeverClaimNWAContainer == null || mRcfg == null) {
+//			return;
+//		}
 
 		// measure size of nwa and rcfg
-		reportSizeBenchmark("Initial property automaton", mNeverClaimNWAContainer.getValue());
+//		reportSizeBenchmark("Initial property automaton", mNeverClaimNWAContainer.getValue());
 		reportSizeBenchmark("Initial RCFG", mRcfg);
 
 		mLogger.info("Do something with these two models...");
 		// new crawler here. 
-		mModelCheckerAssistant = new ModelCheckerAssistant(mNeverClaimNWAContainer.getValue(), mRcfg, mLogger, mServices);
-		// mModelCheckerAssistant = new ModelCheckerAssistant(mRcfg, mLogger, mServices);
+		// mModelCheckerAssistant = new ModelCheckerAssistant(mNeverClaimNWAContainer.getValue(), mRcfg, mLogger, mServices);
+		mModelCheckerAssistant = new ModelCheckerAssistant(mRcfg, mLogger, mServices);
 		
 		/*-----------debugging-----------*/
 		Set<ProgramState> pInitialStates = new HashSet<>();
 		pInitialStates = mModelCheckerAssistant.getProgramInitialStates();
 		
-		Set<NeverState> nInitialStates = new HashSet<>();
-		nInitialStates = mModelCheckerAssistant.getNeverInitialStates();
-		NeverState n = ((NeverState) nInitialStates.toArray()[0]);
+//		Set<NeverState> nInitialStates = new HashSet<>();
+//		nInitialStates = mModelCheckerAssistant.getNeverInitialStates();
+//		NeverState n = ((NeverState) nInitialStates.toArray()[0]);
 		
 		
 		ProgramState a = ((ProgramState) pInitialStates.toArray()[0]);
@@ -112,14 +112,14 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		ProgramStateTransition edge = edges.get(0);
 		ProgramState b = mModelCheckerAssistant.doProgramTransition(a, edge);
 		
-		if(mModelCheckerAssistant.globalVarsInitialized(b)) {
-			List<OutgoingInternalTransition<CodeBlock, NeverState>> nedges = mModelCheckerAssistant.getNeverEnabledTrans(n, b);
-			if(nedges.size() > 0) {
-				OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
-				NeverState m = mModelCheckerAssistant.doNeverTransition(n, nedge, b);
-				n = m;
-			}
-		}
+//		if(mModelCheckerAssistant.globalVarsInitialized(b)) {
+//			List<OutgoingInternalTransition<CodeBlock, NeverState>> nedges = mModelCheckerAssistant.getNeverEnabledTrans(n, b);
+//			if(nedges.size() > 0) {
+//				OutgoingInternalTransition<CodeBlock, NeverState> nedge = nedges.get(0);
+//				NeverState m = mModelCheckerAssistant.doNeverTransition(n, nedge, b);
+//				n = m;
+//			}
+//		}
 		
 		edges = mModelCheckerAssistant.getProgramEnabledTrans(b);
 		edge = edges.get(0);

@@ -2,8 +2,10 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
 
@@ -254,56 +256,99 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 	}
 
 	private Object evaluateArrayStoreExpression(final ArrayStoreExpression expr) {
-		ArrayList<Object> newArray = new ArrayList<>();
-		newArray = (ArrayList<Object>) evaluate(expr.getArray());
-		
+		Map<Object, Object> map = (Map<Object, Object>) evaluate(expr.getArray());
 		final List<Expression> indexExprs = Arrays.asList(expr.getIndices());
 		final Iterator<Expression> it = indexExprs.iterator();
+		
+		final List<Integer> indexList = new ArrayList<>();
 		while(it.hasNext()) {
-			/**
-			 * If array size is too small, grow it.
-			 * We do not need to consider whether this array will be out of bound here.
-			 * Because the rcfg has constructed the error state for us.
-			 * (Toggle on "Check array bounds for arrays that are off heap"
-			 * in the preference of cacsl2boogietranslator.)
-			 */
 			final Expression indexExpr = it.next();
 			final int index = Math.toIntExact((long) evaluate(indexExpr));
-			
-			assert(newArray.size() > 0);
-			newArray = growArraySize(newArray, index + 1);
-			
-			if(!it.hasNext()) {
-				newArray.set(index, evaluate(expr.getValue()));
-			}
+			indexList.add(index);
 		}
+		map.put(indexList, evaluate(expr.getValue()));
 		
-		return newArray;
+		return new HashMap<>(map);
+		
+		/**
+		 * Old implementation using java Array, now use java Map.
+		 */
+//		ArrayList<Object> newArray = new ArrayList<>();
+//		newArray = (ArrayList<Object>) evaluate(expr.getArray());
+//		
+//		final List<Expression> indexExprs = Arrays.asList(expr.getIndices());
+//		final Iterator<Expression> it = indexExprs.iterator();
+//		while(it.hasNext()) {
+//			/**
+//			 * If array size is too small, grow it.
+//			 * We do not need to consider whether this array will be out of bound here.
+//			 * Because the rcfg has constructed the error state for us.
+//			 * (Toggle on "Check array bounds for arrays that are off heap"
+//			 * in the preference of cacsl2boogietranslator.)
+//			 */
+//			final Expression indexExpr = it.next();
+//			final int index = Math.toIntExact((long) evaluate(indexExpr));
+//			
+//			assert(newArray.size() > 0);
+//			newArray = growArraySize(newArray, index + 1);
+//			
+//			if(!it.hasNext()) {
+//				newArray.set(index, evaluate(expr.getValue()));
+//			}
+//		}
+//		
+//		return newArray;
 	}
 
-	private Object evaluateArrayAccessExpression(final ArrayAccessExpression expr) {
-		ArrayList<Object> arrayToAccess = new ArrayList<>();
-		arrayToAccess = (ArrayList<Object>) evaluate(expr.getArray());
-		
+	private Object evaluateArrayAccessExpression(final ArrayAccessExpression expr) {	
+		Map<Object, Object> arrayToAccess = (Map<Object, Object>) evaluate(expr.getArray());
 		final List<Expression> indexExprs = Arrays.asList(expr.getIndices());
 		final Iterator<Expression> it = indexExprs.iterator();
+		
+		final List<Integer> indexList = new ArrayList<>();
 		while(it.hasNext()) {
 			Expression indexExpr = it.next();
 			final int index = Math.toIntExact((long) evaluate(indexExpr));
-			
 			assert(arrayToAccess.size() > 0);
-			arrayToAccess = growArraySize(arrayToAccess, index + 1);
-			
-			if(arrayToAccess.get(index) instanceof ArrayList<?>) {
-				arrayToAccess = (ArrayList<Object>) arrayToAccess.get(index);
+			indexList.add(index);
+		}
+		
+		if(arrayToAccess.containsKey(indexList)) {
+			if(arrayToAccess.get(indexList) instanceof Map<?, ?>) {
+				arrayToAccess = (Map<Object, Object>) arrayToAccess.get(indexList);
 			}
 		}
 		
-		return arrayToAccess;
+		return new HashMap<>(arrayToAccess);
+		
+		/**
+		 * Old implementation using java Array, now use java Map.
+		 */
+//		ArrayList<Object> arrayToAccess = new ArrayList<>();
+//		arrayToAccess = (ArrayList<Object>) evaluate(expr.getArray());
+//		
+//		final List<Expression> indexExprs = Arrays.asList(expr.getIndices());
+//		final Iterator<Expression> it = indexExprs.iterator();
+//		while(it.hasNext()) {
+//			Expression indexExpr = it.next();
+//			final int index = Math.toIntExact((long) evaluate(indexExpr));
+//			
+//			assert(arrayToAccess.size() > 0);
+//			arrayToAccess = growArraySize(arrayToAccess, index + 1);
+//			
+//			if(arrayToAccess.get(index) instanceof ArrayList<?>) {
+//				arrayToAccess = (ArrayList<Object>) arrayToAccess.get(index);
+//			}
+//		}
+//		
+//		return arrayToAccess;
 	}
 	
 	
 	/**
+	 * Data strcture of Boogie array has already changed to java Map.
+	 * This function is for java Array implementation.
+	 * @deprecated
 	 * Ex:
 	 * 		in param 						-> out param
 	 * 		([], 2)							-> [null, null]
@@ -335,6 +380,9 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 	
 	
 	/**
+	 * Data strcture of Boogie array has already changed to java Map.
+	 * This function is for java Array implementation.
+	 * @deprecated
 	 * A recursive function used in {@link #growArraySize(ArrayList, int)}.
 	 * Ex:
 	 * 		in param 		-> out param

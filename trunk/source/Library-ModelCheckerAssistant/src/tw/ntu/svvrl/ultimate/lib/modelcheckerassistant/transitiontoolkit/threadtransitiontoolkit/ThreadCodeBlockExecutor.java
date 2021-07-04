@@ -38,6 +38,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.thread
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.CodeBlockExecutor;
 
 public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
+	static long resBase = 0;
 	private final ProgramStateExplorer mProgramStateExplorer;
 	/**
 	 * For Program Automata.
@@ -219,6 +220,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 			doAssignmentFromEnsures(writeInitInt, callStmt);
 			break;
 		case allocOnStack:
+			
 			List<String> outParams = mProgramStateExplorer.getProc2OutParams().get(allocOnStack);
 			if(!outParams.get(0).equals("#res.base") || !outParams.get(1).equals("#res.offset")) {
 				throw new UnsupportedOperationException("Unexpected behavior in procedure "
@@ -226,7 +228,8 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 			}
 			final ThreadStatementsExecutor statementExecutor 
 				= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
-			statementExecutor.updateThreadState(allocOnStack, "#res.base", (long) 0);
+			statementExecutor.updateThreadState(allocOnStack, "#res.base", resBase);
+			resBase++;
 			statementExecutor.updateThreadState(allocOnStack, "#res.offset", (long) 0);
 			moveToNewState(statementExecutor.getCurrentState());
 		default:

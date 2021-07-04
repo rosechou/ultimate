@@ -8,6 +8,7 @@ import java.util.Set;
 import org.apache.commons.lang3.NotImplementedException;
 
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ArrayAccessExpression;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.ArrayStoreExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.BinaryExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.CallStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.EnsuresSpecification;
@@ -254,25 +255,47 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		
 		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState, mProgramStateExplorer);
 		if(ensuresFormula instanceof BinaryExpression) {
-			Expression left = ((BinaryExpression) ensuresFormula).getLeft();
-			Expression right = ((BinaryExpression) ensuresFormula).getRight();
+			final Expression left = ((BinaryExpression) ensuresFormula).getLeft();
+			final Expression right = ((BinaryExpression) ensuresFormula).getRight();
 			if(exprEvaluator.evaluate(left) == null) {
+				/**
+				 * 						left				  == right
+				 * ensures #memory_int[#ptr.base,#ptr.offset] == #value;
+				 */
+				/**
+				 * 			left  == 				right
+				 * ensures #value == #memory_int[#ptr.base,#ptr.offset];
+				 */
 				assert left instanceof IdentifierExpression || left instanceof ArrayAccessExpression;
 				if(left instanceof IdentifierExpression) {
 					statementExecutor.updateThreadState(
 							((IdentifierExpression) left).getDeclarationInformation().getProcedure(),
 							((IdentifierExpression) left).getIdentifier(),
 							exprEvaluator.evaluate(right));
+					moveToNewState(statementExecutor.getCurrentState());
 				} else if(left instanceof ArrayAccessExpression) {
-					//((ArrayAccessExpression) left).getArray()
+					final ArrayStoreExpression arrayStoreExpr = new ArrayStoreExpression(left.getLoc(), ((ArrayAccessExpression) left).getArray()
+							, ((ArrayAccessExpression) left).getIndices(), right);
+					exprEvaluator.evaluate(arrayStoreExpr);
+					moveToNewState(statementExecutor.getCurrentState());
 				}
-				
 			}else if(exprEvaluator.evaluate(right) == null) {
-				assert right instanceof IdentifierExpression;
-				statementExecutor.updateThreadState(
-					((IdentifierExpression) right).getDeclarationInformation().getProcedure(),
-					((IdentifierExpression) right).getIdentifier(),
-					exprEvaluator.evaluate(left));
+				/**
+				 * left and right exchange
+				 */
+				assert right instanceof IdentifierExpression || right instanceof ArrayAccessExpression;
+				if(right instanceof IdentifierExpression) {
+					statementExecutor.updateThreadState(
+							((IdentifierExpression) right).getDeclarationInformation().getProcedure(),
+							((IdentifierExpression) right).getIdentifier(),
+							exprEvaluator.evaluate(left));
+					moveToNewState(statementExecutor.getCurrentState());
+				} else if(right instanceof ArrayAccessExpression) {
+					final ArrayStoreExpression arrayStoreExpr = new ArrayStoreExpression(right.getLoc(), ((ArrayAccessExpression) right).getArray()
+							, ((ArrayAccessExpression) right).getIndices(), left);
+					exprEvaluator.evaluate(arrayStoreExpr);
+					moveToNewState(statementExecutor.getCurrentState());
+				}
 			}else {
 				if(left instanceof IdentifierExpression) {
 					final String identifier = ((IdentifierExpression) left).getIdentifier();
@@ -280,6 +303,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 						statementExecutor.updateThreadState(
 							((IdentifierExpression) left).getDeclarationInformation().getProcedure(),
 							identifier, exprEvaluator.evaluate(right));
+						moveToNewState(statementExecutor.getCurrentState());
 					} else {
 						throw new UnsupportedOperationException("Unexpected behavior in procedure "
 							+ procName);
@@ -290,6 +314,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 						statementExecutor.updateThreadState(
 							((IdentifierExpression) right).getDeclarationInformation().getProcedure(),
 							identifier, exprEvaluator.evaluate(left));
+						moveToNewState(statementExecutor.getCurrentState());
 					} else {
 						throw new UnsupportedOperationException("Unexpected behavior in procedure "
 								+ procName);

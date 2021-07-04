@@ -315,13 +315,20 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 		
 		if(arrayToAccess.containsKey(indexList)) {
 			if(arrayToAccess.get(indexList) instanceof Map<?, ?>) {
+				/**
+				 * An array
+				 */
 				arrayToAccess = (Map<Object, Object>) arrayToAccess.get(indexList);
+				return new HashMap<>(arrayToAccess);
+			} else {
+				/**
+				 * A value in primitive type 
+				 */
+				return arrayToAccess.get(indexList);
 			}
 		} else {
 			return null;
 		}
-		
-		return new HashMap<>(arrayToAccess);
 		
 		/**
 		 * Old implementation using java Array, now use java Map.
@@ -345,7 +352,6 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 //		
 //		return arrayToAccess;
 	}
-	
 	
 	/**
 	 * Data strcture of Boogie array has already changed to java Map.

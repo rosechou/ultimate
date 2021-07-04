@@ -260,10 +260,10 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 		final List<Expression> indexExprs = Arrays.asList(expr.getIndices());
 		final Iterator<Expression> it = indexExprs.iterator();
 		
-		final List<Integer> indexList = new ArrayList<>();
+		final List<Long> indexList = new ArrayList<>();
 		while(it.hasNext()) {
 			final Expression indexExpr = it.next();
-			final int index = Math.toIntExact((long) evaluate(indexExpr));
+			final long index = (long) evaluate(indexExpr);
 			indexList.add(index);
 		}
 		map.put(indexList, evaluate(expr.getValue()));
@@ -305,10 +305,10 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 		final List<Expression> indexExprs = Arrays.asList(expr.getIndices());
 		final Iterator<Expression> it = indexExprs.iterator();
 		
-		final List<Integer> indexList = new ArrayList<>();
+		final List<Long> indexList = new ArrayList<>();
 		while(it.hasNext()) {
 			Expression indexExpr = it.next();
-			final int index = Math.toIntExact((long) evaluate(indexExpr));
+			final long index = (long) evaluate(indexExpr);
 			assert(arrayToAccess.size() > 0);
 			indexList.add(index);
 		}
@@ -317,6 +317,8 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 			if(arrayToAccess.get(indexList) instanceof Map<?, ?>) {
 				arrayToAccess = (Map<Object, Object>) arrayToAccess.get(indexList);
 			}
+		} else {
+			return null;
 		}
 		
 		return new HashMap<>(arrayToAccess);

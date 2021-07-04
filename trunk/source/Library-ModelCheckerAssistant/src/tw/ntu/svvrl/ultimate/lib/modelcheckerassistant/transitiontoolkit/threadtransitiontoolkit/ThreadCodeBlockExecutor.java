@@ -3,14 +3,21 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.thread
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.NotImplementedException;
 
+import de.uni_freiburg.informatik.ultimate.boogie.ast.ArrayAccessExpression;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.BinaryExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.CallStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.EnsuresSpecification;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.Expression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ForkStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.IdentifierExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.JoinStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
+import de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.base.chandler.BaseMemoryModel;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Call;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
@@ -182,13 +189,124 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		 */
 		if(summary.calledProcedureHasImplementation()) {
 			throw new UnsupportedOperationException("Error: Summary with"
-					+ " implementation is not supported.");
+					+ " implementation is not yet supported.");
 		}
+		final CallStatement callStmt = summary.getCallStatement();
+		final String readInt = "read~int";
+		final String writeInt = "write~int";
+		final String writeInitInt = "write~init~int";
+		final String allocOnStack = "#Ultimate.allocOnStack";
+		
 		/**
-		 * If called Procedure Has no Implementation,
-		 * Do nothing.
+		 * Do actual call for these four procedures.
 		 */
+		if(callStmt.getMethodName().equals(readInt) || callStmt.getMethodName().equals(writeInt)
+			|| callStmt.getMethodName().equals(writeInitInt) || callStmt.getMethodName().equals(allocOnStack)) {
+			final ThreadStatementsExecutor statementExecutor 
+				= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
+			moveToNewState(statementExecutor.execute());
+		}
+		
+		switch(callStmt.getMethodName()) {
+		case readInt:
+			doAssignmentFromEnsures(readInt, callStmt);
+			break;
+		case writeInt:
+			doAssignmentFromEnsures(writeInt, callStmt);
+			break;
+		case writeInitInt:
+			doAssignmentFromEnsures(writeInitInt, callStmt);
+			break;
+		case allocOnStack:
+			List<String> outParams = mProgramStateExplorer.getProc2OutParams().get(allocOnStack);
+			if(!outParams.get(0).equals("#res.base") || !outParams.get(1).equals("#res.offset")) {
+				throw new UnsupportedOperationException("Unexpected behavior in procedure "
+						+ allocOnStack);
+			}
+			final ThreadStatementsExecutor statementExecutor 
+				= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
+			statementExecutor.updateThreadState(allocOnStack, "#res.base", (long) 0);
+			statementExecutor.updateThreadState(allocOnStack, "#res.offset", (long) 0);
+			moveToNewState(statementExecutor.getCurrentState());
+		default:
+			/**
+			 * do nothing.
+			 */
+		}
+		
+		/**
+		 * Do actual return for these four procedures.
+		 */
+		if(callStmt.getMethodName().equals(readInt) || callStmt.getMethodName().equals(writeInt)
+			|| callStmt.getMethodName().equals(writeInitInt) || callStmt.getMethodName().equals(allocOnStack)) {
+			final ProcInfo returnDestinationProc = mCurrentState.getCallerProc();
+			moveToNewState(doReturnRoutines(mCurrentState, returnDestinationProc
+					, callStmt.getLhs()));
+		}
 	}
+
+	private void doAssignmentFromEnsures(String procName, CallStatement callStmt) {
+		EnsuresSpecification ensures = mProgramStateExplorer.getProc2Ensures().get(procName).get(0);
+		Expression ensuresFormula = ensures.getFormula();
+		Set<String> modifiedVars = mProgramStateExplorer.getProc2ModifiedVars().get(procName);
+		final ThreadStatementsExecutor statementExecutor 
+		= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
+		
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState, mProgramStateExplorer);
+		if(ensuresFormula instanceof BinaryExpression) {
+			Expression left = ((BinaryExpression) ensuresFormula).getLeft();
+			Expression right = ((BinaryExpression) ensuresFormula).getRight();
+			if(exprEvaluator.evaluate(left) == null) {
+				assert left instanceof IdentifierExpression || left instanceof ArrayAccessExpression;
+				if(left instanceof IdentifierExpression) {
+					statementExecutor.updateThreadState(
+							((IdentifierExpression) left).getDeclarationInformation().getProcedure(),
+							((IdentifierExpression) left).getIdentifier(),
+							exprEvaluator.evaluate(right));
+				} else if(left instanceof ArrayAccessExpression) {
+					//((ArrayAccessExpression) left).getArray()
+				}
+				
+			}else if(exprEvaluator.evaluate(right) == null) {
+				assert right instanceof IdentifierExpression;
+				statementExecutor.updateThreadState(
+					((IdentifierExpression) right).getDeclarationInformation().getProcedure(),
+					((IdentifierExpression) right).getIdentifier(),
+					exprEvaluator.evaluate(left));
+			}else {
+				if(left instanceof IdentifierExpression) {
+					final String identifier = ((IdentifierExpression) left).getIdentifier();
+					if(modifiedVars.contains(identifier)) {
+						statementExecutor.updateThreadState(
+							((IdentifierExpression) left).getDeclarationInformation().getProcedure(),
+							identifier, exprEvaluator.evaluate(right));
+					} else {
+						throw new UnsupportedOperationException("Unexpected behavior in procedure "
+							+ procName);
+					}
+				}else if(right instanceof IdentifierExpression) {
+					final String identifier = ((IdentifierExpression) right).getIdentifier();
+					if(modifiedVars.contains(identifier)) {
+						statementExecutor.updateThreadState(
+							((IdentifierExpression) right).getDeclarationInformation().getProcedure(),
+							identifier, exprEvaluator.evaluate(left));
+					} else {
+						throw new UnsupportedOperationException("Unexpected behavior in procedure "
+								+ procName);
+					}
+				}else {
+					throw new UnsupportedOperationException("Unexpected behavior in procedure "
+						+ procName);
+				}
+			}
+		}else {
+			throw new UnsupportedOperationException("Unsupported ensures formula "
+				+ "type: " + ensuresFormula.getClass().getSimpleName());
+		}
+		moveToNewState(statementExecutor.getCurrentState());
+	}
+
+
 
 	private void executeReturn(final Return returnn) {
 		final CallStatement correspondingCallStmt = returnn.getCallStatement();

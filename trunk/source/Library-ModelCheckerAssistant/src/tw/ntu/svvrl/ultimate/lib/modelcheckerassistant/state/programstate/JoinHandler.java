@@ -107,7 +107,8 @@ public class JoinHandler {
 		 */
 		for(int i = 0; i < lhss.length; i++) {
 			final String lhsName = lhss[i].getIdentifier();
-			statementExecutor.updateThreadState(toProcName, lhsName, values[i]);
+			statementExecutor.updateThreadState(
+					lhss[i].getDeclarationInformation().getProcedure(), lhsName, values[i]);
 		}
 		
 		return statementExecutor.getCurrentState();

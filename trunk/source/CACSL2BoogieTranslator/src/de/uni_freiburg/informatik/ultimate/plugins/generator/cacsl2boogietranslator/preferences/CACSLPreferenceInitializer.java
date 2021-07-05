@@ -132,6 +132,13 @@ public class CACSLPreferenceInitializer extends UltimatePreferenceInitializer {
 	 */
 	public static final String LABEL_USE_SIMPLE_PTHREAD_TRANSLATION = "Use simple pthread translation";
 	
+	/**
+	 * By Hong-Yang Lin, to add simple implementation to the memory related Boogie procedure 
+	 * which has no implementation. For example, read~int, write~int, write~init~int.
+	 */
+	public static final String LABEL_ADD_SIMPLE_IMPLEMENTATION_TO_MEMORY_PROCEDURE = "Add simple implementation to memory procedure";
+	
+	
 	public enum PointerCheckMode {
 		IGNORE, ASSUME, ASSERTandASSUME
 	}
@@ -294,6 +301,10 @@ public class CACSLPreferenceInitializer extends UltimatePreferenceInitializer {
 				 * 2021-05-28 by Hong-Yang Lin
 				 */
 				new UltimatePreferenceItem<>(LABEL_USE_SIMPLE_PTHREAD_TRANSLATION, false, PreferenceType.Boolean),
+				/**
+				 * 2021-07-03 by Hong-Yang Lin
+				 */
+				new UltimatePreferenceItem<>(LABEL_ADD_SIMPLE_IMPLEMENTATION_TO_MEMORY_PROCEDURE, false, PreferenceType.Boolean),
 				
 				// typesize stuff
 				new UltimatePreferenceItem<>(LABEL_USE_EXPLICIT_TYPESIZES, true, PreferenceType.Boolean),

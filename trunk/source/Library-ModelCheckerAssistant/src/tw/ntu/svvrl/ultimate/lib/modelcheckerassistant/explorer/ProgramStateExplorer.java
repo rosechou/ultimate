@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import de.uni_freiburg.informatik.ultimate.boogie.ast.EnsuresSpecification;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.Specification;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.boogie.Boogie2SmtSymbolTable;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.debugidentifiers.DebugIdentifier;
@@ -49,6 +51,9 @@ public class ProgramStateExplorer {
 	
 	private final Map<String, List<String>> mProc2InParams;
 	private final Map<String, List<String>> mProc2OutParams;
+	
+	private final Map<String, List<EnsuresSpecification>> mProc2Ensures;
+	private Map<String, Set<String>> mProc2ModifiedVars;
 
 	public ProgramStateExplorer(final BoogieIcfgContainer rcfg) {
 		/*---------------RCFG fields---------------*/
@@ -63,6 +68,8 @@ public class ProgramStateExplorer {
 				boogie2SmtSymbolTable.getBoogieDeclarations().getFunctionDeclarations());
 		mProc2InParams = createProc2Prams(boogie2SmtSymbolTable, "in");
 		mProc2OutParams = createProc2Prams(boogie2SmtSymbolTable, "out");
+		mProc2Ensures = boogie2SmtSymbolTable.getBoogieDeclarations().getEnsuresNonFree();
+		mProc2ModifiedVars = boogie2SmtSymbolTable.getBoogieDeclarations().getModifiedVars();
 		
 		mProgramStateFactory = new ProgramStateFactory(boogie2SmtSymbolTable
 				, rcfg.getCfgSmtToolkit(), mEntryNodes, mExitNodes, this);
@@ -76,8 +83,8 @@ public class ProgramStateExplorer {
 		 */
 		markEdges(rcfg);
 	}
-	
-	
+
+
 	private void markEdges(final BoogieIcfgContainer rcfg) {
 		Map<String, Map<DebugIdentifier, BoogieIcfgLocation>> locNodes = rcfg.getProgramPoints();
 		for(final String procName : locNodes.keySet()) {
@@ -308,6 +315,7 @@ public class ProgramStateExplorer {
 		return result;
 	}
 	
+	
 	public BoogieIcfgLocation getEntryNode(final String procName) {
 		return mEntryNodes.get(procName);
 	}
@@ -326,5 +334,13 @@ public class ProgramStateExplorer {
 	
 	public Map<String, List<String>> getProc2OutParams() {
 		return mProc2OutParams;
+	}
+	
+	public Map<String, List<EnsuresSpecification>> getProc2Ensures() {
+		return mProc2Ensures;
+	}
+	
+	public Map<String, Set<String>> getProc2ModifiedVars() {
+		return mProc2ModifiedVars;
 	}
 }

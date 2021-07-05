@@ -3,14 +3,22 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.thread
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.NotImplementedException;
 
+import de.uni_freiburg.informatik.ultimate.boogie.ast.ArrayAccessExpression;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.ArrayStoreExpression;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.BinaryExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.CallStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.EnsuresSpecification;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.Expression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.ForkStatement;
+import de.uni_freiburg.informatik.ultimate.boogie.ast.IdentifierExpression;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.JoinStatement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
+import de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.base.chandler.BaseMemoryModel;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Call;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
@@ -30,6 +38,7 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate.thread
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.CodeBlockExecutor;
 
 public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
+	static long resBase = 0;
 	private final ProgramStateExplorer mProgramStateExplorer;
 	/**
 	 * For Program Automata.
@@ -182,13 +191,210 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		 */
 		if(summary.calledProcedureHasImplementation()) {
 			throw new UnsupportedOperationException("Error: Summary with"
-					+ " implementation is not supported.");
+					+ " implementation is not yet supported.");
 		}
-		/**
-		 * If called Procedure Has no Implementation,
-		 * Do nothing.
-		 */
+		
+		doMemoryAssignments(summary);
 	}
+
+	private void doMemoryAssignments(final Summary summary) {
+		/**
+		 * These four procedures are considered for the purpose of
+		 * the handling of array memory model. In Ultimate, the array representation
+		 * is in the symbolic way, i.e. using requires, ensures and modifies specifications
+		 * as memory address constraints. I implements the assignments from the ensures spec
+		 * in procedure read~int, write~int and write~init~int.
+		 * Note that this approach treats the symptoms but not the root cause.
+		 * It is better to modify the Boogie generator directly. However, it might be time-consuming.
+		 * 
+		 * In the following, see the Boogie program which involves array access and store.
+		 */
+		final CallStatement callStmt = summary.getCallStatement();
+		final String readInt = "read~int";
+		final String writeInt = "write~int";
+		final String writeInitInt = "write~init~int";
+		final String allocOnStack = "#Ultimate.allocOnStack";
+		
+		/**
+		 * Do actual call for these four procedures.
+		 */
+		if(callStmt.getMethodName().equals(readInt) || callStmt.getMethodName().equals(writeInt)
+			|| callStmt.getMethodName().equals(writeInitInt) || callStmt.getMethodName().equals(allocOnStack)) {
+			final ThreadStatementsExecutor statementExecutor 
+				= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
+			moveToNewState(statementExecutor.execute());
+		}
+		
+		switch(callStmt.getMethodName()) {
+		case readInt:
+			/**
+			 * procedure read~int(...)
+			 * ensures #value == #memory_int[#ptr.base,#ptr.offset];
+			 * modifies ;
+			 * 
+			 * Assign value of #memory_int[#ptr.base,#ptr.offset] to #value
+			 */
+			doAssignmentFromEnsures(readInt, callStmt);
+			break;
+		case writeInt:
+			/**
+			 * procedure write~int(...)
+			 * ensures #memory_int == old(#memory_int)[#ptr.base,#ptr.offset := #value];
+			 * modifies #memory_int;
+			 * 
+			 * #memory_int can be modifies, so
+			 * assign value of old(#memory_int)[#ptr.base,#ptr.offset := #value] to #memory_int
+			 */
+			doAssignmentFromEnsures(writeInt, callStmt);
+			break;
+		case writeInitInt:
+			/**
+			 * procedure write~init~int(...)
+			 * ensures #memory_int[#ptr.base,#ptr.offset] == #value;
+			 * modifies ;
+			 * 
+			 * Assign value of #value to #memory_int[#ptr.base,#ptr.offset]
+			 */
+			doAssignmentFromEnsures(writeInitInt, callStmt);
+			break;
+		case allocOnStack:
+			
+			List<String> outParams = mProgramStateExplorer.getProc2OutParams().get(allocOnStack);
+			if(!outParams.get(0).equals("#res.base") || !outParams.get(1).equals("#res.offset")) {
+				throw new UnsupportedOperationException("Unexpected behavior in procedure "
+						+ allocOnStack);
+			}
+			final ThreadStatementsExecutor statementExecutor 
+				= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
+			/**
+			 * procedure #Ultimate.allocOnStack(...)
+			 * ensures 0 != #res.base;
+			 * ensures #StackHeapBarrier < #res.base;
+			 * 
+			 * Once #Ultimate.allocOnStack is called, #res.base increases by 1. 
+			 * The value of #StackHeapBarrier is always ignored.
+			 */
+			statementExecutor.updateThreadState(allocOnStack, "#res.base", resBase);
+			resBase++;
+			/**
+			 * procedure #Ultimate.allocOnStack(...)
+			 * ensures 0 == #res.offset
+			 * 
+			 * #res.offset is always 0.
+			 */
+			statementExecutor.updateThreadState(allocOnStack, "#res.offset", (long) 0);
+			moveToNewState(statementExecutor.getCurrentState());
+		default:
+			/**
+			 * do nothing.
+			 */
+		}
+		
+		/**
+		 * Do actual return for these four procedures.
+		 */
+		if(callStmt.getMethodName().equals(readInt) || callStmt.getMethodName().equals(writeInt)
+			|| callStmt.getMethodName().equals(writeInitInt) || callStmt.getMethodName().equals(allocOnStack)) {
+			final ProcInfo returnDestinationProc = mCurrentState.getCallerProc();
+			moveToNewState(doReturnRoutines(mCurrentState, returnDestinationProc
+					, callStmt.getLhs()));
+		}
+	}
+
+
+
+	private void doAssignmentFromEnsures(final String procName, final CallStatement callStmt) {
+		final EnsuresSpecification ensures = mProgramStateExplorer.getProc2Ensures().get(procName).get(0);
+		final Expression ensuresFormula = ensures.getFormula();
+		final Set<String> modifiedVars = mProgramStateExplorer.getProc2ModifiedVars().get(procName);
+		final ThreadStatementsExecutor statementExecutor 
+			= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
+		
+		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState, mProgramStateExplorer);
+		if(ensuresFormula instanceof BinaryExpression) {
+			final Expression left = ((BinaryExpression) ensuresFormula).getLeft();
+			final Expression right = ((BinaryExpression) ensuresFormula).getRight();
+			if(exprEvaluator.evaluate(left) == null) {
+				/**
+				 * For read~int(...) and write~init~int(...)
+				 */
+				/**
+				 * 						left				  == right
+				 * ensures #memory_int[#ptr.base,#ptr.offset] == #value;
+				 */
+				/**
+				 * 			left  == 				right
+				 * ensures #value == #memory_int[#ptr.base,#ptr.offset];
+				 */
+				assert left instanceof IdentifierExpression || left instanceof ArrayAccessExpression;
+				if(left instanceof IdentifierExpression) {
+					statementExecutor.updateThreadState(
+							((IdentifierExpression) left).getDeclarationInformation().getProcedure(),
+							((IdentifierExpression) left).getIdentifier(),
+							exprEvaluator.evaluate(right));
+					moveToNewState(statementExecutor.getCurrentState());
+				} else if(left instanceof ArrayAccessExpression) {
+					final ArrayStoreExpression arrayStoreExpr = new ArrayStoreExpression(left.getLoc(), ((ArrayAccessExpression) left).getArray()
+							, ((ArrayAccessExpression) left).getIndices(), right);
+					exprEvaluator.evaluate(arrayStoreExpr);
+					moveToNewState(statementExecutor.getCurrentState());
+				}
+			}else if(exprEvaluator.evaluate(right) == null) {
+				/**
+				 * left and right exchange
+				 */
+				assert right instanceof IdentifierExpression || right instanceof ArrayAccessExpression;
+				if(right instanceof IdentifierExpression) {
+					statementExecutor.updateThreadState(
+							((IdentifierExpression) right).getDeclarationInformation().getProcedure(),
+							((IdentifierExpression) right).getIdentifier(),
+							exprEvaluator.evaluate(left));
+					moveToNewState(statementExecutor.getCurrentState());
+				} else if(right instanceof ArrayAccessExpression) {
+					final ArrayStoreExpression arrayStoreExpr = new ArrayStoreExpression(right.getLoc(), ((ArrayAccessExpression) right).getArray()
+							, ((ArrayAccessExpression) right).getIndices(), left);
+					exprEvaluator.evaluate(arrayStoreExpr);
+					moveToNewState(statementExecutor.getCurrentState());
+				}
+			}else {
+				/**
+				 * for write~int(...)
+				 */
+				if(left instanceof IdentifierExpression) {
+					final String identifier = ((IdentifierExpression) left).getIdentifier();
+					if(modifiedVars.contains(identifier)) {
+						statementExecutor.updateThreadState(
+							((IdentifierExpression) left).getDeclarationInformation().getProcedure(),
+							identifier, exprEvaluator.evaluate(right));
+						moveToNewState(statementExecutor.getCurrentState());
+					} else {
+						throw new UnsupportedOperationException("Unexpected behavior in procedure "
+							+ procName);
+					}
+				}else if(right instanceof IdentifierExpression) {
+					final String identifier = ((IdentifierExpression) right).getIdentifier();
+					if(modifiedVars.contains(identifier)) {
+						statementExecutor.updateThreadState(
+							((IdentifierExpression) right).getDeclarationInformation().getProcedure(),
+							identifier, exprEvaluator.evaluate(left));
+						moveToNewState(statementExecutor.getCurrentState());
+					} else {
+						throw new UnsupportedOperationException("Unexpected behavior in procedure "
+								+ procName);
+					}
+				}else {
+					throw new UnsupportedOperationException("Unexpected behavior in procedure "
+						+ procName);
+				}
+			}
+		}else {
+			throw new UnsupportedOperationException("Unsupported ensures formula "
+				+ "type: " + ensuresFormula.getClass().getSimpleName());
+		}
+		moveToNewState(statementExecutor.getCurrentState());
+	}
+
+
 
 	private void executeReturn(final Return returnn) {
 		final CallStatement correspondingCallStmt = returnn.getCallStatement();
@@ -256,7 +462,8 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		 */
 		for(int i = 0; i < lhss.length; i++) {
 			final String lhsName = lhss[i].getIdentifier();
-			statementExecutor.updateThreadState(toProcName, lhsName, values[i]);
+			statementExecutor.updateThreadState(
+					lhss[i].getDeclarationInformation().getProcedure(), lhsName, values[i]);
 		}
 		
 		/**

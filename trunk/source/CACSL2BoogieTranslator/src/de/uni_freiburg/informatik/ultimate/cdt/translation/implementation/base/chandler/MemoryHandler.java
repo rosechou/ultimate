@@ -2021,6 +2021,13 @@ public class MemoryHandler {
 			swrite.add(mProcedureManager.constructEnsuresSpecification(loc, false,
 					ExpressionFactory.and(loc, conjuncts), modifiedGlobals));
 		}
+		
+		/**
+		 * Add implementation of memory procedures here.
+		 */
+		if(mSettings.addSimpleImplementationToMemoryProcedure()) {
+			//mProcedureManager.constructBody(...);
+		}
 
 		mProcedureManager.addSpecificationsToCurrentProcedure(swrite);
 		mProcedureManager.endCustomProcedure(main, procName);

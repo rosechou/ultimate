@@ -1,6 +1,8 @@
 package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.state.programstate;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -193,8 +195,8 @@ public class VarAndParamAdder {
 	 * 		A default value for the given boogie type.
 	 * 		Ex: bool 	-> 	null
 	 * 			int 	-> 	null
-	 * 			int[]	->	[null]
-	 * 			int[][]	->	[[null]]
+	 * 			int[]	->	{null=null}
+	 * 			int[][]	->	{null={null=null}}
 	 */
 	private Object processBoogieType(final IBoogieType bt) {
 		if (bt instanceof BoogiePrimitiveType) {
@@ -230,10 +232,12 @@ public class VarAndParamAdder {
 					}
 				}
 			}
-			final Object v = processBoogieType(((BoogieArrayType) bt).getValueType());
-			final ArrayList<Object> array = new ArrayList<>();
-			array.add(v);
-			return array;
+//			final Object v = processBoogieType(((BoogieArrayType) bt).getValueType());
+//			final Map<Object, Object> map = new HashMap<>();
+//			map.put(null, v);
+//			return map;
+			final Map<Object, Object> map = new HashMap<>();
+			return map;
 		} else {
 			throw new UnsupportedOperationException("Unsupported"
 					+ "BoogieType:" + bt.toString());

@@ -2,8 +2,10 @@ package tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
 
@@ -253,57 +255,123 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 		}
 	}
 
+	/**
+	 * The array type is implemented using java Map 
+	 * because arrays in Boogie are actually maps.
+	 * Boogie Map Examples:
+	 * var a : [int]int; -> One-dimensional integer array whose key contains one integers.
+	 * var b : [int,int]int; -> One-dimensional integer array whose key contains two integers.
+	 * var c : [int][int]int; -> Two-dimensional integer array which has two integer keys.
+	 * 
+	 * The C arrays(No matter what dimension) are translated into One-dimensional array which simulates memory.
+	 * For example, In C language, int a[3] = {1234, 4567, 87987};
+	 * array may be represented like:
+	 * #memory_int = {[0, 0] = 1234, [0, 4] = 4567, [0, 8] = 87987}; in Boogie.
+	 * The numbers in the keys one stands for the base and the other stands for the offset of memory.
+	 *   
+	 */
 	private Object evaluateArrayStoreExpression(final ArrayStoreExpression expr) {
-		ArrayList<Object> newArray = new ArrayList<>();
-		newArray = (ArrayList<Object>) evaluate(expr.getArray());
-		
+		Map<Object, Object> map = (Map<Object, Object>) evaluate(expr.getArray());
 		final List<Expression> indexExprs = Arrays.asList(expr.getIndices());
 		final Iterator<Expression> it = indexExprs.iterator();
-		while(it.hasNext()) {
-			/**
-			 * If array size is too small, grow it.
-			 * We do not need to consider whether this array will be out of bound here.
-			 * Because the rcfg has constructed the error state for us.
-			 * (Toggle on "Check array bounds for arrays that are off heap"
-			 * in the preference of cacsl2boogietranslator.)
-			 */
-			final Expression indexExpr = it.next();
-			final int index = Math.toIntExact((long) evaluate(indexExpr));
-			
-			assert(newArray.size() > 0);
-			newArray = growArraySize(newArray, index + 1);
-			
-			if(!it.hasNext()) {
-				newArray.set(index, evaluate(expr.getValue()));
-			}
-		}
 		
-		return newArray;
+		final List<Long> indexList = new ArrayList<>();
+		while(it.hasNext()) {
+			final Expression indexExpr = it.next();
+			final long index = (long) evaluate(indexExpr);
+			indexList.add(index);
+		}
+		map.put(indexList, evaluate(expr.getValue()));
+		
+		return new HashMap<>(map);
+		
+		/**
+		 * Old implementation using java Array, now use java Map.
+		 */
+//		ArrayList<Object> newArray = new ArrayList<>();
+//		newArray = (ArrayList<Object>) evaluate(expr.getArray());
+//		
+//		final List<Expression> indexExprs = Arrays.asList(expr.getIndices());
+//		final Iterator<Expression> it = indexExprs.iterator();
+//		while(it.hasNext()) {
+//			/**
+//			 * If array size is too small, grow it.
+//			 * We do not need to consider whether this array will be out of bound here.
+//			 * Because the rcfg has constructed the error state for us.
+//			 * (Toggle on "Check array bounds for arrays that are off heap"
+//			 * in the preference of cacsl2boogietranslator.)
+//			 */
+//			final Expression indexExpr = it.next();
+//			final int index = Math.toIntExact((long) evaluate(indexExpr));
+//			
+//			assert(newArray.size() > 0);
+//			newArray = growArraySize(newArray, index + 1);
+//			
+//			if(!it.hasNext()) {
+//				newArray.set(index, evaluate(expr.getValue()));
+//			}
+//		}
+//		
+//		return newArray;
 	}
 
-	private Object evaluateArrayAccessExpression(final ArrayAccessExpression expr) {
-		ArrayList<Object> arrayToAccess = new ArrayList<>();
-		arrayToAccess = (ArrayList<Object>) evaluate(expr.getArray());
-		
+	private Object evaluateArrayAccessExpression(final ArrayAccessExpression expr) {	
+		Map<Object, Object> arrayToAccess = (Map<Object, Object>) evaluate(expr.getArray());
 		final List<Expression> indexExprs = Arrays.asList(expr.getIndices());
 		final Iterator<Expression> it = indexExprs.iterator();
+		
+		final List<Long> indexList = new ArrayList<>();
 		while(it.hasNext()) {
 			Expression indexExpr = it.next();
-			final int index = Math.toIntExact((long) evaluate(indexExpr));
-			
+			final long index = (long) evaluate(indexExpr);
 			assert(arrayToAccess.size() > 0);
-			arrayToAccess = growArraySize(arrayToAccess, index + 1);
-			
-			if(arrayToAccess.get(index) instanceof ArrayList<?>) {
-				arrayToAccess = (ArrayList<Object>) arrayToAccess.get(index);
-			}
+			indexList.add(index);
 		}
 		
-		return arrayToAccess;
+		if(arrayToAccess.containsKey(indexList)) {
+			if(arrayToAccess.get(indexList) instanceof Map<?, ?>) {
+				/**
+				 * An array
+				 */
+				arrayToAccess = (Map<Object, Object>) arrayToAccess.get(indexList);
+				return new HashMap<>(arrayToAccess);
+			} else {
+				/**
+				 * A value in primitive type 
+				 */
+				return arrayToAccess.get(indexList);
+			}
+		} else {
+			return null;
+		}
+		
+		/**
+		 * Old implementation using java Array, now use java Map.
+		 */
+//		ArrayList<Object> arrayToAccess = new ArrayList<>();
+//		arrayToAccess = (ArrayList<Object>) evaluate(expr.getArray());
+//		
+//		final List<Expression> indexExprs = Arrays.asList(expr.getIndices());
+//		final Iterator<Expression> it = indexExprs.iterator();
+//		while(it.hasNext()) {
+//			Expression indexExpr = it.next();
+//			final int index = Math.toIntExact((long) evaluate(indexExpr));
+//			
+//			assert(arrayToAccess.size() > 0);
+//			arrayToAccess = growArraySize(arrayToAccess, index + 1);
+//			
+//			if(arrayToAccess.get(index) instanceof ArrayList<?>) {
+//				arrayToAccess = (ArrayList<Object>) arrayToAccess.get(index);
+//			}
+//		}
+//		
+//		return arrayToAccess;
 	}
 	
-	
 	/**
+	 * Data strcture of Boogie array has already changed to java Map.
+	 * This function is for java Array implementation.
+	 * @deprecated
 	 * Ex:
 	 * 		in param 						-> out param
 	 * 		([], 2)							-> [null, null]
@@ -335,6 +403,9 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 	
 	
 	/**
+	 * Data strcture of Boogie array has already changed to java Map.
+	 * This function is for java Array implementation.
+	 * @deprecated
 	 * A recursive function used in {@link #growArraySize(ArrayList, int)}.
 	 * Ex:
 	 * 		in param 		-> out param

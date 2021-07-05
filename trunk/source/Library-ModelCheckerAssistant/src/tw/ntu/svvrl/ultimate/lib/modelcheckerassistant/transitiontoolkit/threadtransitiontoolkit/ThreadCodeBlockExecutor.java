@@ -193,6 +193,22 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 			throw new UnsupportedOperationException("Error: Summary with"
 					+ " implementation is not yet supported.");
 		}
+		
+		doMemoryAssignments(summary);
+	}
+
+	private void doMemoryAssignments(final Summary summary) {
+		/**
+		 * These four procedures are considered for the purpose of
+		 * the handling of array memory model. In Ultimate, the array representation
+		 * is in the symbolic way, i.e. using requires, ensures and modifies specifications
+		 * as memory address constraints. I implements the assignments from the ensures spec
+		 * in procedure read~int, write~int and write~init~int.
+		 * Note that this approach treats the symptoms but not the root cause.
+		 * It is better to modify the Boogie generator directly. However, it might be time-consuming.
+		 * 
+		 * In the following, see the Boogie program which involves array access and store.
+		 */
 		final CallStatement callStmt = summary.getCallStatement();
 		final String readInt = "read~int";
 		final String writeInt = "write~int";
@@ -211,12 +227,34 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		
 		switch(callStmt.getMethodName()) {
 		case readInt:
+			/**
+			 * procedure read~int(...)
+			 * ensures #value == #memory_int[#ptr.base,#ptr.offset];
+			 * modifies ;
+			 * 
+			 * Assign value of #memory_int[#ptr.base,#ptr.offset] to #value
+			 */
 			doAssignmentFromEnsures(readInt, callStmt);
 			break;
 		case writeInt:
+			/**
+			 * procedure write~int(...)
+			 * ensures #memory_int == old(#memory_int)[#ptr.base,#ptr.offset := #value];
+			 * modifies #memory_int;
+			 * 
+			 * #memory_int can be modifies, so
+			 * assign value of old(#memory_int)[#ptr.base,#ptr.offset := #value] to #memory_int
+			 */
 			doAssignmentFromEnsures(writeInt, callStmt);
 			break;
 		case writeInitInt:
+			/**
+			 * procedure write~init~int(...)
+			 * ensures #memory_int[#ptr.base,#ptr.offset] == #value;
+			 * modifies ;
+			 * 
+			 * Assign value of #value to #memory_int[#ptr.base,#ptr.offset]
+			 */
 			doAssignmentFromEnsures(writeInitInt, callStmt);
 			break;
 		case allocOnStack:
@@ -228,8 +266,22 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 			}
 			final ThreadStatementsExecutor statementExecutor 
 				= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
+			/**
+			 * procedure #Ultimate.allocOnStack(...)
+			 * ensures 0 != #res.base;
+			 * ensures #StackHeapBarrier < #res.base;
+			 * 
+			 * Once #Ultimate.allocOnStack is called, #res.base increases by 1. 
+			 * The value of #StackHeapBarrier is always ignored.
+			 */
 			statementExecutor.updateThreadState(allocOnStack, "#res.base", resBase);
 			resBase++;
+			/**
+			 * procedure #Ultimate.allocOnStack(...)
+			 * ensures 0 == #res.offset
+			 * 
+			 * #res.offset is always 0.
+			 */
 			statementExecutor.updateThreadState(allocOnStack, "#res.offset", (long) 0);
 			moveToNewState(statementExecutor.getCurrentState());
 		default:
@@ -249,18 +301,23 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		}
 	}
 
-	private void doAssignmentFromEnsures(String procName, CallStatement callStmt) {
-		EnsuresSpecification ensures = mProgramStateExplorer.getProc2Ensures().get(procName).get(0);
-		Expression ensuresFormula = ensures.getFormula();
-		Set<String> modifiedVars = mProgramStateExplorer.getProc2ModifiedVars().get(procName);
+
+
+	private void doAssignmentFromEnsures(final String procName, final CallStatement callStmt) {
+		final EnsuresSpecification ensures = mProgramStateExplorer.getProc2Ensures().get(procName).get(0);
+		final Expression ensuresFormula = ensures.getFormula();
+		final Set<String> modifiedVars = mProgramStateExplorer.getProc2ModifiedVars().get(procName);
 		final ThreadStatementsExecutor statementExecutor 
-		= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
+			= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
 		
 		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState, mProgramStateExplorer);
 		if(ensuresFormula instanceof BinaryExpression) {
 			final Expression left = ((BinaryExpression) ensuresFormula).getLeft();
 			final Expression right = ((BinaryExpression) ensuresFormula).getRight();
 			if(exprEvaluator.evaluate(left) == null) {
+				/**
+				 * For read~int(...) and write~init~int(...)
+				 */
 				/**
 				 * 						left				  == right
 				 * ensures #memory_int[#ptr.base,#ptr.offset] == #value;
@@ -300,6 +357,9 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 					moveToNewState(statementExecutor.getCurrentState());
 				}
 			}else {
+				/**
+				 * for write~int(...)
+				 */
 				if(left instanceof IdentifierExpression) {
 					final String identifier = ((IdentifierExpression) left).getIdentifier();
 					if(modifiedVars.contains(identifier)) {

@@ -255,6 +255,21 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 		}
 	}
 
+	/**
+	 * The array type is implemented using java Map 
+	 * because arrays in Boogie are actually maps.
+	 * Boogie Map Examples:
+	 * var a : [int]int; -> One-dimensional integer array whose key contains one integers.
+	 * var b : [int,int]int; -> One-dimensional integer array whose key contains two integers.
+	 * var c : [int][int]int; -> Two-dimensional integer array which has two integer keys.
+	 * 
+	 * The C arrays(No matter what dimension) are translated into One-dimensional array which simulates memory.
+	 * For example, In C language, int a[3] = {1234, 4567, 87987};
+	 * array may be represented like:
+	 * #memory_int = {[0, 0] = 1234, [0, 4] = 4567, [0, 8] = 87987}; in Boogie.
+	 * The numbers in the keys one stands for the base and the other stands for the offset of memory.
+	 *   
+	 */
 	private Object evaluateArrayStoreExpression(final ArrayStoreExpression expr) {
 		Map<Object, Object> map = (Map<Object, Object>) evaluate(expr.getArray());
 		final List<Expression> indexExprs = Arrays.asList(expr.getIndices());

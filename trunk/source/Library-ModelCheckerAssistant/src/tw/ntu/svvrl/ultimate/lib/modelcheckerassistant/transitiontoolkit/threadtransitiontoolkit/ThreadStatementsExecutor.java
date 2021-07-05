@@ -380,16 +380,19 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 		 * Before getting into the procedure, set all locals to null.
 		 */
 		final Map<String, Object> id2v = mCurrentState.getValuation().getProcOrFuncId2V(procName);
-		for(final String varName : id2v.keySet()) {
-			updateThreadState(procName, varName, null);
+		if(id2v != null) {
+			for(final String varName : id2v.keySet()) {
+				updateThreadState(procName, varName, null);
+			}
+			
+			/**
+			 * assign values to in params
+			 */
+			for(int i = 0; i < args.length; i++) {
+				updateThreadState(procName, argsName.get(i), exprEvaluator.evaluate(args[i]));
+			}
 		}
 		
-		/**
-		 * assign values to in params
-		 */
-		for(int i = 0; i < args.length; i++) {
-			updateThreadState(procName, argsName.get(i), exprEvaluator.evaluate(args[i]));
-		}
 		mCurrentState.pushProc(new ProcInfo(procName));
 		
 	}

@@ -200,7 +200,7 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		edges = mModelCheckerAssistant.getProgramEnabledTrans(w);
 		edge = edges.get(0);
 		ProgramState x = mModelCheckerAssistant.doProgramTransition(w, edge);
-		
+				
 		edges = mModelCheckerAssistant.getProgramEnabledTrans(x);
 		edge = edges.get(0);
 		ProgramState y = mModelCheckerAssistant.doProgramTransition(x, edge);

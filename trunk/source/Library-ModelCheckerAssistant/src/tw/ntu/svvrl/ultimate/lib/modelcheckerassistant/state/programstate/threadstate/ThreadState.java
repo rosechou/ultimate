@@ -24,6 +24,19 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.Stateme
  */
 
 public class ThreadState extends ValuationState<ThreadState>{
+	/**
+	 * Indicate which copy method used in the constructor.
+	 * 
+	 * localCopy : Local valuation and stack are deep copied
+	 * while global valuation is shallow copied.
+	 * 
+	 * fullCopy : Local valuation, global valuation and stack are deep copied
+	 *
+	 */
+	public static enum ConstructType{
+		localCopy, fullCopy
+	}
+	
 	private ProgramStateExplorer mProgramStateExplorer;
 	/**
 	 * To specify which IcfgLocation this state is generated from.
@@ -83,11 +96,16 @@ public class ThreadState extends ValuationState<ThreadState>{
 	
 	/**
 	 * Copy constructor
-	 * Local valuation and stack are deep copied
-	 * while global valuation is shallow copied.
 	 */
-	public ThreadState(final ThreadState threadState) {
-		mValuation = threadState.getValuationLocalCopy();
+	public ThreadState(final ThreadState threadState, final ConstructType t) {
+		if(t == ConstructType.localCopy) {
+			mValuation = threadState.getValuationLocalCopy();
+		} else if(t == ConstructType.fullCopy) {
+			mValuation = threadState.getValuationFullCopy();
+		} else {
+			throw new UnsupportedOperationException("Unknown ConstructType: " + 
+					t.getClass().getSimpleName());
+		}
 		mCorrespondingIcfgLoc = threadState.getCorrespondingIcfgLoc();
 		mProcStack = threadState.getProcStackCopy();
 		mThreadID = threadState.getThreadID();

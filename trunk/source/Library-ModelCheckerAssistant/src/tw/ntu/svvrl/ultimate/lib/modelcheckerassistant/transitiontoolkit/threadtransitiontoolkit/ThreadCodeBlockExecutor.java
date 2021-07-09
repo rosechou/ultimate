@@ -91,14 +91,32 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 			throw new NotImplementedException(ParallelComposition.class.getSimpleName()
 					+ "is not yet implemented.");
 		} else if(mCodeBlock instanceof SequentialComposition) {
+			final List<CodeBlock> codeBlocks = ((SequentialComposition) mCodeBlock).getCodeBlocks();
+			
 			/**
-			 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
-			 * This case is not yet implemented because I'm lazy.
-			 * (one of the preferences in
-			 * de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder)
+			 * Deep copy the current state and do the dummy execution.
+			 * 
+			 * For instance, the SequentialComposition has two code blocks, they are
+			 * (1)	#t~post0 := ~x~0;		and
+    		 * (2)	~x~0 := 1 + #t~post0;
+			 * 
+			 * Code block (1) must be executed or #t~post0 in (2) may be null
+			 * and a null pointer exception could be thrown.
+			 * 
+			 * We don't really want the valuation is modified since this is an enabledness check.
+			 * Thus, both global and local variables should be deep copied.
 			 */
-			throw new NotImplementedException(ParallelComposition.class.getSimpleName()
-					+ "is not yet implemented.");
+			ThreadState dummyCurrentState = new ThreadState(mCurrentState, ThreadState.ConstructType.fullCopy);
+			for(CodeBlock codeBlock : codeBlocks) {
+				ThreadCodeBlockExecutor cbe = new ThreadCodeBlockExecutor(codeBlock, dummyCurrentState, mProgramStateExplorer);
+				if(cbe.checkEnabled()) {
+					cbe.execute();
+					dummyCurrentState = cbe.mCurrentState;
+				} else {
+					return false;
+				}
+			}
+			return true;
 		} else {
 			// other edge types are OK.
 			return true;
@@ -147,14 +165,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 			throw new NotImplementedException(ParallelComposition.class.getSimpleName()
 					+ "is not yet implemented.");
 		} else if(mCodeBlock instanceof SequentialComposition) {
-			/**
-			 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
-			 * This case is not yet implemented because I'm lazy.
-			 * (one of the preferences in
-			 * de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder)
-			 */
-			throw new NotImplementedException(ParallelComposition.class.getSimpleName()
-					+ "is not yet implemented.");
+			executeSequentialComposition((SequentialComposition) mCodeBlock);
 		} else if(mCodeBlock instanceof GotoEdge) {
 			throw new UnsupportedOperationException("Suppose the type " + mCodeBlock.getClass().getSimpleName()
 					+ " should not appear in the resulting CFG");
@@ -164,7 +175,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		}
 		return mCurrentState;
 	}
-	
+
 	private void moveToNewState(final ThreadState newState) {
 		mCurrentState = newState;
 	}
@@ -172,14 +183,14 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	private void executeStatementSequence(final StatementSequence stmtSeq) {
 		final List<Statement> stmts = stmtSeq.getStatements();
 		final ThreadStatementsExecutor statementExecutor 
-			= new ThreadStatementsExecutor(stmts, mCurrentState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
+			= new ThreadStatementsExecutor(stmts, mCurrentState, ThreadStatementsExecutor.ExecType.realExec, mProgramStateExplorer);
 		moveToNewState(statementExecutor.execute());
 	}
 
 	private void executeCall(final Call call) {
 		final CallStatement callStmt = call.getCallStatement();
 		final ThreadStatementsExecutor statementExecutor 
-			= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
+			= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.ExecType.realExec, mProgramStateExplorer);
 		moveToNewState(statementExecutor.execute());
 	}
 
@@ -222,7 +233,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		if(callStmt.getMethodName().equals(readInt) || callStmt.getMethodName().equals(writeInt)
 			|| callStmt.getMethodName().equals(writeInitInt) || callStmt.getMethodName().equals(allocOnStack)) {
 			final ThreadStatementsExecutor statementExecutor 
-				= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
+				= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.ExecType.realExec, mProgramStateExplorer);
 			moveToNewState(statementExecutor.execute());
 		}
 		
@@ -266,7 +277,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 						+ allocOnStack);
 			}
 			final ThreadStatementsExecutor statementExecutor 
-				= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
+				= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.ExecType.realExec, mProgramStateExplorer);
 			/**
 			 * procedure #Ultimate.allocOnStack(...)
 			 * ensures 0 != #res.base;
@@ -309,7 +320,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		final Expression ensuresFormula = ensures.getFormula();
 		final Set<String> modifiedVars = mProgramStateExplorer.getProc2ModifiedVars().get(procName);
 		final ThreadStatementsExecutor statementExecutor 
-			= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
+			= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.ExecType.realExec, mProgramStateExplorer);
 		
 		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState, mProgramStateExplorer);
 		if(ensuresFormula instanceof BinaryExpression) {
@@ -430,13 +441,21 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		throw new NotImplementedException(JoinThreadOther.class.getSimpleName()
 				+ "is not yet implemented.");
 	}
+	
+	private void executeSequentialComposition(SequentialComposition sequentialComposition) {
+		final List<CodeBlock> codeBlocks = sequentialComposition.getCodeBlocks();
+		for(CodeBlock codeBlock : codeBlocks) {
+			ThreadCodeBlockExecutor cbe = new ThreadCodeBlockExecutor(codeBlock, mCurrentState, mProgramStateExplorer);
+			cbe.execute();
+			moveToNewState(cbe.mCurrentState);
+		}
+	}
 
 	public ThreadState doReturnRoutines(final ThreadState fromState, final ProcInfo toInfo
 			, final VariableLHS[] stmtLhss) {
 
 		final ProcInfo fromProc = fromState.getCurrentProc();
 		final String fromProcName = fromProc.getProcName();
-		final String toProcName = toInfo.getProcName();
 		
 		/**
 		 * Retrieve return values
@@ -456,7 +475,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		fromState.resetLocalValuation(toInfo.getValuationRecord());
 		
 		final ThreadStatementsExecutor statementExecutor
-		= new ThreadStatementsExecutor(fromState, ThreadStatementsExecutor.execType.realExec);
+		= new ThreadStatementsExecutor(fromState, ThreadStatementsExecutor.ExecType.realExec);
 		
 		/**
 		 * assign return value(s) to lhs(s).
@@ -496,6 +515,8 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 			stmts.add(callStmt);
 			final ThreadStatementsChecker statementsChecker = new ThreadStatementsChecker(stmts, mCurrentState, mProgramStateExplorer);
 			return statementsChecker.checkCallAccessOnlyLocalVar();
+		} else if(mCodeBlock instanceof Summary) {
+			return true;
 		} else if(mCodeBlock instanceof Return) {
 			final List<Statement> stmts = new ArrayList<>();
 			final CallStatement callStmt = ((Return) mCodeBlock).getCorrespondingCall().getCallStatement();
@@ -530,14 +551,16 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 			throw new NotImplementedException(ParallelComposition.class.getSimpleName()
 					+ "is not yet implemented.");
 		} else if(mCodeBlock instanceof SequentialComposition) {
-			/**
-			 * This type of edge will only occur when Size of code block is not set to "SingleStatement"
-			 * This case is not yet implemented because I'm lazy.
-			 * (one of the preferences in
-			 * de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder)
-			 */
-			throw new NotImplementedException(ParallelComposition.class.getSimpleName()
-					+ "is not yet implemented.");
+			final List<CodeBlock> codeBlocks = ((SequentialComposition) mCodeBlock).getCodeBlocks();
+			
+			boolean accessOnlyLocalVar = true;
+			for(CodeBlock codeBlock : codeBlocks) {
+				ThreadCodeBlockExecutor cbe = new ThreadCodeBlockExecutor(codeBlock, mCurrentState, mProgramStateExplorer);
+				if(!cbe.checkAccessOnlyLocalVar()) {
+					accessOnlyLocalVar = false;
+				}
+			}
+			return accessOnlyLocalVar;
 		} else {
 			// other edge types are OK.
 			return true;

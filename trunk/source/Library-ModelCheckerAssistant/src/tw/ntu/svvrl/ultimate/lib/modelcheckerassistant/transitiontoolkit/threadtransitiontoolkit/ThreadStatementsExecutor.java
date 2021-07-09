@@ -41,11 +41,11 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.Stateme
 
 public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 	private final ProgramStateExplorer mProgramStateExplorer;
-	public static enum execType{
+	public static enum ExecType{
 		check, realExec
 	}
 	
-	private final execType mExecType;
+	private final ExecType mExecType;
 	
 	/**
 	 * For many statements.
@@ -54,9 +54,9 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 	 * @param threadState
 	 */
 	public ThreadStatementsExecutor(final List<Statement> statements, final ThreadState state
-									, final execType t, final ProgramStateExplorer pe) {
+									, final ExecType t, final ProgramStateExplorer pe) {
 		super(statements);
-		mCurrentState = new ThreadState(state);
+		mCurrentState = new ThreadState(state, ThreadState.ConstructType.localCopy);
 		mExecType = t;
 		mProgramStateExplorer = pe;
 	}
@@ -67,9 +67,9 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 	 * @param threadState
 	 */
 	public ThreadStatementsExecutor(final Statement statement, final ThreadState state
-									, final execType t, final ProgramStateExplorer pe) {
+									, final ExecType t, final ProgramStateExplorer pe) {
 		super(statement);
-		mCurrentState = new ThreadState(state);
+		mCurrentState = new ThreadState(state, ThreadState.ConstructType.localCopy);
 		mExecType = t;
 		mProgramStateExplorer = pe;
 	}
@@ -78,9 +78,9 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 	 * For no statement. ({@link Return} code block)
 	 * @param threadState
 	 */
-	public ThreadStatementsExecutor(final ThreadState state, final execType t) {
+	public ThreadStatementsExecutor(final ThreadState state, final ExecType t) {
 		super();
-		mCurrentState = new ThreadState(state);
+		mCurrentState = new ThreadState(state, ThreadState.ConstructType.localCopy);
 		mExecType = t;
 		mProgramStateExplorer = null;
 	}
@@ -323,12 +323,12 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 	
 	public void updateThreadState(final String procName, final String varName, final Object value) {
 		Valuation newValuation;
-		if(mExecType == execType.check) {
+		if(mExecType == ExecType.check) {
 			newValuation = mCurrentState.getValuationFullCopy();
-		} else if(mExecType == execType.realExec) {
+		} else if(mExecType == ExecType.realExec) {
 			newValuation = mCurrentState.getValuationLocalCopy();
 		} else {
-			throw new UnsupportedOperationException("Unknown execType: " + 
+			throw new UnsupportedOperationException("Unknown ExecType: " + 
 					mExecType.getClass().getSimpleName());
 		}
 		

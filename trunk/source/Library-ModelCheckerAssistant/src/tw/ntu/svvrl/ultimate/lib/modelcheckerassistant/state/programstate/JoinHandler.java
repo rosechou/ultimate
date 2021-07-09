@@ -100,7 +100,7 @@ public class JoinHandler {
 		
 		
 		final ThreadStatementsExecutor statementExecutor
-		= new ThreadStatementsExecutor(toState, ThreadStatementsExecutor.execType.realExec);
+		= new ThreadStatementsExecutor(toState, ThreadStatementsExecutor.ExecType.realExec);
 		
 		/**
 		 * assign return value(s) to lhs(s).

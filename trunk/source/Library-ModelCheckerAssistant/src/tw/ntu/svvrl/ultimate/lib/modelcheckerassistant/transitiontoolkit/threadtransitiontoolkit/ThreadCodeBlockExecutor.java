@@ -206,6 +206,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		 * in procedure read~int, write~int and write~init~int.
 		 * Note that this approach treats the symptoms but not the root cause.
 		 * It is better to modify the Boogie generator directly. However, it might be time-consuming.
+		 * Also note that the operations related to Boogie map #valid and #length are ignored.
 		 * 
 		 * In the following, see the Boogie program which involves array access and store.
 		 */

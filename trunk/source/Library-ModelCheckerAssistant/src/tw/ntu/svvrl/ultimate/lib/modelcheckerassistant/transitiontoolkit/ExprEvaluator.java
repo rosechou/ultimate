@@ -324,7 +324,6 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 		while(it.hasNext()) {
 			Expression indexExpr = it.next();
 			final long index = (long) evaluate(indexExpr);
-			assert(arrayToAccess.size() > 0);
 			indexList.add(index);
 		}
 		

@@ -24,6 +24,7 @@ public class ModelCheckerDoubleDFSwithReduction{
 	private final ModelCheckerAssistant assistant;
 	private final ILogger mLogger;
 	private boolean match = false;
+	private boolean end = false;
 	//	ProgramState is the node of the Control Flow Graph
 	private List<ProgramState> levelNodes = new ArrayList<ProgramState>();
 	// ProgramState loc = null;
@@ -37,6 +38,9 @@ public class ModelCheckerDoubleDFSwithReduction{
 	// Stack<ProgramState> Programstack = new Stack<>();
 	
 	Stack<Pair<ProgramState, NeverState>> CompoundStack = new Stack<>();
+	List<Pair<ProgramState, NeverState>> ErrorPath = new ArrayList<Pair<ProgramState, NeverState>>();
+	// Stack<Pair<ProgramState, NeverState>> ErrorPath = new Stack<>();
+	// LinkedHashSet<Pair<ProgramState, NeverState>> ErrorPath = new LinkedHashSet();
 	Stack<Pair<Pair<ProgramState, NeverState>, Integer>> StateSpace = new Stack<>();
 	
 
@@ -63,9 +67,23 @@ public class ModelCheckerDoubleDFSwithReduction{
 			}
 		}
 		
-		if(!match) 
+		if(!end)
+		{
+			mLogger.info("*Violation of LTL property");
+			//for(int a = 0; a < ErrorPath.size();a++)
+//			for(int a = ErrorPath.size()-1; a >= 0;a--)
+//			{
+//				mLogger.info(ErrorPath.get(a).getFirst().getThreadStates().toString() + ErrorPath.get(a).getSecond().getName());
+//			}
+//			for (Iterator<Pair<ProgramState, NeverState>> it = ErrorPath.iterator(); it.hasNext(); ) {
+//				Pair<ProgramState, NeverState> f = it.next();
+//				mLogger.info(f.getFirst().getThreadStates().toString() + f.getSecond().getName());
+//		    }
+			return;
+		}else if(!match && end) 
 		{
 			mLogger.info("All specifications hold");
+			return;
 		}
 		
 	}
@@ -94,6 +112,17 @@ public class ModelCheckerDoubleDFSwithReduction{
 		return false;
 	}
 	
+	public boolean compareErrorPath(List<Pair<ProgramState, NeverState>> path, ProgramState node, NeverState state)
+	{
+		for(int i = 0; i < path.size();i++)
+		{
+			if(node.equals(path.get(i).getFirst()) && state.equals(path.get(i).getSecond()))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 	
 	/* system move */
 	public void dfs(int a)
@@ -103,7 +132,6 @@ public class ModelCheckerDoubleDFSwithReduction{
 		
 		List<Long> OrderofProcesses = assistant.getProgramSafestOrder(node);
 		List<ProgramStateTransition> programEdges = new ArrayList<ProgramStateTransition>();
-		
 		
 		for(int k = 0;k < OrderofProcesses.size();k++)
 		{
@@ -118,6 +146,11 @@ public class ModelCheckerDoubleDFSwithReduction{
 			boolean NotInStack = true;
 			boolean AtLeaseOneSuccesor = false;
 			
+			if(programEdges.contains(null))
+			{
+				continue;
+			}
+			
 			// List<ProgramStateTransition> programEdges = assistant.getProgramEnabledTrans(node);
 			
 			List<ProgramState> nProgramNodes = new ArrayList<ProgramState>();
@@ -126,8 +159,7 @@ public class ModelCheckerDoubleDFSwithReduction{
 				nProgramNodes.add(assistant.doProgramTransition(node, programEdges.get(j)));
 			}
 			levelNodes = nProgramNodes;
-			
-			
+					
 			for (int i = 0;i < levelNodes.size();i++) {
 				if(match) {return;}
 				ProgramState nextNode = levelNodes.get(i);
@@ -145,16 +177,18 @@ public class ModelCheckerDoubleDFSwithReduction{
 				Pair p = new Pair(nextNode, state);
 				Pair s = new Pair(p, a);
 
-				
 				// if(!StateSpace.contains(s) || (node.equals(nextNode)&&state.equals(state)))
 				if(!compare(StateSpace, nextNode, state, a) || (node.equals(nextNode)&&(a == 2)))
 				{
 					StateSpace.push(s);
 					CompoundStack.push(p);
 					Dfs(a);
+					// continue;
 				// }else if(CompoundStack.contains(p))
-				// }else
- 				}else if(!compare2(CompoundStack, nextNode, state))
+				// }else if(compare(StateSpace, nextNode, state, a))
+				// }else if(compare2(CompoundStack, nextNode, state))
+				}else if(compare2(CompoundStack, node, state))
+				// }else if(compare(StateSpace, node, state, a))
 				{
 					NotInStack = false;
 				}
@@ -165,8 +199,7 @@ public class ModelCheckerDoubleDFSwithReduction{
 				break;
 			}
 		}
-		
-		
+
 	}
 	/* specification move */
 	public void Dfs(int b)
@@ -187,8 +220,13 @@ public class ModelCheckerDoubleDFSwithReduction{
 			Pair p = new Pair(node, nextState);
 			Pair s = new Pair(p, b);
 			
+			if(node.getThreadStates().toString().contains("ULTIMATE.startEXIT"))
+			{
+				end = true;
+			}
 			// if(b==2 && node.equals(seed.getFirst()) && nextState.equals(seed.getSecond()))
 			if(b==2 && compare(StateSpace, node, nextState, b))
+			// if(b==2 && compare2(CompoundStack, node, nextState))
 			{
 				match = true;
 				mLogger.info("Violation of LTL property");
@@ -198,8 +236,6 @@ public class ModelCheckerDoubleDFSwithReduction{
 				}
 				return;
 			}
-			
-			
 			StateSpace.push(s);			
 			CompoundStack.push(p);			
 			dfs(b);
@@ -213,9 +249,18 @@ public class ModelCheckerDoubleDFSwithReduction{
 			{
 				seed = CompoundStack.peek();
 				dfs(2);
-			}	
-			CompoundStack.pop();
-			StateSpace.pop();
+			}
+			// Pair<Pair<ProgramState, NeverState>, Integer> remove = StateSpace.pop();
+			// mLogger.info(remove.getFirst().getFirst().getThreadStates().toString() + remove.getFirst().getSecond().getName() + "[" + remove.getSecond() + "]");
+			// StateSpace.push(remove);
+			// ErrorPath.add(CompoundStack.pop());
+			Pair<ProgramState, NeverState> remove2 = CompoundStack.pop();
+			// StateSpace.pop();
+			mLogger.info(remove2.getFirst().getThreadStates().toString() + remove2.getSecond().getName()+"["+StateSpace.size()+"]");
+//			if(!compareErrorPath(ErrorPath, remove2.getFirst(), remove2.getSecond()))
+//			{
+//				ErrorPath.add(remove2);
+//			}
 		}
 		
 	}

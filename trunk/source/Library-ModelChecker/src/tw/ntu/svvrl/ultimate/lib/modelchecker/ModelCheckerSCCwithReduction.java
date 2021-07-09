@@ -23,6 +23,7 @@ public class ModelCheckerSCCwithReduction {
 	private final ModelCheckerAssistant assistant;
 	private final ILogger mLogger;
 	private boolean match = false;
+	private boolean end = false;
 	private int count = 1;
 	private List<ProgramState> levelNodes = new ArrayList<ProgramState>();
 
@@ -30,6 +31,7 @@ public class ModelCheckerSCCwithReduction {
 	Stack<Pair<Pair<ProgramState, NeverState>, Boolean>> current = new Stack<>();
 	Stack<Pair<ProgramState, NeverState>> Roots = new Stack<>();
 	Stack<Pair<ProgramState, NeverState>> StateSpace = new Stack<>();
+	List<Pair<ProgramState, NeverState>> ErrorPath = new ArrayList<Pair<ProgramState, NeverState>>();
 	
 	public ModelCheckerSCCwithReduction(final ILogger logger, final ModelCheckerAssistant mca) 
 	{
@@ -50,9 +52,14 @@ public class ModelCheckerSCCwithReduction {
 				dfs(count);
 			}
 		}
-		if(!match) 
+		if(!end)
+		{
+			mLogger.info("*Violation of LTL property");
+			return;
+		}else if(!match && end) 
 		{
 			mLogger.info("All specifications hold");
+			return;
 		}
 	}
 	
@@ -81,6 +88,18 @@ public class ModelCheckerSCCwithReduction {
 		return 0;
 	}
 	
+	public boolean compareErrorPath(List<Pair<ProgramState, NeverState>> path, ProgramState node, NeverState state)
+	{
+		for(int i = 0; i < path.size();i++)
+		{
+			if(node.equals(path.get(i).getFirst()) && state.equals(path.get(i).getSecond()))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	/* system move */
 	public void dfs(int count)
 	{
@@ -102,6 +121,11 @@ public class ModelCheckerSCCwithReduction {
 			
 			boolean NotInStack = true;
 			boolean AtLeaseOneSuccesor = false;
+			
+			if(programEdges.contains(null))
+			{
+				continue;
+			}
 			
 			List<ProgramState> nProgramNodes = new ArrayList<ProgramState>();
 			for(int j = 0;j < programEdges.size();j++)
@@ -127,13 +151,14 @@ public class ModelCheckerSCCwithReduction {
 				
 				Pair p = new Pair(nextNode, state);
 
-				if(!compare(StateSpace, nextNode, state) || (node.equals(nextNode)&& !node.visited))
+				//if(!compare(StateSpace, nextNode, state) || (node.equals(nextNode)&& !node.visited))
+				if(!compare(StateSpace, nextNode, state))
 				{
 					dfsnum.push(new Pair(p, count));
 					Roots.push(p);
 					StateSpace.push(p);
 					Dfs(count);
- 				}else
+ 				}else if(compare(Roots, node, state))
 				{
 					NotInStack = false;
 				}
@@ -163,12 +188,15 @@ public class ModelCheckerSCCwithReduction {
 			StateSpace.pop();
 
 			Pair p = new Pair(node, nextState);
-			dfsnum.push(new Pair(p, count));
+			// dfsnum.push(new Pair(p, count));
+			
+			if(node.getThreadStates().toString().contains("ULTIMATE.startEXIT"))
+			{
+				end = true;
+			}
 			
 			if(compare(StateSpace, node, nextState))
 			{			
-				//dfsnum.push(new Pair(p, count));
-				
 				Pair<ProgramState, NeverState> element;
 				do
 				{
@@ -177,20 +205,22 @@ public class ModelCheckerSCCwithReduction {
 					{
 						match = true;
 						mLogger.info("Violation of LTL property");
-						for(int a = 0; a < StateSpace.size();a++)
+						Roots.push(element);
+						Roots.push(p);
+						for(int a = 0; a < Roots.size();a++)
 						{
-							mLogger.info(StateSpace.get(a).getFirst().getThreadStates().toString() + StateSpace.get(a).getSecond().getName());
+							mLogger.info(Roots.get(a).getFirst().getThreadStates().toString() + Roots.get(a).getSecond().getName());
 						}
-						
 						return;
 					}
 				}while(compareDfsnum(dfsnum, element.getFirst(),element.getSecond())
-						> compareDfsnum(dfsnum, node, nextState));
-				element.getFirst().visited = true;
+					> compareDfsnum(dfsnum, node, nextState));
+				//element.getFirst().visited = true;
 				Roots.push(element);
 				dfs(count);
 				continue;
 			}
+			dfsnum.push(new Pair(p, count));
 			StateSpace.push(p);			
 			Roots.push(p);	
 			dfs(count);
@@ -199,8 +229,8 @@ public class ModelCheckerSCCwithReduction {
 		if(!Roots.isEmpty())
 		{
 			Pair<ProgramState, NeverState> RemoveElement = Roots.pop();
-			StateSpace.pop();
-			// mLogger.info(RemoveElement.getFirst().getThreadNumber() + RemoveElement.getFirst().getThreadStates().toString() + RemoveElement.getSecond().getName());
+			// StateSpace.pop();
+			mLogger.info(RemoveElement.getFirst().getThreadNumber() + RemoveElement.getFirst().getThreadStates().toString() + RemoveElement.getSecond().getName());
 		}
 		
 	}

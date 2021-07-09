@@ -33,7 +33,7 @@ public class ThreadState extends ValuationState<ThreadState>{
 	 * fullCopy : Local valuation, global valuation and stack are deep copied
 	 *
 	 */
-	public static enum ConstructType{
+	public static enum ConstructStrategy{
 		localCopy, fullCopy
 	}
 	
@@ -97,13 +97,13 @@ public class ThreadState extends ValuationState<ThreadState>{
 	/**
 	 * Copy constructor
 	 */
-	public ThreadState(final ThreadState threadState, final ConstructType t) {
-		if(t == ConstructType.localCopy) {
+	public ThreadState(final ThreadState threadState, final ConstructStrategy t) {
+		if(t == ConstructStrategy.localCopy) {
 			mValuation = threadState.getValuationLocalCopy();
-		} else if(t == ConstructType.fullCopy) {
+		} else if(t == ConstructStrategy.fullCopy) {
 			mValuation = threadState.getValuationFullCopy();
 		} else {
-			throw new UnsupportedOperationException("Unknown ConstructType: " + 
+			throw new UnsupportedOperationException("Unknown ConstructStrategy: " + 
 					t.getClass().getSimpleName());
 		}
 		mCorrespondingIcfgLoc = threadState.getCorrespondingIcfgLoc();

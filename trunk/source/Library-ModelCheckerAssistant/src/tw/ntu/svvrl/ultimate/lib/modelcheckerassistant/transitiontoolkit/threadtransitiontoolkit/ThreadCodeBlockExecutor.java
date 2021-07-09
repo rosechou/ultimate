@@ -106,7 +106,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 			 * We don't really want the valuation is modified since this is an enabledness check.
 			 * Thus, both global and local variables should be deep copied.
 			 */
-			ThreadState dummyCurrentState = new ThreadState(mCurrentState, ThreadState.ConstructType.fullCopy);
+			ThreadState dummyCurrentState = new ThreadState(mCurrentState, ThreadState.ConstructStrategy.fullCopy);
 			for(CodeBlock codeBlock : codeBlocks) {
 				ThreadCodeBlockExecutor cbe = new ThreadCodeBlockExecutor(codeBlock, dummyCurrentState, mProgramStateExplorer);
 				if(cbe.checkEnabled()) {
@@ -183,14 +183,14 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 	private void executeStatementSequence(final StatementSequence stmtSeq) {
 		final List<Statement> stmts = stmtSeq.getStatements();
 		final ThreadStatementsExecutor statementExecutor 
-			= new ThreadStatementsExecutor(stmts, mCurrentState, ThreadStatementsExecutor.ExecType.realExec, mProgramStateExplorer);
+			= new ThreadStatementsExecutor(stmts, mCurrentState, ThreadStatementsExecutor.ExecStrategy.realExec, mProgramStateExplorer);
 		moveToNewState(statementExecutor.execute());
 	}
 
 	private void executeCall(final Call call) {
 		final CallStatement callStmt = call.getCallStatement();
 		final ThreadStatementsExecutor statementExecutor 
-			= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.ExecType.realExec, mProgramStateExplorer);
+			= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.ExecStrategy.realExec, mProgramStateExplorer);
 		moveToNewState(statementExecutor.execute());
 	}
 
@@ -233,7 +233,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		if(callStmt.getMethodName().equals(readInt) || callStmt.getMethodName().equals(writeInt)
 			|| callStmt.getMethodName().equals(writeInitInt) || callStmt.getMethodName().equals(allocOnStack)) {
 			final ThreadStatementsExecutor statementExecutor 
-				= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.ExecType.realExec, mProgramStateExplorer);
+				= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.ExecStrategy.realExec, mProgramStateExplorer);
 			moveToNewState(statementExecutor.execute());
 		}
 		
@@ -277,7 +277,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 						+ allocOnStack);
 			}
 			final ThreadStatementsExecutor statementExecutor 
-				= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.ExecType.realExec, mProgramStateExplorer);
+				= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.ExecStrategy.realExec, mProgramStateExplorer);
 			/**
 			 * procedure #Ultimate.allocOnStack(...)
 			 * ensures 0 != #res.base;
@@ -320,7 +320,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		final Expression ensuresFormula = ensures.getFormula();
 		final Set<String> modifiedVars = mProgramStateExplorer.getProc2ModifiedVars().get(procName);
 		final ThreadStatementsExecutor statementExecutor 
-			= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.ExecType.realExec, mProgramStateExplorer);
+			= new ThreadStatementsExecutor(callStmt, mCurrentState, ThreadStatementsExecutor.ExecStrategy.realExec, mProgramStateExplorer);
 		
 		final ThreadExprEvaluator exprEvaluator = new ThreadExprEvaluator(mCurrentState, mProgramStateExplorer);
 		if(ensuresFormula instanceof BinaryExpression) {
@@ -475,7 +475,7 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 		fromState.resetLocalValuation(toInfo.getValuationRecord());
 		
 		final ThreadStatementsExecutor statementExecutor
-		= new ThreadStatementsExecutor(fromState, ThreadStatementsExecutor.ExecType.realExec);
+		= new ThreadStatementsExecutor(fromState, ThreadStatementsExecutor.ExecStrategy.realExec);
 		
 		/**
 		 * assign return value(s) to lhs(s).

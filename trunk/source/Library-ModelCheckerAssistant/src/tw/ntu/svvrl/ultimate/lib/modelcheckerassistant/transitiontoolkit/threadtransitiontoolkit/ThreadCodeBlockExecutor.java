@@ -20,6 +20,7 @@ import de.uni_freiburg.informatik.ultimate.boogie.ast.Statement;
 import de.uni_freiburg.informatik.ultimate.boogie.ast.VariableLHS;
 import de.uni_freiburg.informatik.ultimate.cdt.translation.implementation.base.chandler.BaseMemoryModel;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgEdge;
+import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IcfgLocation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.Call;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.ForkThreadCurrent;
@@ -76,9 +77,12 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 			 * (Force the execution to execute {@link Call} and {@link Return})
 			 * later.)
 			 */
-			List<IcfgEdge> otherEdges = mCodeBlock.getSource().getOutgoingEdges();
-			if(containsCall(otherEdges)) {
-				return false;
+			IcfgLocation source = mCodeBlock.getSource();
+			if(source != null) {
+				List<IcfgEdge> otherEdges = mCodeBlock.getSource().getOutgoingEdges();
+				if(containsCall(otherEdges)) {
+					return false;
+				}
 			}
 			return true;
 		} else if(mCodeBlock instanceof ParallelComposition) {

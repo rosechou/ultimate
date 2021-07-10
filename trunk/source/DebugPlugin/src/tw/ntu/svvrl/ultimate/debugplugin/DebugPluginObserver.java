@@ -270,6 +270,67 @@ public class DebugPluginObserver implements IUnmanagedObserver {
 		edges = mModelCheckerAssistant.getProgramEnabledTrans(M);
 		edge = edges.get(0);
 		ProgramState N = mModelCheckerAssistant.doProgramTransition(M, edge);
+
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(N);
+		edge = edges.get(0);
+		ProgramState O = mModelCheckerAssistant.doProgramTransition(N, edge);
+
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(O);
+		edge = edges.get(0);
+		ProgramState P = mModelCheckerAssistant.doProgramTransition(O, edge);
+
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(P);
+		edge = edges.get(0);
+		ProgramState Q = mModelCheckerAssistant.doProgramTransition(P, edge);
+
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(Q);
+		edge = edges.get(0);
+		ProgramState R = mModelCheckerAssistant.doProgramTransition(Q, edge);
+
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(R);
+		edge = edges.get(0);
+		ProgramState S = mModelCheckerAssistant.doProgramTransition(R, edge);
+
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(S);
+		edge = edges.get(0);
+		ProgramState T = mModelCheckerAssistant.doProgramTransition(S, edge);
+
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(T);
+		edge = edges.get(0);
+		ProgramState U = mModelCheckerAssistant.doProgramTransition(T, edge);
+
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(U);
+		edge = edges.get(0);
+		ProgramState V = mModelCheckerAssistant.doProgramTransition(U, edge);
+
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(V);
+		edge = edges.get(0);
+		ProgramState W = mModelCheckerAssistant.doProgramTransition(V, edge);
+
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(W);
+		edge = edges.get(0);
+		ProgramState X = mModelCheckerAssistant.doProgramTransition(W, edge);
+
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(X);
+		edge = edges.get(0);
+		ProgramState Y = mModelCheckerAssistant.doProgramTransition(X, edge);
+
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(Y);
+		edge = edges.get(0);
+		ProgramState Z = mModelCheckerAssistant.doProgramTransition(Y, edge);
+
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(Z);
+		edge = edges.get(0);
+		ProgramState aa = mModelCheckerAssistant.doProgramTransition(Z, edge);
+
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(aa);
+		edge = edges.get(0);
+		ProgramState ab = mModelCheckerAssistant.doProgramTransition(aa, edge);
+
+		edges = mModelCheckerAssistant.getProgramEnabledTrans(ab);
+		edge = edges.get(0);
+		ProgramState ac = mModelCheckerAssistant.doProgramTransition(ab, edge);
+		
 		// Do something...
 	}
 

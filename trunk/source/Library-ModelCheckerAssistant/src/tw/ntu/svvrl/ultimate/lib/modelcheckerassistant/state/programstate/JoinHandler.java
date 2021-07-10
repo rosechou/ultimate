@@ -16,6 +16,12 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadt
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit.ThreadExprEvaluator;
 import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.threadtransitiontoolkit.ThreadStatementsExecutor;
 
+/**
+ * Please ensure that the preference of "Use Simple Pthread Translation" is toggled on
+ * in CACSL2Boogie setting.
+ * With this preference, the join statement in Boogie becomes easier : join [tid];
+ * But I'm not sure whether the thread join with return values works or not. 
+ */
 public class JoinHandler {
 	final ProgramState mProgramState;
 	final ThreadStateTransition mTrans;

@@ -198,8 +198,12 @@ public class ModelCheckerSCCwithReduction {
 			if(compare(StateSpace, node, nextState))
 			{			
 				Pair<ProgramState, NeverState> element;
+				//Pair<ProgramState, NeverState> s;
+				Pair<Pair<ProgramState, NeverState>, Integer> dfselement;
 				do
 				{
+					//s = StateSpace.pop();
+					dfselement = dfsnum.pop();
 					element = Roots.pop();
 					if(element.getSecond().isFinal())
 					{
@@ -216,7 +220,9 @@ public class ModelCheckerSCCwithReduction {
 				}while(compareDfsnum(dfsnum, element.getFirst(),element.getSecond())
 					> compareDfsnum(dfsnum, node, nextState));
 				//element.getFirst().visited = true;
+				//StateSpace.push(s);
 				Roots.push(element);
+				dfsnum.push(dfselement);
 				dfs(count);
 				continue;
 			}
@@ -229,7 +235,8 @@ public class ModelCheckerSCCwithReduction {
 		if(!Roots.isEmpty())
 		{
 			Pair<ProgramState, NeverState> RemoveElement = Roots.pop();
-			// StateSpace.pop();
+			//StateSpace.pop();
+			dfsnum.pop();
 			mLogger.info(RemoveElement.getFirst().getThreadNumber() + RemoveElement.getFirst().getThreadStates().toString() + RemoveElement.getSecond().getName());
 		}
 		

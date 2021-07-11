@@ -46,7 +46,7 @@ public class ProgramState extends ValuationState<ProgramState> {
 	public ProgramState(final ProgramState state) {
 		mValuation = state.getValuationFullCopy();
 		for(final ThreadState s : state.mThreadStates.values()) {
-			final ThreadState t = new ThreadState(s);
+			final ThreadState t = new ThreadState(s, ThreadState.ConstructStrategy.localCopy);
 			t.getValuation().linkGlobals(mValuation);
 			this.mThreadStates.put(s.getThreadID(), t);
 		}

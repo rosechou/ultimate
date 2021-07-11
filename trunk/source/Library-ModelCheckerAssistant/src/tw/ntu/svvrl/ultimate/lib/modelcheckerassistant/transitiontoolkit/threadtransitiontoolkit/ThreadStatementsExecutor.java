@@ -41,11 +41,11 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.transitiontoolkit.Stateme
 
 public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 	private final ProgramStateExplorer mProgramStateExplorer;
-	public static enum execType{
+	public static enum ExecStrategy{
 		check, realExec
 	}
 	
-	private final execType mExecType;
+	private final ExecStrategy mExecStrategy;
 	
 	/**
 	 * For many statements.
@@ -54,10 +54,10 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 	 * @param threadState
 	 */
 	public ThreadStatementsExecutor(final List<Statement> statements, final ThreadState state
-									, final execType t, final ProgramStateExplorer pe) {
+									, final ExecStrategy t, final ProgramStateExplorer pe) {
 		super(statements);
-		mCurrentState = new ThreadState(state);
-		mExecType = t;
+		mCurrentState = new ThreadState(state, ThreadState.ConstructStrategy.localCopy);
+		mExecStrategy = t;
 		mProgramStateExplorer = pe;
 	}
 	
@@ -67,10 +67,10 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 	 * @param threadState
 	 */
 	public ThreadStatementsExecutor(final Statement statement, final ThreadState state
-									, final execType t, final ProgramStateExplorer pe) {
+									, final ExecStrategy t, final ProgramStateExplorer pe) {
 		super(statement);
-		mCurrentState = new ThreadState(state);
-		mExecType = t;
+		mCurrentState = new ThreadState(state, ThreadState.ConstructStrategy.localCopy);
+		mExecStrategy = t;
 		mProgramStateExplorer = pe;
 	}
 	
@@ -78,10 +78,10 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 	 * For no statement. ({@link Return} code block)
 	 * @param threadState
 	 */
-	public ThreadStatementsExecutor(final ThreadState state, final execType t) {
+	public ThreadStatementsExecutor(final ThreadState state, final ExecStrategy t) {
 		super();
-		mCurrentState = new ThreadState(state);
-		mExecType = t;
+		mCurrentState = new ThreadState(state, ThreadState.ConstructStrategy.localCopy);
+		mExecStrategy = t;
 		mProgramStateExplorer = null;
 	}
 	
@@ -273,13 +273,13 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 		if((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
 			final ThreadStatementsExecutor newStatementsExecutor
 					 = new ThreadStatementsExecutor(Arrays.asList(stmt.getThenPart())
-							 , mCurrentState, mExecType, mProgramStateExplorer);
+							 , mCurrentState, mExecStrategy, mProgramStateExplorer);
 			final ThreadState newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		} else {
 			final ThreadStatementsExecutor newStatementsExecutor
 			 		= new ThreadStatementsExecutor(Arrays.asList(stmt.getElsePart())
-			 				, mCurrentState, mExecType, mProgramStateExplorer);
+			 				, mCurrentState, mExecStrategy, mProgramStateExplorer);
 			final ThreadState newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}
@@ -315,7 +315,7 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 		while((boolean) exprEvaluator.evaluate(stmt.getCondition())) {
 			final ThreadStatementsExecutor newStatementsExecutor
 	 			= new ThreadStatementsExecutor(Arrays.asList(stmt.getBody())
-	 					, mCurrentState, mExecType, mProgramStateExplorer);
+	 					, mCurrentState, mExecStrategy, mProgramStateExplorer);
 			final ThreadState newState = newStatementsExecutor.execute();
 			setCurrentState(newState);
 		}
@@ -323,13 +323,13 @@ public class ThreadStatementsExecutor extends StatementsExecutor<ThreadState> {
 	
 	public void updateThreadState(final String procName, final String varName, final Object value) {
 		Valuation newValuation;
-		if(mExecType == execType.check) {
+		if(mExecStrategy == ExecStrategy.check) {
 			newValuation = mCurrentState.getValuationFullCopy();
-		} else if(mExecType == execType.realExec) {
+		} else if(mExecStrategy == ExecStrategy.realExec) {
 			newValuation = mCurrentState.getValuationLocalCopy();
 		} else {
-			throw new UnsupportedOperationException("Unknown execType: " + 
-					mExecType.getClass().getSimpleName());
+			throw new UnsupportedOperationException("Unknown ExecStrategy: " + 
+					mExecStrategy.getClass().getSimpleName());
 		}
 		
 		assert(newValuation.containsProcOrFunc(procName));

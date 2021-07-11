@@ -52,7 +52,7 @@ public class ForkHandler {
 		 * new thread's entry node.
 		 */
 		final ThreadStatementsExecutor stmtExecutor = new ThreadStatementsExecutor(
-				forkStmt, currentThreadState, ThreadStatementsExecutor.execType.realExec, mProgramStateExplorer);
+				forkStmt, currentThreadState, ThreadStatementsExecutor.ExecStrategy.realExec, mProgramStateExplorer);
 		final ThreadState otherNextState =  stmtExecutor.execute();
 		BoogieIcfgLocation threadEntryNode = mProgramStateExplorer.getEntryNode(forkProcName);
 		otherNextState.setCorrespondingIcfgLoc(threadEntryNode);

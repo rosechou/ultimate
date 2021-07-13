@@ -350,10 +350,19 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 							exprEvaluator.evaluate(right));
 					moveToNewState(statementExecutor.getCurrentState());
 				} else if(left instanceof ArrayAccessExpression) {
-					final ArrayStoreExpression arrayStoreExpr = new ArrayStoreExpression(left.getLoc(), ((ArrayAccessExpression) left).getArray()
-							, ((ArrayAccessExpression) left).getIndices(), right);
-					exprEvaluator.evaluate(arrayStoreExpr);
-					moveToNewState(statementExecutor.getCurrentState());
+					if(((ArrayAccessExpression) left).getArray() instanceof IdentifierExpression) {
+						final IdentifierExpression arrayId = (IdentifierExpression) ((ArrayAccessExpression) left).getArray();
+						final ArrayStoreExpression arrayStoreExpr = new ArrayStoreExpression(left.getLoc(), ((ArrayAccessExpression) left).getArray()
+								, ((ArrayAccessExpression) left).getIndices(), right);
+						statementExecutor.updateThreadState(
+								arrayId.getDeclarationInformation().getProcedure(),
+								arrayId.getIdentifier(),
+								exprEvaluator.evaluate(arrayStoreExpr));
+						moveToNewState(statementExecutor.getCurrentState());
+					} else {
+						throw new UnsupportedOperationException("Unexpected behavior in procedure "
+								+ procName);
+					}
 				}
 			}else if(exprEvaluator.evaluate(right) == null) {
 				/**
@@ -367,10 +376,19 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 							exprEvaluator.evaluate(left));
 					moveToNewState(statementExecutor.getCurrentState());
 				} else if(right instanceof ArrayAccessExpression) {
-					final ArrayStoreExpression arrayStoreExpr = new ArrayStoreExpression(right.getLoc(), ((ArrayAccessExpression) right).getArray()
-							, ((ArrayAccessExpression) right).getIndices(), left);
-					exprEvaluator.evaluate(arrayStoreExpr);
-					moveToNewState(statementExecutor.getCurrentState());
+					if(((ArrayAccessExpression) right).getArray() instanceof IdentifierExpression) {
+						final IdentifierExpression arrayId = (IdentifierExpression) ((ArrayAccessExpression) right).getArray();
+						final ArrayStoreExpression arrayStoreExpr = new ArrayStoreExpression(right.getLoc(), ((ArrayAccessExpression) right).getArray()
+								, ((ArrayAccessExpression) right).getIndices(), left);
+						statementExecutor.updateThreadState(
+								arrayId.getDeclarationInformation().getProcedure(),
+								arrayId.getIdentifier(),
+								exprEvaluator.evaluate(arrayStoreExpr));
+						moveToNewState(statementExecutor.getCurrentState());
+					} else {
+						throw new UnsupportedOperationException("Unexpected behavior in procedure "
+								+ procName);
+					}
 				}
 			}else {
 				/**

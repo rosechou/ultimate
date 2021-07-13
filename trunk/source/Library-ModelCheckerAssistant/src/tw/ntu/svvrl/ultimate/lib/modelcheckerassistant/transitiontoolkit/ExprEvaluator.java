@@ -271,7 +271,7 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 	 *   
 	 */
 	private Object evaluateArrayStoreExpression(final ArrayStoreExpression expr) {
-		Map<Object, Object> map = (Map<Object, Object>) evaluate(expr.getArray());
+		Map<Object, Object> map = new HashMap<>((Map<Object, Object>) evaluate(expr.getArray()));
 		final List<Expression> indexExprs = Arrays.asList(expr.getIndices());
 		final Iterator<Expression> it = indexExprs.iterator();
 		
@@ -283,7 +283,7 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 		}
 		map.put(indexList, evaluate(expr.getValue()));
 		
-		return new HashMap<>(map);
+		return map;
 		
 		/**
 		 * Old implementation using java Array, now use java Map.

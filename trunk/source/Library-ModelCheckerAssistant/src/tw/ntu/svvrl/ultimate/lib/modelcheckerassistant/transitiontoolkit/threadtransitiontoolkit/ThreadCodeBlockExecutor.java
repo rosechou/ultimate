@@ -335,12 +335,12 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 				 * For read~int(...) and write~init~int(...)
 				 */
 				/**
-				 * 						left				  == right
-				 * ensures #memory_int[#ptr.base,#ptr.offset] == #value;
-				 */
-				/**
 				 * 			left  == 				right
 				 * ensures #value == #memory_int[#ptr.base,#ptr.offset];
+				 */
+				/**
+				 * 						left				  == right
+				 * ensures #memory_int[#ptr.base,#ptr.offset] == #value;
 				 */
 				assert left instanceof IdentifierExpression || left instanceof ArrayAccessExpression;
 				if(left instanceof IdentifierExpression) {
@@ -407,7 +407,6 @@ public class ThreadCodeBlockExecutor extends CodeBlockExecutor<ThreadState> {
 			throw new UnsupportedOperationException("Unsupported ensures formula "
 				+ "type: " + ensuresFormula.getClass().getSimpleName());
 		}
-		moveToNewState(statementExecutor.getCurrentState());
 	}
 
 

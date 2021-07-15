@@ -107,8 +107,8 @@ public class ExprEvaluator<S extends ValuationState<S>> {
 	}
 
 	private Object evaluateWildcardExpression(final WildcardExpression expr) {
-		Random random = new Random();
-	    return random.nextBoolean();
+		throw new UnsupportedOperationException("Error: " + expr.getClass().getSimpleName()
+				+ " is not yet supported.");
 	}
 
 	private Object evaluateUnaryExpression(final UnaryExpression expr) {

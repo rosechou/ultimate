@@ -27,7 +27,7 @@ public class Valuation implements Cloneable {
     {
 		final Map<String, Map<String, Object>> val = new HashMap<>();
 		for(String procName : mValueMap.keySet()) {
-			Map<String, Object> id2v = new HashMap<>(mValueMap.get(procName));
+			final Map<String, Object> id2v = new HashMap<>(mValueMap.get(procName));
 			val.put(procName, id2v);
 		}
 		return new Valuation(val);
@@ -42,7 +42,7 @@ public class Valuation implements Cloneable {
 		val.put(null, mValueMap.get(null));
 		for(String procName : mValueMap.keySet()) {
 			if(procName != null) {
-				Map<String, Object> id2v = new HashMap<>(mValueMap.get(procName));
+				final Map<String, Object> id2v = new HashMap<>(mValueMap.get(procName));
 				val.put(procName, id2v);
 			}
 		}
@@ -103,8 +103,32 @@ public class Valuation implements Cloneable {
 		return mValueMap.containsKey(procOrFuncName);
 	}
 	
+	/**
+	 * Two valuations are equivalent if the non-old variables has the same values.
+	 */
 	public boolean equals(final Valuation anotherValuation) {
-		return mValueMap.equals(anotherValuation.mValueMap);
+		final Valuation v1 = this.getRemoveOldsValuation();
+		final Valuation v2 = anotherValuation.getRemoveOldsValuation();
+		return v1.mValueMap.equals(v2.mValueMap);
+	}
+	
+	/**
+	 * Copy the original value map and remove old variables.
+	 * Use the result to construct a new valuation.
+	 */
+	private Valuation getRemoveOldsValuation() {
+		final Map<String, Map<String, Object>> val = new HashMap<>();
+		for(String procName : mValueMap.keySet()) {
+			final Map<String, Object> id2v = new HashMap<>(mValueMap.get(procName));
+			final Map<String, Object> removeOldId2v = new HashMap<>();
+			for(final String varName : id2v.keySet()) {
+				if(!isOld(varName)) {
+					removeOldId2v.put(varName, id2v.get(varName));
+				}
+			}
+			val.put(procName, removeOldId2v);
+		}
+		return new Valuation(val);
 	}
 
 	/**

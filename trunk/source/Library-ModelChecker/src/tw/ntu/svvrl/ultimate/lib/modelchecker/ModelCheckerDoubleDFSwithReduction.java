@@ -19,6 +19,8 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.ModelCheckerAssistant;
 
 import java.util.Map.Entry;
 import java.util.*;
+import java.util.Collections;
+import java.util.stream.Collectors;
 
 public class ModelCheckerDoubleDFSwithReduction{
 	private final ModelCheckerAssistant assistant;
@@ -38,11 +40,11 @@ public class ModelCheckerDoubleDFSwithReduction{
 	// Stack<ProgramState> Programstack = new Stack<>();
 	
 	Stack<Pair<ProgramState, NeverState>> CompoundStack = new Stack<>();
-	List<Pair<ProgramState, NeverState>> ErrorPath = new ArrayList<Pair<ProgramState, NeverState>>();
+	// List<Pair<ProgramState, NeverState>> ErrorPath = new ArrayList<Pair<ProgramState, NeverState>>();
 	// Stack<Pair<ProgramState, NeverState>> ErrorPath = new Stack<>();
 	// LinkedHashSet<Pair<ProgramState, NeverState>> ErrorPath = new LinkedHashSet();
 	Stack<Pair<Pair<ProgramState, NeverState>, Integer>> StateSpace = new Stack<>();
-	
+	Stack<Pair<Pair<ProgramState, NeverState>, List<Long>>> ErrorPath = new Stack<>();
 
 	public ModelCheckerDoubleDFSwithReduction(final ILogger logger, final ModelCheckerAssistant mca)
 	{	
@@ -67,9 +69,9 @@ public class ModelCheckerDoubleDFSwithReduction{
 			}
 		}
 		
-		if(!end)
-		{
-			mLogger.info("*Violation of LTL property");
+//		if(!end)
+//		{
+//			mLogger.info("*Violation of LTL property");
 			//for(int a = 0; a < ErrorPath.size();a++)
 //			for(int a = ErrorPath.size()-1; a >= 0;a--)
 //			{
@@ -79,8 +81,9 @@ public class ModelCheckerDoubleDFSwithReduction{
 //				Pair<ProgramState, NeverState> f = it.next();
 //				mLogger.info(f.getFirst().getThreadStates().toString() + f.getSecond().getName());
 //		    }
-			return;
-		}else if(!match && end) 
+//			return;
+//		}else 
+		if(!match) 
 		{
 			mLogger.info("All specifications hold");
 			return;
@@ -92,7 +95,11 @@ public class ModelCheckerDoubleDFSwithReduction{
 	{
 		for(int i = 0; i < path.size();i++)
 		{
-			if(node.equals(path.get(i).getFirst().getFirst()) && state.equals(path.get(i).getFirst().getSecond()) && path.get(i).getSecond() == ab)
+//			if((node.equals(path.get(i).getFirst().getFirst())) && (state.equals(path.get(i).getFirst().getSecond())) && (path.get(i).getSecond() == ab))
+//			{
+//				return true;
+//			}
+			if((path.get(i).getFirst().getFirst().toString().equals(node.toString())) && (path.get(i).getFirst().getSecond().toString().equals(state.toString())) && (path.get(i).getSecond() == ab))
 			{
 				return true;
 			}
@@ -112,18 +119,47 @@ public class ModelCheckerDoubleDFSwithReduction{
 		return false;
 	}
 	
-	public boolean compareErrorPath(List<Pair<ProgramState, NeverState>> path, ProgramState node, NeverState state)
-	{
-		for(int i = 0; i < path.size();i++)
-		{
-			if(node.equals(path.get(i).getFirst()) && state.equals(path.get(i).getSecond()))
-			{
-				return true;
-			}
+	private static List<Long> getIntersectOfLists1(List<Long> list1, List<Long> list2) {
+		List<Long> intersectElements = list1.stream()
+				.filter(list2 :: contains)
+				.collect(Collectors.toList());
+		
+		if(!intersectElements.isEmpty()) {
+			return intersectElements;
+		}else {
+			return Collections.emptyList();
 		}
-		return false;
+	}
+	public List<List<Long>> getFairList(Stack<Pair<Pair<ProgramState, NeverState>, List<Long>>> path)
+	{
+		List<List<Long>> FairList = new ArrayList<>();
+		for(int i = 0;i<path.size();i++)
+		{
+			FairList.add(path.get(i).getSecond());
+		}
+		return FairList;
 	}
 	
+	public boolean compareErrorPath(List<List<Long>> FairList)
+	{
+		while(FairList.size()>1)
+		{
+			List<Long> temp = getIntersectOfLists1(FairList.get(0), FairList.get(1));
+			FairList.remove(0);
+			FairList.remove(0);
+			FairList.add(temp);
+		}
+		if(FairList.get(0).size()<2)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
+
 	/* system move */
 	public void dfs(int a)
 	{
@@ -150,9 +186,7 @@ public class ModelCheckerDoubleDFSwithReduction{
 			{
 				continue;
 			}
-			
-			// List<ProgramStateTransition> programEdges = assistant.getProgramEnabledTrans(node);
-			
+
 			List<ProgramState> nProgramNodes = new ArrayList<ProgramState>();
 			for(int j = 0;j < programEdges.size();j++)
 			{
@@ -176,28 +210,33 @@ public class ModelCheckerDoubleDFSwithReduction{
 				
 				Pair p = new Pair(nextNode, state);
 				Pair s = new Pair(p, a);
-
+				
+				if(a==2)
+				{
+					List<Long> f = OrderofProcesses;
+//					TODO: f.remove(k);
+					Pair l = new Pair(p, f);
+					ErrorPath.push(l);
+				}
 				// if(!StateSpace.contains(s) || (node.equals(nextNode)&&state.equals(state)))
-				if(!compare(StateSpace, nextNode, state, a) || (node.equals(nextNode)&&(a == 2)))
+//				if(!compare(StateSpace, nextNode, state, a) || (node.equals(nextNode)&&(a == 2)))
+//				if(!compare(StateSpace, nextNode, state, a) || (a == 2))
+				if(!compare(StateSpace, nextNode, state, a))
 				{
 					StateSpace.push(s);
 					CompoundStack.push(p);
 					Dfs(a);
-					// continue;
-				// }else if(CompoundStack.contains(p))
-				// }else if(compare(StateSpace, nextNode, state, a))
-				// }else if(compare2(CompoundStack, nextNode, state))
-				}else if(compare2(CompoundStack, node, state))
-				// }else if(compare(StateSpace, node, state, a))
-				{
-					NotInStack = false;
-				}
-				AtLeaseOneSuccesor = true;
+				}	
+//				else if(compare2(CompoundStack, nextNode, state))
+//				{
+//					NotInStack = false;
+//				}
+//				AtLeaseOneSuccesor = true;
 			}
-			if(AtLeaseOneSuccesor && NotInStack)
-			{
-				break;
-			}
+//			if(AtLeaseOneSuccesor && NotInStack)
+//			{
+//				break;
+//			}
 		}
 
 	}
@@ -210,12 +249,16 @@ public class ModelCheckerDoubleDFSwithReduction{
 		List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = assistant.getNeverEnabledTrans(state, node);
 		
 		for (int j = 0;j < neverEdges.size();j++) {
+			if(neverEdges.contains(null))
+			{
+//				StateSpace.pop();
+				break;
+			}
 			if(match) {return;}
 			OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
 			NeverState nextState = assistant.doNeverTransition(state, neverEdge, node);
 			
-			StateSpace.pop();
-			CompoundStack.pop();
+			
 
 			Pair p = new Pair(node, nextState);
 			Pair s = new Pair(p, b);
@@ -224,44 +267,106 @@ public class ModelCheckerDoubleDFSwithReduction{
 			{
 				end = true;
 			}
-			// if(b==2 && node.equals(seed.getFirst()) && nextState.equals(seed.getSecond()))
-			if(b==2 && compare(StateSpace, node, nextState, b))
-			// if(b==2 && compare2(CompoundStack, node, nextState))
+			/*debug for equal func*/
+//			if(StateSpace.size()>200)
+//			{
+//				mLogger.info("StateSpace.size()>50");
+//				match = true;
+//				for(int a = 0; a < StateSpace.size();a++)
+//				{
+//					mLogger.info(StateSpace.get(a).getFirst().getFirst().toString()+StateSpace.get(a).getFirst().getSecond().getName()+"("+StateSpace.get(a).getSecond()+")"+StateSpace.size());
+//				}
+//				return;
+//			}
+			
+			//if(b==2 && compare(StateSpace, node, nextState, b))
+			//if(b==2 && compare2(CompoundStack, node, nextState))
+			//if(b==2 && node.equals(seed.getFirst()) && nextState.equals(seed.getSecond()))
+			if(b==2 && node.toString().equals(seed.getFirst().toString()) && nextState.toString().equals(seed.getSecond().toString()))
 			{
-				match = true;
-				mLogger.info("Violation of LTL property");
-				for(int a = 0; a < CompoundStack.size();a++)
+				List<List<Long>> fList = getFairList(ErrorPath);
+				for(int a = 0; a < fList.size();a++)
 				{
-					mLogger.info(CompoundStack.get(a).getFirst().getThreadStates().toString() + CompoundStack.get(a).getSecond().getName());
+					mLogger.info(fList.get(a).toString());
 				}
-				return;
+				
+				if(compareErrorPath(fList))
+				{
+					match = true;
+					mLogger.info("Violation of LTL property");
+					for(int a = 0; a < CompoundStack.size();a++)
+					{
+						mLogger.info(CompoundStack.get(a).getFirst().getThreadStates().toString() + CompoundStack.get(a).getSecond().getName());
+					}
+					return;
+				}
+				else
+				{
+//					if(!CompoundStack.peek().getFirst().equals(seed.getFirst()))
+//					{
+//						CompoundStack.pop();
+//					}
+					StateSpace.push(new Pair(p, 2));
+					seed = null;
+					//b = 1;  
+				}
 			}
-			StateSpace.push(s);			
-			CompoundStack.push(p);			
-			dfs(b);
-
-		}
-
-		if(!CompoundStack.empty())
-		{
-			if(match) {return;}
-			if(b == 1 && CompoundStack.peek().getSecond().isFinal())
+			
+			if(j == 0)
 			{
-				seed = CompoundStack.peek();
-				dfs(2);
+				StateSpace.pop();
+				CompoundStack.pop();
 			}
+			
+			
+			if(!compare(StateSpace, node, nextState, b))
+			{
+				StateSpace.push(s);			
+				CompoundStack.push(p);
+				mLogger.info(StateSpace.peek().getFirst().getFirst().toString()+StateSpace.peek().getFirst().getSecond().getName()+"("+StateSpace.peek().getSecond()+")"+StateSpace.size());
+				mLogger.info(CompoundStack.size());
+				dfs(b);
+			
+			}
+			
+			if(!CompoundStack.empty())
+			{
+				if(match) {return;}
+				if(b == 1 && CompoundStack.peek().getSecond().isFinal())
+				//if(CompoundStack.peek().getSecond().isFinal())
+				{
+					ErrorPath.clear();
+					seed = CompoundStack.peek();
+					mLogger.info("seed:"+seed.getFirst().getThreadStates().toString() +seed.getSecond().getName());
+					dfs(2);
+				}
+			}
+		}
+		
+		Pair<ProgramState, NeverState> remove2 = CompoundStack.pop();
+//		if(!CompoundStack.empty())
+//		{
+//			if(match) {return;}
+//			if(b == 1 && CompoundStack.peek().getSecond().isFinal())
+//			{
+//				seed = CompoundStack.peek();
+//				dfs(2);
+//			}
+//		}
+		
+		//Pair<ProgramState, NeverState> remove2 = CompoundStack.pop();
+		
 			// Pair<Pair<ProgramState, NeverState>, Integer> remove = StateSpace.pop();
 			// mLogger.info(remove.getFirst().getFirst().getThreadStates().toString() + remove.getFirst().getSecond().getName() + "[" + remove.getSecond() + "]");
 			// StateSpace.push(remove);
 			// ErrorPath.add(CompoundStack.pop());
-			Pair<ProgramState, NeverState> remove2 = CompoundStack.pop();
+			
 			// StateSpace.pop();
-			mLogger.info(remove2.getFirst().getThreadStates().toString() + remove2.getSecond().getName()+"["+StateSpace.size()+"]");
+//			mLogger.info(remove2.getFirst().getThreadStates().toString() + remove2.getSecond().getName()+"["+StateSpace.size()+"]");
 //			if(!compareErrorPath(ErrorPath, remove2.getFirst(), remove2.getSecond()))
 //			{
 //				ErrorPath.add(remove2);
 //			}
-		}
 		
 	}
 

@@ -27,22 +27,12 @@ public class ModelCheckerDoubleDFSwithReduction{
 	private final ILogger mLogger;
 	private boolean match = false;
 	private boolean end = false;
-	//	ProgramState is the node of the Control Flow Graph
 	private List<ProgramState> levelNodes = new ArrayList<ProgramState>();
-	// ProgramState loc = null;
-	Pair<ProgramState, NeverState> seed = null;
-	// NeverState Neverseed = null;
-	// Stack<ProgramState> firstVisited = new Stack<>();
-	// Stack<ProgramState> secondVisited = new Stack<>();
-	
 	protected Set<NeverState> initStates =new HashSet<>();
-	// Stack<NeverState> Neverstack = new Stack<>();
-	// Stack<ProgramState> Programstack = new Stack<>();
 	
+	Pair<ProgramState, NeverState> seed = null;
+
 	Stack<Pair<ProgramState, NeverState>> CompoundStack = new Stack<>();
-	// List<Pair<ProgramState, NeverState>> ErrorPath = new ArrayList<Pair<ProgramState, NeverState>>();
-	// Stack<Pair<ProgramState, NeverState>> ErrorPath = new Stack<>();
-	// LinkedHashSet<Pair<ProgramState, NeverState>> ErrorPath = new LinkedHashSet();
 	Stack<Pair<Pair<ProgramState, NeverState>, Integer>> StateSpace = new Stack<>();
 	Stack<Pair<Pair<ProgramState, NeverState>, List<Long>>> ErrorPath = new Stack<>();
 
@@ -67,22 +57,7 @@ public class ModelCheckerDoubleDFSwithReduction{
 				StateSpace.push(new Pair(p, 1));
 				dfs(1);
 			}
-		}
-		
-//		if(!end)
-//		{
-//			mLogger.info("*Violation of LTL property");
-			//for(int a = 0; a < ErrorPath.size();a++)
-//			for(int a = ErrorPath.size()-1; a >= 0;a--)
-//			{
-//				mLogger.info(ErrorPath.get(a).getFirst().getThreadStates().toString() + ErrorPath.get(a).getSecond().getName());
-//			}
-//			for (Iterator<Pair<ProgramState, NeverState>> it = ErrorPath.iterator(); it.hasNext(); ) {
-//				Pair<ProgramState, NeverState> f = it.next();
-//				mLogger.info(f.getFirst().getThreadStates().toString() + f.getSecond().getName());
-//		    }
-//			return;
-//		}else 
+		} 
 		if(!match) 
 		{
 			mLogger.info("All specifications hold");
@@ -103,18 +78,10 @@ public class ModelCheckerDoubleDFSwithReduction{
 			{
 				return true;
 			}
-		}
-		return false;
-	}
-	
-	public boolean compare2(Stack<Pair<ProgramState, NeverState>> path, ProgramState node, NeverState state)
-	{
-		for(int i = 0; i < path.size();i++)
-		{
-			if(node.equals(path.get(i).getFirst()) && state.equals(path.get(i).getSecond()))
-			{
-				return true;
-			}
+//			if((path.get(i).getFirst().getFirst().equals(node)) && (path.get(i).getFirst().getSecond().equals(state)) && (path.get(i).getSecond() == ab))
+//			{
+//				return true;
+//			}
 		}
 		return false;
 	}
@@ -149,7 +116,7 @@ public class ModelCheckerDoubleDFSwithReduction{
 			FairList.remove(0);
 			FairList.add(temp);
 		}
-		if(FairList.get(0).size()<2)
+		if(FairList.get(0).size()<3)
 		{
 			return true;
 		}
@@ -211,18 +178,19 @@ public class ModelCheckerDoubleDFSwithReduction{
 				Pair p = new Pair(nextNode, state);
 				Pair s = new Pair(p, a);
 				
-				if(a==2)
-				{
-					List<Long> f = OrderofProcesses;
-//					TODO: f.remove(k);
-					Pair l = new Pair(p, f);
-					ErrorPath.push(l);
-				}
 				// if(!StateSpace.contains(s) || (node.equals(nextNode)&&state.equals(state)))
 //				if(!compare(StateSpace, nextNode, state, a) || (node.equals(nextNode)&&(a == 2)))
 //				if(!compare(StateSpace, nextNode, state, a) || (a == 2))
 				if(!compare(StateSpace, nextNode, state, a))
 				{
+					if(a==2 && seed!=null)
+					{
+						List<Long> f = OrderofProcesses;
+						Pair l = new Pair(p, f);
+						ErrorPath.push(l);
+						mLogger.info("ErrorPath: "+ErrorPath.peek().getFirst().getFirst().toString()+ErrorPath.peek().getFirst().getSecond().getName()+ErrorPath.peek().getSecond());
+					}
+					
 					StateSpace.push(s);
 					CompoundStack.push(p);
 					Dfs(a);
@@ -248,18 +216,17 @@ public class ModelCheckerDoubleDFSwithReduction{
 		
 		List<OutgoingInternalTransition<CodeBlock, NeverState>> neverEdges = assistant.getNeverEnabledTrans(state, node);
 		
+		if(neverEdges.contains(null))
+		{
+			return;
+		}
+		
 		for (int j = 0;j < neverEdges.size();j++) {
-			if(neverEdges.contains(null))
-			{
-//				StateSpace.pop();
-				break;
-			}
+			
 			if(match) {return;}
 			OutgoingInternalTransition<CodeBlock, NeverState> neverEdge = neverEdges.get(j);
 			NeverState nextState = assistant.doNeverTransition(state, neverEdge, node);
 			
-			
-
 			Pair p = new Pair(node, nextState);
 			Pair s = new Pair(p, b);
 			
@@ -289,14 +256,21 @@ public class ModelCheckerDoubleDFSwithReduction{
 				{
 					mLogger.info(fList.get(a).toString());
 				}
+				boolean x = (fList.size()<5);
+				boolean y = compareErrorPath(fList);
 				
-				if(compareErrorPath(fList))
+				//if((compareErrorPath(fList)) && (fList.size()<5))
+				if(y)
 				{
-					match = true;
-					mLogger.info("Violation of LTL property");
-					for(int a = 0; a < CompoundStack.size();a++)
+					if(x)
 					{
-						mLogger.info(CompoundStack.get(a).getFirst().getThreadStates().toString() + CompoundStack.get(a).getSecond().getName());
+						match = true;
+						mLogger.info("Violation of LTL property");
+						for(int a = 0; a < CompoundStack.size();a++)
+						{
+							mLogger.info(CompoundStack.get(a).getFirst().getThreadStates().toString() + CompoundStack.get(a).getSecond().getName());
+						}
+						return;
 					}
 					return;
 				}
@@ -308,6 +282,7 @@ public class ModelCheckerDoubleDFSwithReduction{
 //					}
 					StateSpace.push(new Pair(p, 2));
 					seed = null;
+					continue;
 					//b = 1;  
 				}
 			}
@@ -317,7 +292,6 @@ public class ModelCheckerDoubleDFSwithReduction{
 				StateSpace.pop();
 				CompoundStack.pop();
 			}
-			
 			
 			if(!compare(StateSpace, node, nextState, b))
 			{
@@ -355,18 +329,6 @@ public class ModelCheckerDoubleDFSwithReduction{
 //		}
 		
 		//Pair<ProgramState, NeverState> remove2 = CompoundStack.pop();
-		
-			// Pair<Pair<ProgramState, NeverState>, Integer> remove = StateSpace.pop();
-			// mLogger.info(remove.getFirst().getFirst().getThreadStates().toString() + remove.getFirst().getSecond().getName() + "[" + remove.getSecond() + "]");
-			// StateSpace.push(remove);
-			// ErrorPath.add(CompoundStack.pop());
-			
-			// StateSpace.pop();
-//			mLogger.info(remove2.getFirst().getThreadStates().toString() + remove2.getSecond().getName()+"["+StateSpace.size()+"]");
-//			if(!compareErrorPath(ErrorPath, remove2.getFirst(), remove2.getSecond()))
-//			{
-//				ErrorPath.add(remove2);
-//			}
 		
 	}
 

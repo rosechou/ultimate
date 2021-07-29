@@ -19,7 +19,6 @@ import tw.ntu.svvrl.ultimate.lib.modelcheckerassistant.ModelCheckerAssistant;
 
 import java.util.Map.Entry;
 import java.util.*;
-import java.util.Collections;
 import java.util.stream.Collectors;
 
 public class ModelCheckerDoubleDFSwithReduction{
@@ -134,6 +133,12 @@ public class ModelCheckerDoubleDFSwithReduction{
 		NeverState state = CompoundStack.peek().getSecond();
 		
 		List<Long> OrderofProcesses = assistant.getProgramSafestOrder(node);
+		 
+		/* Without Partial Order Reduction */
+//		Set<Long> Processes = node.getThreadIDs();
+//		mLogger.info("getThreadIDs()"+Processes);
+//		List<Long> OrderofProcesses = new ArrayList<>(Processes);
+		
 		List<ProgramStateTransition> programEdges = new ArrayList<ProgramStateTransition>();
 		
 		for(int k = 0;k < OrderofProcesses.size();k++)
@@ -146,8 +151,8 @@ public class ModelCheckerDoubleDFSwithReduction{
 				programEdges.add(assistant.checkNeedOfSelfLoop(node));
 			}
 			
-			boolean NotInStack = true;
-			boolean AtLeaseOneSuccesor = false;
+//			boolean NotInStack = true;
+//			boolean AtLeaseOneSuccesor = false;
 			
 			if(programEdges.contains(null))
 			{
@@ -188,7 +193,7 @@ public class ModelCheckerDoubleDFSwithReduction{
 						List<Long> f = OrderofProcesses;
 						Pair l = new Pair(p, f);
 						ErrorPath.push(l);
-						mLogger.info("ErrorPath: "+ErrorPath.peek().getFirst().getFirst().toString()+ErrorPath.peek().getFirst().getSecond().getName()+ErrorPath.peek().getSecond());
+						//mLogger.info("ErrorPath: "+ErrorPath.peek().getFirst().getFirst().toString()+ErrorPath.peek().getFirst().getSecond().getName()+ErrorPath.peek().getSecond());
 					}
 					
 					StateSpace.push(s);
@@ -230,10 +235,10 @@ public class ModelCheckerDoubleDFSwithReduction{
 			Pair p = new Pair(node, nextState);
 			Pair s = new Pair(p, b);
 			
-			if(node.getThreadStates().toString().contains("ULTIMATE.startEXIT"))
-			{
-				end = true;
-			}
+//			if(node.getThreadStates().toString().contains("ULTIMATE.startEXIT"))
+//			{
+//				end = true;
+//			}
 			/*debug for equal func*/
 //			if(StateSpace.size()>200)
 //			{
@@ -246,6 +251,12 @@ public class ModelCheckerDoubleDFSwithReduction{
 //				return;
 //			}
 			
+			if(j == 0)
+			{
+				StateSpace.pop();
+				CompoundStack.pop();
+			}
+			
 			//if(b==2 && compare(StateSpace, node, nextState, b))
 			//if(b==2 && compare2(CompoundStack, node, nextState))
 			//if(b==2 && node.equals(seed.getFirst()) && nextState.equals(seed.getSecond()))
@@ -254,7 +265,7 @@ public class ModelCheckerDoubleDFSwithReduction{
 				List<List<Long>> fList = getFairList(ErrorPath);
 				for(int a = 0; a < fList.size();a++)
 				{
-					mLogger.info(fList.get(a).toString());
+//					mLogger.info(fList.get(a).toString());
 				}
 				boolean x = (fList.size()<5);
 				boolean y = compareErrorPath(fList);
@@ -265,11 +276,11 @@ public class ModelCheckerDoubleDFSwithReduction{
 					if(x)
 					{
 						match = true;
-						mLogger.info("Violation of LTL property");
 						for(int a = 0; a < CompoundStack.size();a++)
 						{
 							mLogger.info(CompoundStack.get(a).getFirst().getThreadStates().toString() + CompoundStack.get(a).getSecond().getName());
 						}
+						mLogger.info("Violation of LTL property");
 						return;
 					}
 					return;
@@ -287,18 +298,15 @@ public class ModelCheckerDoubleDFSwithReduction{
 				}
 			}
 			
-			if(j == 0)
-			{
-				StateSpace.pop();
-				CompoundStack.pop();
-			}
+			
 			
 			if(!compare(StateSpace, node, nextState, b))
 			{
 				StateSpace.push(s);			
 				CompoundStack.push(p);
-				mLogger.info(StateSpace.peek().getFirst().getFirst().toString()+StateSpace.peek().getFirst().getSecond().getName()+"("+StateSpace.peek().getSecond()+")"+StateSpace.size());
-				mLogger.info(CompoundStack.size());
+//				mLogger.info(StateSpace.peek().getFirst().getFirst().toString()+StateSpace.peek().getFirst().getSecond().getName()+"("+StateSpace.peek().getSecond()+")"+StateSpace.size());
+				mLogger.info(StateSpace.peek().getFirst().getFirst().toString()+StateSpace.peek().getFirst().getSecond().getName()+"("+StateSpace.peek().getSecond()+")");
+				//mLogger.info(CompoundStack.size());
 				dfs(b);
 			
 			}
@@ -311,7 +319,7 @@ public class ModelCheckerDoubleDFSwithReduction{
 				{
 					ErrorPath.clear();
 					seed = CompoundStack.peek();
-					mLogger.info("seed:"+seed.getFirst().getThreadStates().toString() +seed.getSecond().getName());
+//					mLogger.info("seed:"+seed.getFirst().getThreadStates().toString() +seed.getSecond().getName());
 					dfs(2);
 				}
 			}

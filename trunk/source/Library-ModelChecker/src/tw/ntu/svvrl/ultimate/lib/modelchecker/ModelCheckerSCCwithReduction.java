@@ -150,6 +150,11 @@ public class ModelCheckerSCCwithReduction {
 		List<Long> OrderofProcesses = assistant.getProgramSafestOrder(node);
 		List<ProgramStateTransition> programEdges = new ArrayList<ProgramStateTransition>();
 		
+		/* Without Partial Order Reduction */
+//		Set<Long> Processes = node.getThreadIDs();
+//		mLogger.info("getThreadIDs()"+Processes);
+//		List<Long> OrderofProcesses = new ArrayList<>(Processes);
+		
 		for(int k = 0;k < OrderofProcesses.size();k++)
 		{
 			programEdges = assistant.getProgramEnabledTransByThreadID(node, OrderofProcesses.get(k));
@@ -252,8 +257,9 @@ public class ModelCheckerSCCwithReduction {
 					Pair l = new Pair(p, addOrderofProcesses(ErrorPath, node));
 					ErrorPath.push(l);
 				}
-				mLogger.info(StateSpace.peek().getFirst().toString()+StateSpace.peek().getSecond().getName()+"("+dfsnum.peek().getSecond()+")"+StateSpace.size());
-				mLogger.info(Roots.size());	
+//				mLogger.info(StateSpace.peek().getFirst().toString()+StateSpace.peek().getSecond().getName()+"("+dfsnum.peek().getSecond()+")"+StateSpace.size());
+				mLogger.info(StateSpace.peek().getFirst().toString()+StateSpace.peek().getSecond().getName()+"(dfsnum: "+dfsnum.peek().getSecond()+")");
+				//mLogger.info(Roots.size());	
 				dfs();
 			}
 			else if(compare(Roots, node, nextState))
@@ -264,16 +270,17 @@ public class ModelCheckerSCCwithReduction {
 //					mLogger.info("continue");
 //					continue;
 //				}
-				mLogger.info("#####Roots contains:#####");
-				mLogger.info(Roots.peek().getFirst().toString()+Roots.peek().getSecond().getName());
-				mLogger.info("node: "+node.toString()+";"+"nextState: "+nextState.getName());
+				
+//				mLogger.info("#####Roots contains:#####");
+//				mLogger.info(Roots.peek().getFirst().toString()+Roots.peek().getSecond().getName());
+//				mLogger.info("node: "+node.toString()+";"+"nextState: "+nextState.getName());
 				Pair<ProgramState, NeverState> element;
-				Pair<Pair<ProgramState, NeverState>, Integer> dfselement;
+				//Pair<Pair<ProgramState, NeverState>, Integer> dfselement;
 				do
 				{
-					dfselement = dfsnum.pop();
+					//dfselement = dfsnum.pop();
 					element = Roots.pop();
-					mLogger.info(element.getSecond().getName());
+//					mLogger.info(element.getSecond().getName());
 					if(element.getSecond().isFinal())
 					{
 						// CyclePath.clear();
@@ -295,7 +302,7 @@ public class ModelCheckerSCCwithReduction {
 							if(!(StateSpace.get(s).getFirst().toString().equals(node.toString()) 
 									&& (StateSpace.get(s).getSecond().toString().equals(nextState.toString()))))
 							{
-								mLogger.info(StateSpace.get(s).getFirst().toString()+StateSpace.get(s).getSecond().getName());
+//								mLogger.info(StateSpace.get(s).getFirst().toString()+StateSpace.get(s).getSecond().getName());
 								fList.add(addOrderofProcesses(ErrorPath, StateSpace.get(s).getFirst()));
 							}
 							else
@@ -310,21 +317,20 @@ public class ModelCheckerSCCwithReduction {
 						{
 							mLogger.info(fList.get(a).toString());
 						}
-						mLogger.info(fList.size());
-						mLogger.info(fList.size()<5);
+//						mLogger.info(fList.size());
+//						mLogger.info(fList.size()<5);
 						boolean x = (fList.size()<5);
 						boolean y = compareErrorPath(fList);
-						mLogger.info("compareErrorPath(fList)"+compareErrorPath(fList));
-						mLogger.info("(compareErrorPath(fList)) && (fList.size()<5)"+((compareErrorPath(fList)) & (fList.size()<5)));
+//						mLogger.info("compareErrorPath(fList)"+compareErrorPath(fList));
+//						mLogger.info("(compareErrorPath(fList)) && (fList.size()<5)"+((compareErrorPath(fList)) & (fList.size()<5)));
 						//if(((compareErrorPath(fList)) && (fList.size()<5)))
 						if(y)
 						{
 							if(x)
 							{
-								mLogger.info("element_dfsnm: "+compareDfsnum(dfsnum, element.getFirst(),element.getSecond()));
-								mLogger.info("nextState_dfsnm: "+compareDfsnum(dfsnum, node, nextState));
+//								mLogger.info("element_dfsnm: "+compareDfsnum(dfsnum, element.getFirst(),element.getSecond()));
+//								mLogger.info("nextState_dfsnm: "+compareDfsnum(dfsnum, node, nextState));
 								match = true;
-								mLogger.info("Violation of LTL property");
 								Roots.push(element);
 								Roots.push(p);
 								StateSpace.push(p);
@@ -332,6 +338,7 @@ public class ModelCheckerSCCwithReduction {
 								{
 									mLogger.info(StateSpace.get(a).getFirst().getThreadStates().toString() + StateSpace.get(a).getSecond().getName());
 								}
+								mLogger.info("Violation of LTL property");
 								return;
 							}
 							return;
@@ -341,7 +348,7 @@ public class ModelCheckerSCCwithReduction {
 				}while(compareDfsnum(dfsnum, element.getFirst(),element.getSecond())
 					> compareDfsnum(dfsnum, node, nextState));
 				Roots.push(element);
-				dfsnum.push(dfselement);
+				// dfsnum.push(dfselement);
 				//dfs();
 			}
 			
